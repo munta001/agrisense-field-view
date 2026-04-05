@@ -14,16 +14,413 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      activity_logs: {
+        Row: {
+          action: string
+          created_at: string
+          details: Json | null
+          id: string
+          org_id: string
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          org_id: string
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          org_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_logs_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      alerts: {
+        Row: {
+          created_at: string
+          id: string
+          is_read: boolean
+          message: string | null
+          org_id: string
+          sensor_id: string | null
+          severity: string
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message?: string | null
+          org_id: string
+          sensor_id?: string | null
+          severity?: string
+          title: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message?: string | null
+          org_id?: string
+          sensor_id?: string | null
+          severity?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alerts_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "alerts_sensor_id_fkey"
+            columns: ["sensor_id"]
+            isOneToOne: false
+            referencedRelation: "sensors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      data_entries: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          org_id: string
+          recorded_at: string
+          sensor_id: string | null
+          user_id: string
+          value: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          org_id: string
+          recorded_at?: string
+          sensor_id?: string | null
+          user_id: string
+          value: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          org_id?: string
+          recorded_at?: string
+          sensor_id?: string | null
+          user_id?: string
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "data_entries_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "data_entries_sensor_id_fkey"
+            columns: ["sensor_id"]
+            isOneToOne: false
+            referencedRelation: "sensors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organizations: {
+        Row: {
+          created_at: string
+          id: string
+          logo_url: string | null
+          name: string
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          logo_url?: string | null
+          name: string
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          logo_url?: string | null
+          name?: string
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          full_name: string | null
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      sensor_readings: {
+        Row: {
+          id: string
+          recorded_at: string
+          sensor_id: string
+          value: number
+        }
+        Insert: {
+          id?: string
+          recorded_at?: string
+          sensor_id: string
+          value: number
+        }
+        Update: {
+          id?: string
+          recorded_at?: string
+          sensor_id?: string
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sensor_readings_sensor_id_fkey"
+            columns: ["sensor_id"]
+            isOneToOne: false
+            referencedRelation: "sensors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sensor_types: {
+        Row: {
+          created_at: string
+          description: string | null
+          icon: string | null
+          id: string
+          max_value: number | null
+          min_value: number | null
+          name: string
+          unit: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          max_value?: number | null
+          min_value?: number | null
+          name: string
+          unit: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          max_value?: number | null
+          min_value?: number | null
+          name?: string
+          unit?: string
+        }
+        Relationships: []
+      }
+      sensors: {
+        Row: {
+          created_at: string
+          id: string
+          ip_address: string | null
+          latitude: number | null
+          longitude: number | null
+          map_x: number | null
+          map_y: number | null
+          name: string
+          org_id: string
+          sensor_type_id: string
+          status: string
+          updated_at: string
+          zone_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          map_x?: number | null
+          map_y?: number | null
+          name: string
+          org_id: string
+          sensor_type_id: string
+          status?: string
+          updated_at?: string
+          zone_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          map_x?: number | null
+          map_y?: number | null
+          name?: string
+          org_id?: string
+          sensor_type_id?: string
+          status?: string
+          updated_at?: string
+          zone_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sensors_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sensors_sensor_type_id_fkey"
+            columns: ["sensor_type_id"]
+            isOneToOne: false
+            referencedRelation: "sensor_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sensors_zone_id_fkey"
+            columns: ["zone_id"]
+            isOneToOne: false
+            referencedRelation: "zones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          org_id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          org_id: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          org_id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_roles_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      zones: {
+        Row: {
+          boundaries: Json | null
+          color: string
+          created_at: string
+          id: string
+          name: string
+          org_id: string
+          updated_at: string
+        }
+        Insert: {
+          boundaries?: Json | null
+          color?: string
+          created_at?: string
+          id?: string
+          name: string
+          org_id: string
+          updated_at?: string
+        }
+        Update: {
+          boundaries?: Json | null
+          color?: string
+          created_at?: string
+          id?: string
+          name?: string
+          org_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zones_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _org_id: string
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_org_member: {
+        Args: { _org_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "operator" | "viewer"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +547,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "operator", "viewer"],
+    },
   },
 } as const
