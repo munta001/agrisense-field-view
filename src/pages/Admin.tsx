@@ -28,8 +28,17 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (!currentOrg) return;
-    supabase.from("user_roles").select("*, profiles(full_name)").eq("org_id", currentOrg.id)
-      .then(({ data }) => setMembers((data as UserRoleWithProfile[]) || []));
+    supabase.from("user_roles").select("*").eq("org_id", currentOrg.id)
+      .then(async ({ data: roles }) => {
+        if (!roles) { setMembers([]); return; }
+        const userIds = roles.map(r => r.user_id);
+        const { data: profiles } = await supabase.from("profiles").select("user_id, full_name").in("user_id", userIds);
+        const merged = roles.map(r => ({
+          ...r,
+          profiles: profiles?.find(p => p.user_id === r.user_id) || null,
+        }));
+        setMembers(merged as any);
+      });
     supabase.from("sensor_types").select("*").then(({ data }) => setSensorTypes(data || []));
     supabase.from("activity_logs").select("*").eq("org_id", currentOrg.id).order("created_at", { ascending: false }).limit(20)
       .then(({ data }) => setLogs(data || []));
