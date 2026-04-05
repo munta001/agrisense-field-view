@@ -365,6 +365,7 @@ export type Database = {
       }
       zones: {
         Row: {
+          background_image_url: string | null
           boundaries: Json | null
           color: string
           created_at: string
@@ -374,6 +375,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          background_image_url?: string | null
           boundaries?: Json | null
           color?: string
           created_at?: string
@@ -383,6 +385,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          background_image_url?: string | null
           boundaries?: Json | null
           color?: string
           created_at?: string
