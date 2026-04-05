@@ -8,7 +8,7 @@ import { OrgProvider } from "@/contexts/OrgContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AppLayout } from "@/components/AppLayout";
 import LoginPage from "@/pages/Login";
-import OnboardingPage from "@/pages/Onboarding";
+
 import DashboardPage from "@/pages/Dashboard";
 import SensorsPage from "@/pages/Sensors";
 import FieldMapPage from "@/pages/FieldMap";
@@ -40,7 +40,7 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
               <Route path="/login" element={<LoginPage />} />
-              <Route path="/onboarding" element={<ProtectedRoute><OnboardingPage /></ProtectedRoute>} />
+              
               <Route path="/dashboard" element={<ProtectedAppRoute><DashboardPage /></ProtectedAppRoute>} />
               <Route path="/sensors" element={<ProtectedAppRoute><SensorsPage /></ProtectedAppRoute>} />
               <Route path="/field-map" element={<ProtectedAppRoute><FieldMapPage /></ProtectedAppRoute>} />

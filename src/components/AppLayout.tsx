@@ -1,8 +1,7 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { useOrg } from "@/contexts/OrgContext";
-import { Loader2 } from "lucide-react";
-import { Navigate } from "react-router-dom";
+import { Leaf, Loader2 } from "lucide-react";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { currentOrg, loading } = useOrg();
@@ -15,7 +14,19 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!currentOrg) return <Navigate to="/onboarding" replace />;
+  if (!currentOrg) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background p-4">
+        <div className="text-center max-w-md space-y-4">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl gradient-primary shadow-lg">
+            <Leaf className="h-7 w-7 text-primary-foreground" />
+          </div>
+          <h1 className="font-display text-2xl font-bold text-foreground">No Organisation Assigned</h1>
+          <p className="text-muted-foreground">Your account has not been assigned to an organisation yet. Please contact your administrator to get access.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <SidebarProvider>
