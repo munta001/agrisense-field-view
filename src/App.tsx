@@ -17,6 +17,8 @@ import AnalyticsPage from "@/pages/Analytics";
 import AlertsPage from "@/pages/Alerts";
 import ReportsPage from "@/pages/Reports";
 import AdminPage from "@/pages/Admin";
+import CropsPage from "@/pages/Crops";
+import ZonesPage from "@/pages/Zones";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -48,6 +50,8 @@ const App = () => (
               <Route path="/analytics" element={<ProtectedAppRoute><AnalyticsPage /></ProtectedAppRoute>} />
               <Route path="/alerts" element={<ProtectedAppRoute><AlertsPage /></ProtectedAppRoute>} />
               <Route path="/reports" element={<ProtectedAppRoute><ReportsPage /></ProtectedAppRoute>} />
+              <Route path="/crops" element={<ProtectedAppRoute><CropsPage /></ProtectedAppRoute>} />
+              <Route path="/zones" element={<ProtectedAppRoute><ZonesPage /></ProtectedAppRoute>} />
               <Route path="/admin" element={<ProtectedAppRoute><AdminPage /></ProtectedAppRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
