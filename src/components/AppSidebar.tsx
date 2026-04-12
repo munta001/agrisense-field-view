@@ -1,5 +1,5 @@
 import {
-  LayoutDashboard, Activity, Map, FileInput, BarChart3, Bell, FileText, Settings, LogOut, Leaf, ChevronDown,
+  LayoutDashboard, Activity, Map, FileInput, BarChart3, Bell, FileText, Settings, LogOut, Leaf, ChevronDown, Sprout, MapPin,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
@@ -20,6 +20,8 @@ const mainItems = [
   { title: "Analytics", url: "/analytics", icon: BarChart3 },
   { title: "Alerts", url: "/alerts", icon: Bell },
   { title: "Reports", url: "/reports", icon: FileText },
+  { title: "Crops", url: "/crops", icon: Sprout },
+  { title: "Zones", url: "/zones", icon: MapPin },
 ];
 
 const adminItems = [

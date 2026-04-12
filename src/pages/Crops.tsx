@@ -1,0 +1,297 @@
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useOrg } from "@/contexts/OrgContext";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Plus, Trash2, Sprout, Layers } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+
+type SensorType = { id: string; name: string; unit: string; min_value: number | null; max_value: number | null };
+type Threshold = { id: string; crop_stage_id: string; sensor_type_id: string; min_value: number | null; max_value: number | null };
+type CropStage = { id: string; crop_id: string; name: string; stage_order: number; description: string | null; thresholds: Threshold[] };
+type Crop = { id: string; org_id: string; name: string; category: string; description: string | null; crop_stages: CropStage[] };
+
+export default function CropsPage() {
+  const { currentOrg, currentRole } = useOrg();
+  const [crops, setCrops] = useState<Crop[]>([]);
+  const [sensorTypes, setSensorTypes] = useState<SensorType[]>([]);
+  const [cropOpen, setCropOpen] = useState(false);
+  const [cropForm, setCropForm] = useState({ name: "", category: "", description: "" });
+  const [stageOpen, setStageOpen] = useState<string | null>(null);
+  const [stageForm, setStageForm] = useState({ name: "", description: "", stage_order: 0 });
+  const [thresholdOpen, setThresholdOpen] = useState<string | null>(null);
+  const [thresholdForm, setThresholdForm] = useState({ sensor_type_id: "", min_value: "", max_value: "" });
+  const { toast } = useToast();
+  const canEdit = currentRole?.role === "admin" || currentRole?.role === "operator";
+
+  const fetchCrops = async () => {
+    if (!currentOrg) return;
+    const { data: cropsData } = await supabase.from("crops").select("*").eq("org_id", currentOrg.id);
+    if (!cropsData) { setCrops([]); return; }
+
+    const cropIds = cropsData.map(c => c.id);
+    const { data: stagesData } = await supabase.from("crop_stages").select("*").in("crop_id", cropIds).order("stage_order");
+    const stageIds = (stagesData || []).map(s => s.id);
+    const { data: thresholdsData } = stageIds.length > 0
+      ? await supabase.from("crop_stage_thresholds").select("*").in("crop_stage_id", stageIds)
+      : { data: [] };
+
+    const merged: Crop[] = cropsData.map(c => ({
+      ...c,
+      crop_stages: (stagesData || [])
+        .filter(s => s.crop_id === c.id)
+        .map(s => ({
+          ...s,
+          thresholds: (thresholdsData || []).filter(t => t.crop_stage_id === s.id),
+        })),
+    }));
+    setCrops(merged);
+  };
+
+  useEffect(() => {
+    if (!currentOrg) return;
+    fetchCrops();
+    supabase.from("sensor_types").select("*").then(({ data }) => setSensorTypes(data || []));
+  }, [currentOrg]);
+
+  const addCrop = async () => {
+    if (!currentOrg || !cropForm.name) return;
+    const { error } = await supabase.from("crops").insert({
+      org_id: currentOrg.id,
+      name: cropForm.name,
+      category: cropForm.category,
+      description: cropForm.description || null,
+    });
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Crop added" });
+    setCropOpen(false);
+    setCropForm({ name: "", category: "", description: "" });
+    fetchCrops();
+  };
+
+  const addStage = async (cropId: string) => {
+    if (!stageForm.name) return;
+    const { error } = await supabase.from("crop_stages").insert({
+      crop_id: cropId,
+      name: stageForm.name,
+      description: stageForm.description || null,
+      stage_order: stageForm.stage_order,
+    });
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Stage added" });
+    setStageOpen(null);
+    setStageForm({ name: "", description: "", stage_order: 0 });
+    fetchCrops();
+  };
+
+  const addThreshold = async (stageId: string) => {
+    if (!thresholdForm.sensor_type_id) return;
+    const { error } = await supabase.from("crop_stage_thresholds").insert({
+      crop_stage_id: stageId,
+      sensor_type_id: thresholdForm.sensor_type_id,
+      min_value: thresholdForm.min_value ? Number(thresholdForm.min_value) : null,
+      max_value: thresholdForm.max_value ? Number(thresholdForm.max_value) : null,
+    });
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Threshold added" });
+    setThresholdOpen(null);
+    setThresholdForm({ sensor_type_id: "", min_value: "", max_value: "" });
+    fetchCrops();
+  };
+
+  const deleteThreshold = async (id: string) => {
+    await supabase.from("crop_stage_thresholds").delete().eq("id", id);
+    fetchCrops();
+  };
+
+  const deleteStage = async (id: string) => {
+    await supabase.from("crop_stages").delete().eq("id", id);
+    fetchCrops();
+  };
+
+  const deleteCrop = async (id: string) => {
+    await supabase.from("crops").delete().eq("id", id);
+    fetchCrops();
+  };
+
+  const getSensorTypeName = (id: string) => sensorTypes.find(st => st.id === id)?.name || "Unknown";
+  const getSensorTypeUnit = (id: string) => sensorTypes.find(st => st.id === id)?.unit || "";
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="font-display text-2xl font-bold">Crop Management</h1>
+          <p className="text-muted-foreground">Define crops, growth stages, and sensor thresholds</p>
+        </div>
+        {canEdit && (
+          <Dialog open={cropOpen} onOpenChange={setCropOpen}>
+            <DialogTrigger asChild>
+              <Button><Plus className="mr-2 h-4 w-4" />Add Crop</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader><DialogTitle className="font-display">Add New Crop</DialogTitle></DialogHeader>
+              <div className="space-y-4 pt-2">
+                <Input placeholder="Crop Name (e.g. Tomato)" value={cropForm.name} onChange={e => setCropForm({ ...cropForm, name: e.target.value })} />
+                <Input placeholder="Category (e.g. Vegetables, Fruits)" value={cropForm.category} onChange={e => setCropForm({ ...cropForm, category: e.target.value })} />
+                <Textarea placeholder="Description (optional)" value={cropForm.description} onChange={e => setCropForm({ ...cropForm, description: e.target.value })} />
+                <Button onClick={addCrop} className="w-full">Add Crop</Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
+      </div>
+
+      {crops.length === 0 && (
+        <Card className="glass-card">
+          <CardContent className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+            <Sprout className="h-12 w-12 mb-4 opacity-40" />
+            <p className="text-lg font-medium">No crops defined yet</p>
+            <p className="text-sm">Add your first crop to define growth stages and sensor thresholds</p>
+          </CardContent>
+        </Card>
+      )}
+
+      <Accordion type="multiple" className="space-y-4">
+        {crops.map(crop => (
+          <AccordionItem key={crop.id} value={crop.id} className="glass-card border rounded-lg px-4">
+            <AccordionTrigger className="hover:no-underline">
+              <div className="flex items-center gap-3">
+                <Sprout className="h-5 w-5 text-primary" />
+                <div className="text-left">
+                  <span className="font-display font-semibold text-base">{crop.name}</span>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <Badge variant="secondary">{crop.category || "Uncategorized"}</Badge>
+                    <span className="text-xs text-muted-foreground">{crop.crop_stages.length} stages</span>
+                  </div>
+                </div>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="pt-2 pb-4">
+              {crop.description && <p className="text-sm text-muted-foreground mb-4">{crop.description}</p>}
+
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-display font-semibold text-sm flex items-center gap-2">
+                  <Layers className="h-4 w-4" /> Growth Stages
+                </h3>
+                {canEdit && (
+                  <Dialog open={stageOpen === crop.id} onOpenChange={open => setStageOpen(open ? crop.id : null)}>
+                    <DialogTrigger asChild>
+                      <Button size="sm" variant="outline"><Plus className="mr-1 h-3 w-3" />Add Stage</Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader><DialogTitle className="font-display">Add Growth Stage</DialogTitle></DialogHeader>
+                      <div className="space-y-4 pt-2">
+                        <Input placeholder="Stage Name (e.g. Germination)" value={stageForm.name} onChange={e => setStageForm({ ...stageForm, name: e.target.value })} />
+                        <Input type="number" placeholder="Order (0, 1, 2...)" value={stageForm.stage_order} onChange={e => setStageForm({ ...stageForm, stage_order: Number(e.target.value) })} />
+                        <Textarea placeholder="Description (optional)" value={stageForm.description} onChange={e => setStageForm({ ...stageForm, description: e.target.value })} />
+                        <Button onClick={() => addStage(crop.id)} className="w-full">Add Stage</Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                )}
+              </div>
+
+              {crop.crop_stages.length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-4">No stages defined yet</p>
+              )}
+
+              <div className="space-y-3">
+                {crop.crop_stages.map((stage, idx) => (
+                  <Card key={stage.id} className="border">
+                    <CardHeader className="py-3 px-4">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-sm font-medium flex items-center gap-2">
+                          <Badge variant="outline" className="text-xs">{stage.stage_order}</Badge>
+                          {stage.name}
+                        </CardTitle>
+                        <div className="flex items-center gap-1">
+                          {canEdit && (
+                            <>
+                              <Dialog open={thresholdOpen === stage.id} onOpenChange={open => setThresholdOpen(open ? stage.id : null)}>
+                                <DialogTrigger asChild>
+                                  <Button size="sm" variant="ghost"><Plus className="h-3 w-3 mr-1" />Threshold</Button>
+                                </DialogTrigger>
+                                <DialogContent>
+                                  <DialogHeader><DialogTitle className="font-display">Add Sensor Threshold</DialogTitle></DialogHeader>
+                                  <div className="space-y-4 pt-2">
+                                    <select
+                                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                      value={thresholdForm.sensor_type_id}
+                                      onChange={e => setThresholdForm({ ...thresholdForm, sensor_type_id: e.target.value })}
+                                    >
+                                      <option value="">Select Sensor Type</option>
+                                      {sensorTypes.filter(st => !stage.thresholds.some(t => t.sensor_type_id === st.id)).map(st => (
+                                        <option key={st.id} value={st.id}>{st.name} ({st.unit})</option>
+                                      ))}
+                                    </select>
+                                    <div className="grid grid-cols-2 gap-3">
+                                      <Input type="number" placeholder="Min Value" value={thresholdForm.min_value} onChange={e => setThresholdForm({ ...thresholdForm, min_value: e.target.value })} />
+                                      <Input type="number" placeholder="Max Value" value={thresholdForm.max_value} onChange={e => setThresholdForm({ ...thresholdForm, max_value: e.target.value })} />
+                                    </div>
+                                    <Button onClick={() => addThreshold(stage.id)} className="w-full">Add Threshold</Button>
+                                  </div>
+                                </DialogContent>
+                              </Dialog>
+                              <Button size="sm" variant="ghost" className="text-destructive" onClick={() => deleteStage(stage.id)}>
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </CardHeader>
+                    {stage.thresholds.length > 0 && (
+                      <CardContent className="pt-0 px-4 pb-3">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead className="text-xs">Sensor Type</TableHead>
+                              <TableHead className="text-xs">Min</TableHead>
+                              <TableHead className="text-xs">Max</TableHead>
+                              {canEdit && <TableHead className="text-xs w-10"></TableHead>}
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {stage.thresholds.map(t => (
+                              <TableRow key={t.id}>
+                                <TableCell className="text-sm">{getSensorTypeName(t.sensor_type_id)}</TableCell>
+                                <TableCell className="text-sm font-mono">{t.min_value ?? "—"} {getSensorTypeUnit(t.sensor_type_id)}</TableCell>
+                                <TableCell className="text-sm font-mono">{t.max_value ?? "—"} {getSensorTypeUnit(t.sensor_type_id)}</TableCell>
+                                {canEdit && (
+                                  <TableCell>
+                                    <Button size="sm" variant="ghost" className="text-destructive h-6 w-6 p-0" onClick={() => deleteThreshold(t.id)}>
+                                      <Trash2 className="h-3 w-3" />
+                                    </Button>
+                                  </TableCell>
+                                )}
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </CardContent>
+                    )}
+                  </Card>
+                ))}
+              </div>
+
+              {canEdit && (
+                <div className="mt-3 flex justify-end">
+                  <Button size="sm" variant="destructive" onClick={() => deleteCrop(crop.id)}>
+                    <Trash2 className="h-3 w-3 mr-1" /> Delete Crop
+                  </Button>
+                </div>
+              )}
+            </AccordionContent>
+          </AccordionItem>
+        ))}
+      </Accordion>
+    </div>
+  );
+}

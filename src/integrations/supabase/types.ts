@@ -97,6 +97,124 @@ export type Database = {
           },
         ]
       }
+      crop_stage_thresholds: {
+        Row: {
+          created_at: string
+          crop_stage_id: string
+          id: string
+          max_value: number | null
+          min_value: number | null
+          sensor_type_id: string
+        }
+        Insert: {
+          created_at?: string
+          crop_stage_id: string
+          id?: string
+          max_value?: number | null
+          min_value?: number | null
+          sensor_type_id: string
+        }
+        Update: {
+          created_at?: string
+          crop_stage_id?: string
+          id?: string
+          max_value?: number | null
+          min_value?: number | null
+          sensor_type_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crop_stage_thresholds_crop_stage_id_fkey"
+            columns: ["crop_stage_id"]
+            isOneToOne: false
+            referencedRelation: "crop_stages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crop_stage_thresholds_sensor_type_id_fkey"
+            columns: ["sensor_type_id"]
+            isOneToOne: false
+            referencedRelation: "sensor_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crop_stages: {
+        Row: {
+          created_at: string
+          crop_id: string
+          description: string | null
+          id: string
+          name: string
+          stage_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          crop_id: string
+          description?: string | null
+          id?: string
+          name: string
+          stage_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          crop_id?: string
+          description?: string | null
+          id?: string
+          name?: string
+          stage_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crop_stages_crop_id_fkey"
+            columns: ["crop_id"]
+            isOneToOne: false
+            referencedRelation: "crops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crops: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          org_id: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          org_id: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          org_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crops_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       data_entries: {
         Row: {
           created_at: string
@@ -369,6 +487,8 @@ export type Database = {
           boundaries: Json | null
           color: string
           created_at: string
+          crop_id: string | null
+          crop_stage_id: string | null
           id: string
           name: string
           org_id: string
@@ -379,6 +499,8 @@ export type Database = {
           boundaries?: Json | null
           color?: string
           created_at?: string
+          crop_id?: string | null
+          crop_stage_id?: string | null
           id?: string
           name: string
           org_id: string
@@ -389,12 +511,28 @@ export type Database = {
           boundaries?: Json | null
           color?: string
           created_at?: string
+          crop_id?: string | null
+          crop_stage_id?: string | null
           id?: string
           name?: string
           org_id?: string
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "zones_crop_id_fkey"
+            columns: ["crop_id"]
+            isOneToOne: false
+            referencedRelation: "crops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "zones_crop_stage_id_fkey"
+            columns: ["crop_stage_id"]
+            isOneToOne: false
+            referencedRelation: "crop_stages"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "zones_org_id_fkey"
             columns: ["org_id"]
