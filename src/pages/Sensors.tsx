@@ -82,8 +82,35 @@ export default function SensorsPage() {
     return zone?.name || "Unknown Zone";
   };
 
+  const [editSensor, setEditSensor] = useState<Sensor | null>(null);
+  const [editZoneId, setEditZoneId] = useState<string>("");
+
+  const handleUpdateZone = async () => {
+    if (!editSensor) return;
+    const newZoneId = editZoneId === "none" ? null : editZoneId || null;
+    const { error } = await supabase.from("sensors").update({ zone_id: newZoneId }).eq("id", editSensor.id);
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Sensor zone updated" });
+    setEditSensor(null);
+    fetchSensors();
+  };
+
   return (
     <div className="space-y-6">
+      <Dialog open={!!editSensor} onOpenChange={open => { if (!open) setEditSensor(null); }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle className="font-display">Update Sensor Zone</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">Change zone for <strong>{editSensor?.name}</strong></p>
+          <Select value={editZoneId} onValueChange={setEditZoneId}>
+            <SelectTrigger><SelectValue placeholder="Select Zone" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">No Zone</SelectItem>
+              {zones.map(z => <SelectItem key={z.id} value={z.id}>{z.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Button onClick={handleUpdateZone} className="w-full">Update Zone</Button>
+        </DialogContent>
+      </Dialog>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="font-display text-2xl font-bold">Sensors</h1>
@@ -148,7 +175,7 @@ export default function SensorsPage() {
             </h2>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {typeSensors.map(sensor => (
-                <Card key={sensor.id} className="glass-card">
+                <Card key={sensor.id} className="glass-card cursor-pointer hover:shadow-md transition-shadow" onClick={() => { if (canEdit) { setEditSensor(sensor); setEditZoneId(sensor.zone_id || "none"); } }}>
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between mb-2">
                       <span className="font-medium">{sensor.name}</span>
