@@ -52,14 +52,41 @@ export default function FieldMapPage() {
     ? sensors
     : sensors.filter(s => s.zone_id === activeZone);
 
-  // Sensor positions with pending overrides
-  const getSensorPos = (s: Sensor) => {
+  // Rect of a zone in the "All Zones" overview
+  const zoneRect = (zoneId: string | null) => {
+    const idx = zones.findIndex(z => z.id === zoneId);
+    if (idx < 0) return null;
+    const cols = 2;
+    const col = idx % cols;
+    const row = Math.floor(idx / cols);
+    const w = (MAP_WIDTH - 30) / cols;
+    const h = (MAP_HEIGHT - 30) / Math.ceil(zones.length / cols);
+    return { x: 10 + col * (w + 10), y: 10 + row * (h + 10), w, h };
+  };
+
+  // Raw stored/pending position in the single-zone coordinate space
+  const rawPos = (s: Sensor) => {
     if (pendingPositions[s.id]) return pendingPositions[s.id];
     return {
       x: s.map_x ?? (50 + Math.abs(s.id.charCodeAt(0) % 7) * 100),
       y: s.map_y ?? (50 + Math.abs(s.id.charCodeAt(1) % 4) * 110),
     };
   };
+
+  // Sensor positions: in "all" view, map into the sensor's own zone rectangle
+  const getSensorPos = (s: Sensor) => {
+    const pos = rawPos(s);
+    if (activeZone !== "all") return pos;
+    const rect = zoneRect(s.zone_id);
+    if (!rect) return pos;
+    const padX = 16;
+    const padY = 34;
+    return {
+      x: rect.x + padX + (pos.x / MAP_WIDTH) * (rect.w - padX * 2),
+      y: rect.y + padY + (pos.y / MAP_HEIGHT) * (rect.h - padY - 20),
+    };
+  };
+
 
   // SVG coordinate conversion
   const svgPoint = (clientX: number, clientY: number) => {
@@ -78,7 +105,7 @@ export default function FieldMapPage() {
   };
 
   const handleMouseDown = (sensorId: string) => {
-    if (!isAdmin) return;
+    if (!isAdmin || activeZone === "all") return;
     setDraggingSensor(sensorId);
   };
 
@@ -146,7 +173,7 @@ export default function FieldMapPage() {
           <h1 className="font-display text-2xl font-bold">Field Map</h1>
           <p className="text-muted-foreground">
             View sensor locations by zone
-            {isAdmin && " — drag sensors to reposition"}
+            {isAdmin && " — open a zone tab to drag sensors and reposition them"}
           </p>
         </div>
         {isAdmin && Object.keys(pendingPositions).length > 0 && (
@@ -253,7 +280,7 @@ export default function FieldMapPage() {
                 return (
                   <g key={sensor.id}
                     onMouseDown={() => handleMouseDown(sensor.id)}
-                    style={{ cursor: isAdmin ? "grab" : "default" }}
+                    style={{ cursor: isAdmin && activeZone !== "all" ? "grab" : "default" }}
                   >
                     {/* Outer ring */}
                     <circle cx={pos.x} cy={pos.y} r={16}
