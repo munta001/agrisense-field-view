@@ -105,7 +105,7 @@ export default function FieldMapPage() {
   };
 
   const handleMouseDown = (sensorId: string) => {
-    if (!isAdmin) return;
+    if (!isAdmin || activeZone === "all") return;
     setDraggingSensor(sensorId);
   };
 
