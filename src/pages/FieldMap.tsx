@@ -173,7 +173,7 @@ export default function FieldMapPage() {
           <h1 className="font-display text-2xl font-bold">Field Map</h1>
           <p className="text-muted-foreground">
             View sensor locations by zone
-            {isAdmin && " — drag sensors to reposition"}
+            {isAdmin && " — open a zone tab to drag sensors and reposition them"}
           </p>
         </div>
         {isAdmin && Object.keys(pendingPositions).length > 0 && (
@@ -280,7 +280,7 @@ export default function FieldMapPage() {
                 return (
                   <g key={sensor.id}
                     onMouseDown={() => handleMouseDown(sensor.id)}
-                    style={{ cursor: isAdmin ? "grab" : "default" }}
+                    style={{ cursor: isAdmin && activeZone !== "all" ? "grab" : "default" }}
                   >
                     {/* Outer ring */}
                     <circle cx={pos.x} cy={pos.y} r={16}
