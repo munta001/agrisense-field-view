@@ -11,6 +11,7 @@ import LoginPage from "@/pages/Login";
 
 import DashboardPage from "@/pages/Dashboard";
 import SensorsPage from "@/pages/Sensors";
+import SensorDetailPage from "@/pages/SensorDetail";
 import FieldMapPage from "@/pages/FieldMap";
 import DataEntryPage from "@/pages/DataEntry";
 import AnalyticsPage from "@/pages/Analytics";
@@ -45,6 +46,7 @@ const App = () => (
               
               <Route path="/dashboard" element={<ProtectedAppRoute><DashboardPage /></ProtectedAppRoute>} />
               <Route path="/sensors" element={<ProtectedAppRoute><SensorsPage /></ProtectedAppRoute>} />
+              <Route path="/sensors/:id" element={<ProtectedAppRoute><SensorDetailPage /></ProtectedAppRoute>} />
               <Route path="/field-map" element={<ProtectedAppRoute><FieldMapPage /></ProtectedAppRoute>} />
               <Route path="/data-entry" element={<ProtectedAppRoute><DataEntryPage /></ProtectedAppRoute>} />
               <Route path="/analytics" element={<ProtectedAppRoute><AnalyticsPage /></ProtectedAppRoute>} />

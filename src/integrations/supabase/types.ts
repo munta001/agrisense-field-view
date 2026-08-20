@@ -319,22 +319,67 @@ export type Database = {
       }
       sensor_readings: {
         Row: {
+          battery_v: number | null
+          channel: string | null
+          checksum_valid: boolean | null
+          conductivity: number | null
+          device_id: number | null
           id: string
+          moisture_pct: number | null
+          nitrogen: number | null
+          packet_type: number | null
+          ph: number | null
+          phosphorus: number | null
+          potassium: number | null
           recorded_at: string
-          sensor_id: string
-          value: number
+          report_cycle_s: number | null
+          salinity: number | null
+          sensor_id: string | null
+          serial_number: number | null
+          temperature_c: number | null
+          value: number | null
         }
         Insert: {
+          battery_v?: number | null
+          channel?: string | null
+          checksum_valid?: boolean | null
+          conductivity?: number | null
+          device_id?: number | null
           id?: string
+          moisture_pct?: number | null
+          nitrogen?: number | null
+          packet_type?: number | null
+          ph?: number | null
+          phosphorus?: number | null
+          potassium?: number | null
           recorded_at?: string
-          sensor_id: string
-          value: number
+          report_cycle_s?: number | null
+          salinity?: number | null
+          sensor_id?: string | null
+          serial_number?: number | null
+          temperature_c?: number | null
+          value?: number | null
         }
         Update: {
+          battery_v?: number | null
+          channel?: string | null
+          checksum_valid?: boolean | null
+          conductivity?: number | null
+          device_id?: number | null
           id?: string
+          moisture_pct?: number | null
+          nitrogen?: number | null
+          packet_type?: number | null
+          ph?: number | null
+          phosphorus?: number | null
+          potassium?: number | null
           recorded_at?: string
-          sensor_id?: string
-          value?: number
+          report_cycle_s?: number | null
+          salinity?: number | null
+          sensor_id?: string | null
+          serial_number?: number | null
+          temperature_c?: number | null
+          value?: number | null
         }
         Relationships: [
           {
@@ -382,13 +427,16 @@ export type Database = {
       sensors: {
         Row: {
           created_at: string
+          device_id: number | null
           id: string
           ip_address: string | null
           latitude: number | null
+          location: string | null
           longitude: number | null
           map_x: number | null
           map_y: number | null
           name: string
+          notes: string | null
           org_id: string
           sensor_type_id: string
           status: string
@@ -397,13 +445,16 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          device_id?: number | null
           id?: string
           ip_address?: string | null
           latitude?: number | null
+          location?: string | null
           longitude?: number | null
           map_x?: number | null
           map_y?: number | null
           name: string
+          notes?: string | null
           org_id: string
           sensor_type_id: string
           status?: string
@@ -412,13 +463,16 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          device_id?: number | null
           id?: string
           ip_address?: string | null
           latitude?: number | null
+          location?: string | null
           longitude?: number | null
           map_x?: number | null
           map_y?: number | null
           name?: string
+          notes?: string | null
           org_id?: string
           sensor_type_id?: string
           status?: string

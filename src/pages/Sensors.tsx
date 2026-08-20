@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrg } from "@/contexts/OrgContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,12 +17,13 @@ type SensorType = Tables<"sensor_types">;
 
 export default function SensorsPage() {
   const { currentOrg, currentRole } = useOrg();
+  const navigate = useNavigate();
   const [sensors, setSensors] = useState<Sensor[]>([]);
   const [sensorTypes, setSensorTypes] = useState<SensorType[]>([]);
   const [zones, setZones] = useState<Tables<"zones">[]>([]);
   const [selectedZone, setSelectedZone] = useState<string>("all");
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ name: "", sensor_type_id: "", zone_id: "", ip_address: "" });
+  const [form, setForm] = useState({ name: "", sensor_type_id: "", zone_id: "", ip_address: "", device_id: "", location: "" });
   const { toast } = useToast();
   const canEdit = currentRole?.role === "admin" || currentRole?.role === "operator";
 
@@ -52,11 +54,13 @@ export default function SensorsPage() {
       sensor_type_id: form.sensor_type_id,
       zone_id: form.zone_id || null,
       ip_address: form.ip_address || null,
+      device_id: form.device_id ? parseInt(form.device_id, 10) : null,
+      location: form.location || null,
     });
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
     toast({ title: "Sensor added" });
     setOpen(false);
-    setForm({ name: "", sensor_type_id: "", zone_id: "", ip_address: "" });
+    setForm({ name: "", sensor_type_id: "", zone_id: "", ip_address: "", device_id: "", location: "" });
     fetchSensors();
   };
 
@@ -155,6 +159,8 @@ export default function SensorsPage() {
                       {zones.map(z => <SelectItem key={z.id} value={z.id}>{z.name}</SelectItem>)}
                     </SelectContent>
                   </Select>
+                  <Input type="number" placeholder="LoRaWAN Device ID (optional)" value={form.device_id} onChange={e => setForm({ ...form, device_id: e.target.value })} />
+                  <Input placeholder="Location (optional)" value={form.location} onChange={e => setForm({ ...form, location: e.target.value })} />
                   <Input placeholder="IP Address (optional)" value={form.ip_address} onChange={e => setForm({ ...form, ip_address: e.target.value })} />
                   <Button onClick={handleAdd} className="w-full">Add Sensor</Button>
                 </div>
@@ -175,7 +181,7 @@ export default function SensorsPage() {
             </h2>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {typeSensors.map(sensor => (
-                <Card key={sensor.id} className="glass-card cursor-pointer hover:shadow-md transition-shadow" onClick={() => { if (canEdit) { setEditSensor(sensor); setEditZoneId(sensor.zone_id || "none"); } }}>
+                <Card key={sensor.id} className="glass-card cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate(`/sensors/${sensor.id}`)}>
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between mb-2">
                       <span className="font-medium">{sensor.name}</span>
@@ -184,7 +190,14 @@ export default function SensorsPage() {
                     <div className="flex flex-col gap-1 text-sm text-muted-foreground">
                       <span className="flex items-center gap-1">{statusIcon(sensor.status)} {sensor.ip_address || "No IP"}</span>
                       <span className="text-xs pl-5">📍 {getZoneName(sensor.zone_id)}</span>
+                      {sensor.device_id != null && <span className="text-xs pl-5 font-mono">Device ID {sensor.device_id}</span>}
                     </div>
+                    {canEdit && (
+                      <Button variant="ghost" size="sm" className="mt-2 -ml-2 h-7 text-xs"
+                        onClick={e => { e.stopPropagation(); setEditSensor(sensor); setEditZoneId(sensor.zone_id || "none"); }}>
+                        Change zone
+                      </Button>
+                    )}
                   </CardContent>
                 </Card>
               ))}
