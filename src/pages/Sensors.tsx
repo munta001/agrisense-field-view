@@ -47,6 +47,7 @@ export default function SensorsPage() {
   const [manageSensor, setManageSensor] = useState<Sensor | null>(null);
   const [manageName, setManageName] = useState("");
   const [manageStatus, setManageStatus] = useState("online");
+  const [manageActive, setManageActive] = useState(true);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const canEdit = currentRole?.role === "admin" || currentRole?.role === "operator";
   const isAdmin = currentRole?.role === "admin";
@@ -112,7 +113,7 @@ export default function SensorsPage() {
   const handleSaveManage = async () => {
     if (!manageSensor || !manageName.trim()) return;
     const { error } = await supabase.from("sensors")
-      .update({ name: manageName.trim(), status: manageStatus })
+      .update({ name: manageName.trim(), status: manageStatus, is_active: manageActive })
       .eq("id", manageSensor.id);
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
     toast({ title: "Device updated" });
@@ -131,8 +132,8 @@ export default function SensorsPage() {
   };
 
   const zoneName = (zoneId: string | null) => (zoneId ? zones.find(z => z.id === zoneId)?.name || "Unknown zone" : "No zone");
-  const visible = showInactive ? sensors : sensors.filter(s => s.status !== "inactive");
-  const inactiveCount = sensors.filter(s => s.status === "inactive").length;
+  const visible = showInactive ? sensors : sensors.filter(s => s.is_active);
+  const inactiveCount = sensors.filter(s => !s.is_active).length;
   const filtered = selectedZone === "all" ? visible : visible.filter(s => s.zone_id === selectedZone);
 
   return (
@@ -167,7 +168,6 @@ export default function SensorsPage() {
                 <SelectContent>
                   <SelectItem value="online">Online</SelectItem>
                   <SelectItem value="offline">Offline</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -296,7 +296,7 @@ export default function SensorsPage() {
                     )}
                     {isAdmin && (
                       <Button variant="ghost" size="sm" className="h-7 text-xs"
-                        onClick={e => { e.stopPropagation(); setManageSensor(sensor); setManageName(sensor.name); setManageStatus(sensor.status); setConfirmDelete(false); }}>
+                        onClick={e => { e.stopPropagation(); setManageSensor(sensor); setManageName(sensor.name); setManageStatus(sensor.status === "inactive" ? "offline" : sensor.status); setManageActive(sensor.is_active); setConfirmDelete(false); }}>
                         <Pencil className="mr-1 h-3 w-3" />Manage
                       </Button>
                     )}
