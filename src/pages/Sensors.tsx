@@ -129,7 +129,9 @@ export default function SensorsPage() {
   };
 
   const zoneName = (zoneId: string | null) => (zoneId ? zones.find(z => z.id === zoneId)?.name || "Unknown zone" : "No zone");
-  const filtered = selectedZone === "all" ? sensors : sensors.filter(s => s.zone_id === selectedZone);
+  const visible = showInactive ? sensors : sensors.filter(s => s.status !== "inactive");
+  const inactiveCount = sensors.filter(s => s.status === "inactive").length;
+  const filtered = selectedZone === "all" ? visible : visible.filter(s => s.zone_id === selectedZone);
 
   return (
     <div className="space-y-6">
