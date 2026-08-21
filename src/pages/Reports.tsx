@@ -247,30 +247,56 @@ export default function ReportsPage() {
                 </Select>
 
                 {period === "custom" && (
-                  <>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button variant="outline" className={cn("w-full justify-start text-left font-normal sm:w-[190px]", !from && "text-muted-foreground")}>
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {from ? format(from, "PPP") : "From date"}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar mode="single" selected={from} onSelect={setFrom} initialFocus className={cn("p-3 pointer-events-auto")} />
-                      </PopoverContent>
-                    </Popover>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button variant="outline" className={cn("w-full justify-start text-left font-normal sm:w-[190px]", !to && "text-muted-foreground")}>
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {to ? format(to, "PPP") : "To date"}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar mode="single" selected={to} onSelect={setTo} initialFocus className={cn("p-3 pointer-events-auto")} />
-                      </PopoverContent>
-                    </Popover>
-                  </>
+                  <div className="flex w-full flex-col gap-1.5 sm:w-auto">
+                    <span className="ml-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Report Period</span>
+                    <div className="flex items-center rounded-xl border border-border bg-card shadow-sm transition-colors hover:border-primary/50">
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <button className="group flex flex-1 items-center gap-3 rounded-l-xl px-4 py-2.5 text-left transition-colors hover:bg-accent focus:outline-none focus:ring-2 focus:ring-primary/20">
+                            <div className="rounded-lg bg-primary/10 p-1.5 text-primary transition-colors group-hover:bg-primary/20">
+                              <CalendarIcon className="h-4 w-4" />
+                            </div>
+                            <div className="flex flex-col items-start">
+                              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">From</span>
+                              <span className={cn("text-sm font-medium", !from && "text-muted-foreground")}>
+                                {from ? format(from, "PPP") : "Start date"}
+                              </span>
+                            </div>
+                          </button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar mode="single" selected={from} onSelect={setFrom} initialFocus className={cn("p-3 pointer-events-auto")} />
+                        </PopoverContent>
+                      </Popover>
+
+                      <div className="flex items-center px-1 text-muted-foreground/50">
+                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </div>
+
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <button className="group flex flex-1 items-center gap-3 rounded-r-xl px-4 py-2.5 text-left transition-colors hover:bg-accent focus:outline-none focus:ring-2 focus:ring-primary/20">
+                            <div className="flex flex-col items-start">
+                              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">To</span>
+                              <span className={cn("text-sm font-medium", !to && "text-muted-foreground")}>
+                                {to ? format(to, "PPP") : "End date"}
+                              </span>
+                            </div>
+                            <div className="rounded-lg bg-muted p-1.5 text-muted-foreground transition-colors group-hover:bg-muted/80">
+                              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                              </svg>
+                            </div>
+                          </button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="end">
+                          <Calendar mode="single" selected={to} onSelect={setTo} initialFocus className={cn("p-3 pointer-events-auto")} />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                  </div>
                 )}
 
                 <Button onClick={generate} disabled={generating || !sensorId} className="w-full sm:w-auto">
