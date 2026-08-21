@@ -58,6 +58,8 @@ export default function ReportsPage() {
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [reports, setReports] = useState<Generated[]>([]);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewReport, setPreviewReport] = useState<Generated | null>(null);
 
   useEffect(() => {
     if (!currentOrg) return;
@@ -152,20 +154,19 @@ export default function ReportsPage() {
 
       const fileName = `${range.label.toLowerCase()}-report-${selected.name.replace(/\s+/g, "-").toLowerCase()}-${format(new Date(), "yyyyMMdd-HHmm")}.pdf`;
       const blobUrl = URL.createObjectURL(doc.output("blob"));
-      doc.save(fileName);
 
-      setReports(prev => [
-        {
-          id: crypto.randomUUID(),
-          name: `${range.label} report — ${selected.name}`,
-          type: range.label,
-          date: format(new Date(), "yyyy-MM-dd HH:mm"),
-          rows: readings.length,
-          blobUrl,
-          fileName,
-        },
-        ...prev,
-      ]);
+      const report: Generated = {
+        id: crypto.randomUUID(),
+        name: `${range.label} report — ${selected.name}`,
+        type: range.label,
+        date: format(new Date(), "yyyy-MM-dd HH:mm"),
+        rows: readings.length,
+        blobUrl,
+        fileName,
+      };
+      setReports(prev => [report, ...prev]);
+      setPreviewUrl(blobUrl);
+      setPreviewReport(report);
       toast({ title: "Report generated", description: `${readings.length} readings exported to PDF` });
     } catch (e: any) {
       toast({ title: "Failed to generate report", description: e.message, variant: "destructive" });
@@ -264,8 +265,8 @@ export default function ReportsPage() {
                 )}
 
                 <Button onClick={generate} disabled={generating || !sensorId}>
-                  {generating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
-                  Generate PDF
+                  {generating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
+                  Generate Report
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">
@@ -275,6 +276,29 @@ export default function ReportsPage() {
           )}
         </CardContent>
       </Card>
+
+      {previewUrl && previewReport && (
+        <Card className="glass-card">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="font-display text-lg">Report preview</CardTitle>
+            <Button variant="outline" size="sm" asChild>
+              <a href={previewReport.blobUrl} download={previewReport.fileName}>
+                <Download className="mr-2 h-4 w-4" />
+                Download PDF
+              </a>
+            </Button>
+          </CardHeader>
+          <CardContent>
+            <div className="w-full overflow-hidden rounded-md border bg-white">
+              <iframe
+                src={previewUrl}
+                title={previewReport.name}
+                className="h-[600px] w-full"
+              />
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card className="glass-card">
         <CardHeader><CardTitle className="font-display text-lg">Generated reports</CardTitle></CardHeader>
