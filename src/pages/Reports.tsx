@@ -190,11 +190,12 @@ export default function ReportsPage() {
         <p className="text-muted-foreground">Generate PDF sensor reports for {currentOrg?.name}</p>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[
           { key: "daily", label: "Daily Summary" },
           { key: "weekly", label: "Weekly Analysis" },
           { key: "monthly", label: "Monthly Overview" },
+          { key: "custom", label: "Custom Range" },
         ].map(t => (
           <Card
             key={t.key}
@@ -208,7 +209,9 @@ export default function ReportsPage() {
               <div className="rounded-lg bg-primary/10 p-2.5 text-primary"><FileText className="h-5 w-5" /></div>
               <div>
                 <p className="font-medium">{t.label}</p>
-                <p className="text-sm text-muted-foreground">Select period</p>
+                <p className="text-sm text-muted-foreground">
+                  {t.key === "custom" ? "Pick from / to dates" : "Select period"}
+                </p>
               </div>
             </CardContent>
           </Card>
