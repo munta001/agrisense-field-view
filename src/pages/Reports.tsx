@@ -265,8 +265,8 @@ export default function ReportsPage() {
                 )}
 
                 <Button onClick={generate} disabled={generating || !sensorId}>
-                  {generating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
-                  Generate PDF
+                  {generating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
+                  Generate Report
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">
