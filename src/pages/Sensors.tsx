@@ -197,10 +197,14 @@ export default function SensorsPage() {
         <div>
           <h1 className="font-display text-2xl font-bold">LoRaWAN Devices</h1>
           <p className="text-muted-foreground">
-            8-in-1 soil probes reporting temperature, moisture, EC, pH, N, P, K and salinity ({filtered.length} of {sensors.length})
+            8-in-1 soil probes reporting temperature, moisture, EC, pH, N, P, K and salinity ({filtered.length} of {visible.length})
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
+            <Checkbox checked={showInactive} onCheckedChange={v => setShowInactive(v === true)} />
+            Show inactive{inactiveCount ? ` (${inactiveCount})` : ""}
+          </label>
           <Select value={selectedZone} onValueChange={setSelectedZone}>
             <SelectTrigger className="w-[180px]"><SelectValue placeholder="Filter by zone" /></SelectTrigger>
             <SelectContent>
