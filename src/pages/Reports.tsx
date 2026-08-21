@@ -10,10 +10,11 @@ import { Calendar } from "@/components/ui/calendar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { CalendarIcon, FileText, Download, Loader2 } from "lucide-react";
+import { CalendarIcon, FileText, Download, Loader2, FileSpreadsheet } from "lucide-react";
 import { format, startOfDay, subDays, subMonths } from "date-fns";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import * as XLSX from "xlsx";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Sensor = Tables<"sensors">;
@@ -43,8 +44,21 @@ type Generated = {
   type: string;
   date: string;
   rows: number;
-  blobUrl: string;
-  fileName: string;
+  pdfUrl: string;
+  pdfName: string;
+  xlsxUrl: string;
+  xlsxName: string;
+};
+
+// Mobile-safe download: anchor click with download attr, fallback to new tab
+const downloadFile = (url: string, fileName: string) => {
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = fileName;
+  a.rel = "noopener";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
 };
 
 type PreviewData = {
@@ -159,8 +173,40 @@ export default function ReportsPage() {
         headStyles: { fillColor: [34, 84, 61] },
       });
 
-      const fileName = `${range.label.toLowerCase()}-report-${selected.name.replace(/\s+/g, "-").toLowerCase()}-${format(new Date(), "yyyyMMdd-HHmm")}.pdf`;
-      const blobUrl = URL.createObjectURL(doc.output("blob"));
+      const baseName = `${range.label.toLowerCase()}-report-${selected.name.replace(/\s+/g, "-").toLowerCase()}-${format(new Date(), "yyyyMMdd-HHmm")}`;
+      const pdfUrl = URL.createObjectURL(doc.output("blob"));
+
+      // Excel workbook: Summary + Readings sheets
+      const wb = XLSX.utils.book_new();
+      const infoRows = [
+        ["Organisation", currentOrg?.name ?? "-"],
+        ["Device", `${selected.name}${selected.device_id != null ? ` (#${selected.device_id})` : ""}`],
+        ["Period", `${format(range.start, "dd MMM yyyy HH:mm")} — ${format(range.end, "dd MMM yyyy HH:mm")}`],
+        ["Readings", readings.length],
+        ["Generated", format(new Date(), "dd MMM yyyy HH:mm")],
+        [],
+        ["Metric", "Last", "Min", "Max", "Average"],
+        ...summary.map(s => [s.label, s.last, s.min, s.max, s.avg]),
+      ];
+      const wsSummary = XLSX.utils.aoa_to_sheet(infoRows);
+      wsSummary["!cols"] = [{ wch: 24 }, { wch: 28 }, { wch: 12 }, { wch: 12 }, { wch: 12 }];
+      XLSX.utils.book_append_sheet(wb, wsSummary, "Summary");
+
+      const wsReadings = XLSX.utils.aoa_to_sheet([
+        ["Recorded at", ...METRICS.map(m => m.label), "Battery (V)"],
+        ...readings.map(r => [
+          format(new Date(r.recorded_at), "dd MMM yyyy HH:mm"),
+          ...METRICS.map(m => (r[m.key as keyof Reading] as number | null) ?? ""),
+          r.battery_v ?? "",
+        ]),
+      ]);
+      wsReadings["!cols"] = [{ wch: 20 }, ...METRICS.map(() => ({ wch: 14 })), { wch: 12 }];
+      XLSX.utils.book_append_sheet(wb, wsReadings, "Readings");
+
+      const xlsxArray = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+      const xlsxUrl = URL.createObjectURL(
+        new Blob([xlsxArray], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" })
+      );
 
       const report: Generated = {
         id: crypto.randomUUID(),
@@ -168,12 +214,14 @@ export default function ReportsPage() {
         type: range.label,
         date: format(new Date(), "yyyy-MM-dd HH:mm"),
         rows: readings.length,
-        blobUrl,
-        fileName,
+        pdfUrl,
+        pdfName: `${baseName}.pdf`,
+        xlsxUrl,
+        xlsxName: `${baseName}.xlsx`,
       };
       setReports(prev => [report, ...prev]);
       setPreview({ report, readings, summary });
-      toast({ title: "Report generated", description: `${readings.length} readings exported to PDF` });
+      toast({ title: "Report generated", description: `${readings.length} readings ready as PDF or Excel` });
     } catch (e: any) {
       toast({ title: "Failed to generate report", description: e.message, variant: "destructive" });
     } finally {
@@ -336,9 +384,14 @@ export default function ReportsPage() {
                     <TableCell>{r.date}</TableCell>
                     <TableCell>{r.rows}</TableCell>
                     <TableCell>
-                      <Button variant="ghost" size="sm" asChild>
-                        <a href={r.blobUrl} download={r.fileName}><Download className="h-4 w-4" /></a>
-                      </Button>
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="sm" title="Download PDF" onClick={() => downloadFile(r.pdfUrl, r.pdfName)}>
+                          <Download className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" title="Download Excel" onClick={() => downloadFile(r.xlsxUrl, r.xlsxName)}>
+                          <FileSpreadsheet className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -355,12 +408,16 @@ export default function ReportsPage() {
               <CardTitle className="font-display text-lg">Report preview</CardTitle>
               <p className="text-sm text-muted-foreground">{preview.report.name}</p>
             </div>
-            <Button variant="outline" size="sm" asChild>
-              <a href={preview.report.blobUrl} download={preview.report.fileName}>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Button variant="outline" size="sm" className="w-full sm:w-auto" onClick={() => downloadFile(preview.report.pdfUrl, preview.report.pdfName)}>
                 <Download className="mr-2 h-4 w-4" />
                 Download PDF
-              </a>
-            </Button>
+              </Button>
+              <Button variant="outline" size="sm" className="w-full sm:w-auto" onClick={() => downloadFile(preview.report.xlsxUrl, preview.report.xlsxName)}>
+                <FileSpreadsheet className="mr-2 h-4 w-4" />
+                Download Excel
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="w-full overflow-hidden rounded-md border bg-white text-slate-900 shadow-sm">
