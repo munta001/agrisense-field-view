@@ -283,6 +283,42 @@ export default function ReportsPage() {
         </CardContent>
       </Card>
 
+      <Card className="glass-card">
+        <CardHeader><CardTitle className="font-display text-lg">Generated reports</CardTitle></CardHeader>
+        <CardContent>
+          {!reports.length ? (
+            <p className="py-8 text-center text-muted-foreground">No reports generated in this session yet</p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Report name</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Generated</TableHead>
+                  <TableHead>Readings</TableHead>
+                  <TableHead></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {reports.map(r => (
+                  <TableRow key={r.id}>
+                    <TableCell className="font-medium">{r.name}</TableCell>
+                    <TableCell>{r.type}</TableCell>
+                    <TableCell>{r.date}</TableCell>
+                    <TableCell>{r.rows}</TableCell>
+                    <TableCell>
+                      <Button variant="ghost" size="sm" asChild>
+                        <a href={r.blobUrl} download={r.fileName}><Download className="h-4 w-4" /></a>
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
       {preview && (
         <Card className="glass-card">
           <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -369,42 +405,6 @@ export default function ReportsPage() {
           </CardContent>
         </Card>
       )}
-
-      <Card className="glass-card">
-        <CardHeader><CardTitle className="font-display text-lg">Generated reports</CardTitle></CardHeader>
-        <CardContent>
-          {!reports.length ? (
-            <p className="py-8 text-center text-muted-foreground">No reports generated in this session yet</p>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Report name</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Generated</TableHead>
-                  <TableHead>Readings</TableHead>
-                  <TableHead></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {reports.map(r => (
-                  <TableRow key={r.id}>
-                    <TableCell className="font-medium">{r.name}</TableCell>
-                    <TableCell>{r.type}</TableCell>
-                    <TableCell>{r.date}</TableCell>
-                    <TableCell>{r.rows}</TableCell>
-                    <TableCell>
-                      <Button variant="ghost" size="sm" asChild>
-                        <a href={r.blobUrl} download={r.fileName}><Download className="h-4 w-4" /></a>
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
     </div>
   );
 }
