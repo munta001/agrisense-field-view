@@ -148,6 +148,49 @@ export default function SensorsPage() {
         </DialogContent>
       </Dialog>
 
+      <Dialog open={!!manageSensor} onOpenChange={o => { if (!o) { setManageSensor(null); setConfirmDelete(false); } }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle className="font-display">Manage device</DialogTitle></DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Device name</label>
+              <Input value={manageName} onChange={e => setManageName(e.target.value)} placeholder="Device name" />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Status</label>
+              <Select value={manageStatus} onValueChange={setManageStatus}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="online">Online</SelectItem>
+                  <SelectItem value="offline">Offline</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Button onClick={handleSaveManage} className="w-full">Save changes</Button>
+
+            <div className="rounded-lg border border-destructive/30 p-3">
+              {!confirmDelete ? (
+                <Button variant="destructive" className="w-full" onClick={() => setConfirmDelete(true)}>
+                  <Trash2 className="mr-2 h-4 w-4" />Delete device
+                </Button>
+              ) : (
+                <div className="space-y-3">
+                  <p className="text-sm text-muted-foreground">
+                    Deleting <strong>{manageSensor?.name}</strong> permanently removes the device and <strong>all its readings</strong>. This cannot be undone.
+                  </p>
+                  <div className="flex gap-2">
+                    <Button variant="outline" className="flex-1" onClick={() => setConfirmDelete(false)}>Cancel</Button>
+                    <Button variant="destructive" className="flex-1" onClick={handleDelete}>Delete permanently</Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="font-display text-2xl font-bold">LoRaWAN Devices</h1>
