@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, Radio, Battery, MapPin, Activity, Thermometer, Droplets, Zap, FlaskConical, Leaf, Sprout, Beaker, Waves, Pencil, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -47,6 +48,7 @@ export default function SensorsPage() {
   const [manageSensor, setManageSensor] = useState<Sensor | null>(null);
   const [manageName, setManageName] = useState("");
   const [manageStatus, setManageStatus] = useState("online");
+  const [manageActive, setManageActive] = useState(true);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const canEdit = currentRole?.role === "admin" || currentRole?.role === "operator";
   const isAdmin = currentRole?.role === "admin";
@@ -112,7 +114,7 @@ export default function SensorsPage() {
   const handleSaveManage = async () => {
     if (!manageSensor || !manageName.trim()) return;
     const { error } = await supabase.from("sensors")
-      .update({ name: manageName.trim(), status: manageStatus })
+      .update({ name: manageName.trim(), status: manageStatus, is_active: manageActive })
       .eq("id", manageSensor.id);
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
     toast({ title: "Device updated" });
@@ -131,8 +133,8 @@ export default function SensorsPage() {
   };
 
   const zoneName = (zoneId: string | null) => (zoneId ? zones.find(z => z.id === zoneId)?.name || "Unknown zone" : "No zone");
-  const visible = showInactive ? sensors : sensors.filter(s => s.status !== "inactive");
-  const inactiveCount = sensors.filter(s => s.status === "inactive").length;
+  const visible = showInactive ? sensors : sensors.filter(s => s.is_active);
+  const inactiveCount = sensors.filter(s => !s.is_active).length;
   const filtered = selectedZone === "all" ? visible : visible.filter(s => s.zone_id === selectedZone);
 
   return (
@@ -161,15 +163,21 @@ export default function SensorsPage() {
               <Input value={manageName} onChange={e => setManageName(e.target.value)} placeholder="Device name" />
             </div>
             <div className="space-y-1.5">
-              <label className="text-sm font-medium">Status</label>
+              <label className="text-sm font-medium">Connection status</label>
               <Select value={manageStatus} onValueChange={setManageStatus}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="online">Online</SelectItem>
                   <SelectItem value="offline">Offline</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+            <div className="flex items-center justify-between rounded-lg border p-3">
+              <div>
+                <p className="text-sm font-medium">Active</p>
+                <p className="text-xs text-muted-foreground">Inactive devices are hidden from the list</p>
+              </div>
+              <Switch checked={manageActive} onCheckedChange={setManageActive} />
             </div>
             <Button onClick={handleSaveManage} className="w-full">Save changes</Button>
 
@@ -269,9 +277,12 @@ export default function SensorsPage() {
                         {r && <span>{formatDistanceToNow(new Date(r.recorded_at), { addSuffix: true })}</span>}
                       </div>
                     </div>
-                    <Badge variant={sensor.status === "online" ? "default" : sensor.status === "offline" ? "destructive" : "secondary"}>
-                      {sensor.status}
-                    </Badge>
+                    <div className="flex flex-col items-end gap-1">
+                      <Badge variant={sensor.status === "online" ? "default" : "destructive"}>
+                        {sensor.status}
+                      </Badge>
+                      {!sensor.is_active && <Badge variant="secondary">inactive</Badge>}
+                    </div>
                   </div>
 
                   <div className="mt-4 grid grid-cols-4 gap-2">
@@ -296,7 +307,7 @@ export default function SensorsPage() {
                     )}
                     {isAdmin && (
                       <Button variant="ghost" size="sm" className="h-7 text-xs"
-                        onClick={e => { e.stopPropagation(); setManageSensor(sensor); setManageName(sensor.name); setManageStatus(sensor.status); setConfirmDelete(false); }}>
+                        onClick={e => { e.stopPropagation(); setManageSensor(sensor); setManageName(sensor.name); setManageStatus(sensor.status === "inactive" ? "offline" : sensor.status); setManageActive(sensor.is_active); setConfirmDelete(false); }}>
                         <Pencil className="mr-1 h-3 w-3" />Manage
                       </Button>
                     )}
