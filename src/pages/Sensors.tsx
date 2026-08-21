@@ -279,12 +279,20 @@ export default function SensorsPage() {
                     })}
                   </div>
 
-                  {canEdit && (
-                    <Button variant="ghost" size="sm" className="mt-3 -ml-2 h-7 text-xs"
-                      onClick={e => { e.stopPropagation(); setEditSensor(sensor); setEditZoneId(sensor.zone_id || "none"); }}>
-                      Change zone
-                    </Button>
-                  )}
+                  <div className="mt-3 -ml-2 flex flex-wrap items-center gap-1">
+                    {canEdit && (
+                      <Button variant="ghost" size="sm" className="h-7 text-xs"
+                        onClick={e => { e.stopPropagation(); setEditSensor(sensor); setEditZoneId(sensor.zone_id || "none"); }}>
+                        Change zone
+                      </Button>
+                    )}
+                    {isAdmin && (
+                      <Button variant="ghost" size="sm" className="h-7 text-xs"
+                        onClick={e => { e.stopPropagation(); setManageSensor(sensor); setManageName(sensor.name); setManageStatus(sensor.status); setConfirmDelete(false); }}>
+                        <Pencil className="mr-1 h-3 w-3" />Manage
+                      </Button>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             );
