@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Radio, Battery, MapPin, Activity, Thermometer, Droplets, Zap, FlaskConical, Leaf, Sprout, Beaker, Waves } from "lucide-react";
+import { Plus, Radio, Battery, MapPin, Activity, Thermometer, Droplets, Zap, FlaskConical, Leaf, Sprout, Beaker, Waves, Pencil, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
 import type { Tables } from "@/integrations/supabase/types";
@@ -42,7 +42,12 @@ export default function SensorsPage() {
   const [form, setForm] = useState({ name: "", device_id: "", zone_id: "", location: "" });
   const [editSensor, setEditSensor] = useState<Sensor | null>(null);
   const [editZoneId, setEditZoneId] = useState<string>("");
+  const [manageSensor, setManageSensor] = useState<Sensor | null>(null);
+  const [manageName, setManageName] = useState("");
+  const [manageStatus, setManageStatus] = useState("online");
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const canEdit = currentRole?.role === "admin" || currentRole?.role === "operator";
+  const isAdmin = currentRole?.role === "admin";
 
   const fetchAll = async () => {
     if (!currentOrg) return;
@@ -102,6 +107,27 @@ export default function SensorsPage() {
     fetchAll();
   };
 
+  const handleSaveManage = async () => {
+    if (!manageSensor || !manageName.trim()) return;
+    const { error } = await supabase.from("sensors")
+      .update({ name: manageName.trim(), status: manageStatus })
+      .eq("id", manageSensor.id);
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Device updated" });
+    setManageSensor(null);
+    fetchAll();
+  };
+
+  const handleDelete = async () => {
+    if (!manageSensor) return;
+    const { error } = await supabase.from("sensors").delete().eq("id", manageSensor.id);
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Device deleted", description: "All readings for this device were removed." });
+    setConfirmDelete(false);
+    setManageSensor(null);
+    fetchAll();
+  };
+
   const zoneName = (zoneId: string | null) => (zoneId ? zones.find(z => z.id === zoneId)?.name || "Unknown zone" : "No zone");
   const filtered = selectedZone === "all" ? sensors : sensors.filter(s => s.zone_id === selectedZone);
 
@@ -121,6 +147,49 @@ export default function SensorsPage() {
           <Button onClick={handleUpdateZone} className="w-full">Update zone</Button>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={!!manageSensor} onOpenChange={o => { if (!o) { setManageSensor(null); setConfirmDelete(false); } }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle className="font-display">Manage device</DialogTitle></DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Device name</label>
+              <Input value={manageName} onChange={e => setManageName(e.target.value)} placeholder="Device name" />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Status</label>
+              <Select value={manageStatus} onValueChange={setManageStatus}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="online">Online</SelectItem>
+                  <SelectItem value="offline">Offline</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Button onClick={handleSaveManage} className="w-full">Save changes</Button>
+
+            <div className="rounded-lg border border-destructive/30 p-3">
+              {!confirmDelete ? (
+                <Button variant="destructive" className="w-full" onClick={() => setConfirmDelete(true)}>
+                  <Trash2 className="mr-2 h-4 w-4" />Delete device
+                </Button>
+              ) : (
+                <div className="space-y-3">
+                  <p className="text-sm text-muted-foreground">
+                    Deleting <strong>{manageSensor?.name}</strong> permanently removes the device and <strong>all its readings</strong>. This cannot be undone.
+                  </p>
+                  <div className="flex gap-2">
+                    <Button variant="outline" className="flex-1" onClick={() => setConfirmDelete(false)}>Cancel</Button>
+                    <Button variant="destructive" className="flex-1" onClick={handleDelete}>Delete permanently</Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -210,12 +279,20 @@ export default function SensorsPage() {
                     })}
                   </div>
 
-                  {canEdit && (
-                    <Button variant="ghost" size="sm" className="mt-3 -ml-2 h-7 text-xs"
-                      onClick={e => { e.stopPropagation(); setEditSensor(sensor); setEditZoneId(sensor.zone_id || "none"); }}>
-                      Change zone
-                    </Button>
-                  )}
+                  <div className="mt-3 -ml-2 flex flex-wrap items-center gap-1">
+                    {canEdit && (
+                      <Button variant="ghost" size="sm" className="h-7 text-xs"
+                        onClick={e => { e.stopPropagation(); setEditSensor(sensor); setEditZoneId(sensor.zone_id || "none"); }}>
+                        Change zone
+                      </Button>
+                    )}
+                    {isAdmin && (
+                      <Button variant="ghost" size="sm" className="h-7 text-xs"
+                        onClick={e => { e.stopPropagation(); setManageSensor(sensor); setManageName(sensor.name); setManageStatus(sensor.status); setConfirmDelete(false); }}>
+                        <Pencil className="mr-1 h-3 w-3" />Manage
+                      </Button>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             );
