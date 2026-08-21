@@ -2,167 +2,157 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrg } from "@/contexts/OrgContext";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Wifi, WifiOff, Wrench, Activity } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Plus, Radio, Battery, MapPin, Activity, Thermometer, Droplets, Zap, FlaskConical, Leaf, Sprout, Beaker, Waves } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { formatDistanceToNow } from "date-fns";
 import type { Tables } from "@/integrations/supabase/types";
 
-type Sensor = Tables<"sensors"> & { sensor_types?: Tables<"sensor_types"> | null };
-type SensorType = Tables<"sensor_types">;
+type Sensor = Tables<"sensors">;
+type Reading = Tables<"sensor_readings">;
+
+const METRICS = [
+  { key: "temperature_c", label: "Temp", unit: "°C", icon: Thermometer },
+  { key: "moisture_pct", label: "Moisture", unit: "%", icon: Droplets },
+  { key: "conductivity", label: "EC", unit: "µS/cm", icon: Zap },
+  { key: "ph", label: "pH", unit: "", icon: FlaskConical },
+  { key: "nitrogen", label: "N", unit: "mg/kg", icon: Leaf },
+  { key: "phosphorus", label: "P", unit: "mg/kg", icon: Sprout },
+  { key: "potassium", label: "K", unit: "mg/kg", icon: Beaker },
+  { key: "salinity", label: "Salinity", unit: "", icon: Waves },
+] as const;
 
 export default function SensorsPage() {
   const { currentOrg, currentRole } = useOrg();
   const navigate = useNavigate();
-  const [sensors, setSensors] = useState<Sensor[]>([]);
-  const [sensorTypes, setSensorTypes] = useState<SensorType[]>([]);
-  const [zones, setZones] = useState<Tables<"zones">[]>([]);
-  const [selectedZone, setSelectedZone] = useState<string>("all");
-  const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ name: "", sensor_type_id: "", zone_id: "", ip_address: "", device_id: "", location: "" });
   const { toast } = useToast();
+  const [sensors, setSensors] = useState<Sensor[]>([]);
+  const [latest, setLatest] = useState<Record<string, Reading>>({});
+  const [zones, setZones] = useState<Tables<"zones">[]>([]);
+  const [loraTypeId, setLoraTypeId] = useState<string>("");
+  const [selectedZone, setSelectedZone] = useState<string>("all");
+  const [loading, setLoading] = useState(true);
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState({ name: "", device_id: "", zone_id: "", location: "" });
+  const [editSensor, setEditSensor] = useState<Sensor | null>(null);
+  const [editZoneId, setEditZoneId] = useState<string>("");
   const canEdit = currentRole?.role === "admin" || currentRole?.role === "operator";
 
-  const fetchSensors = async () => {
+  const fetchAll = async () => {
     if (!currentOrg) return;
-    const { data } = await supabase.from("sensors").select("*, sensor_types(*), zones(*)").eq("org_id", currentOrg.id);
-    setSensors((data as (Sensor & { zones?: Tables<"zones"> | null })[]) || []);
+    setLoading(true);
+    const [{ data: s }, { data: z }, { data: t }] = await Promise.all([
+      supabase.from("sensors").select("*").eq("org_id", currentOrg.id).order("device_id", { ascending: true }),
+      supabase.from("zones").select("*").eq("org_id", currentOrg.id),
+      supabase.from("sensor_types").select("id, name").eq("name", "Soil 8-in-1 (LoRaWAN)").maybeSingle(),
+    ]);
+    const list = s || [];
+    setSensors(list);
+    setZones(z || []);
+    setLoraTypeId(t?.id || "");
+
+    if (list.length) {
+      const { data: r } = await supabase
+        .from("sensor_readings")
+        .select("*")
+        .in("sensor_id", list.map(x => x.id))
+        .order("recorded_at", { ascending: false })
+        .limit(1000);
+      const map: Record<string, Reading> = {};
+      (r || []).forEach(row => { if (row.sensor_id && !map[row.sensor_id]) map[row.sensor_id] = row; });
+      setLatest(map);
+    } else {
+      setLatest({});
+    }
+    setLoading(false);
   };
 
-  useEffect(() => {
-    if (!currentOrg) return;
-    fetchSensors();
-    supabase.from("sensor_types").select("*").then(({ data }) => setSensorTypes(data || []));
-    supabase.from("zones").select("*").eq("org_id", currentOrg.id).then(({ data }) => setZones(data || []));
-  }, [currentOrg]);
+  useEffect(() => { fetchAll(); }, [currentOrg]);
 
   const handleAdd = async () => {
-    if (!currentOrg || !form.name || !form.sensor_type_id) return;
-    // Check limit: max 10 per type
-    const countOfType = sensors.filter(s => s.sensor_type_id === form.sensor_type_id).length;
-    if (countOfType >= 10) {
-      toast({ title: "Limit reached", description: "Maximum 10 sensors per type.", variant: "destructive" });
-      return;
-    }
+    if (!currentOrg || !form.name || !form.device_id) return;
     const { error } = await supabase.from("sensors").insert({
       org_id: currentOrg.id,
+      sensor_type_id: loraTypeId,
       name: form.name,
-      sensor_type_id: form.sensor_type_id,
+      device_id: parseInt(form.device_id, 10),
       zone_id: form.zone_id || null,
-      ip_address: form.ip_address || null,
-      device_id: form.device_id ? parseInt(form.device_id, 10) : null,
       location: form.location || null,
     });
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
-    toast({ title: "Sensor added" });
+    toast({ title: "Device registered" });
     setOpen(false);
-    setForm({ name: "", sensor_type_id: "", zone_id: "", ip_address: "", device_id: "", location: "" });
-    fetchSensors();
+    setForm({ name: "", device_id: "", zone_id: "", location: "" });
+    fetchAll();
   };
-
-  const statusIcon = (s: string) => {
-    if (s === "online") return <Wifi className="h-4 w-4 text-success" />;
-    if (s === "offline") return <WifiOff className="h-4 w-4 text-destructive" />;
-    return <Wrench className="h-4 w-4 text-warning" />;
-  };
-
-  const statusBadge = (s: string) => {
-    const v = s === "online" ? "default" : s === "offline" ? "destructive" : "secondary";
-    return <Badge variant={v}>{s}</Badge>;
-  };
-
-  // Filter sensors by selected zone
-  const filteredSensors = selectedZone === "all" 
-    ? sensors 
-    : sensors.filter(s => s.zone_id === selectedZone);
-
-  const getZoneName = (zoneId: string | null) => {
-    if (!zoneId) return "No Zone";
-    const zone = zones.find(z => z.id === zoneId);
-    return zone?.name || "Unknown Zone";
-  };
-
-  const [editSensor, setEditSensor] = useState<Sensor | null>(null);
-  const [editZoneId, setEditZoneId] = useState<string>("");
 
   const handleUpdateZone = async () => {
     if (!editSensor) return;
     const newZoneId = editZoneId === "none" ? null : editZoneId || null;
     const { error } = await supabase.from("sensors").update({ zone_id: newZoneId }).eq("id", editSensor.id);
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
-    toast({ title: "Sensor zone updated" });
+    toast({ title: "Device zone updated" });
     setEditSensor(null);
-    fetchSensors();
+    fetchAll();
   };
+
+  const zoneName = (zoneId: string | null) => (zoneId ? zones.find(z => z.id === zoneId)?.name || "Unknown zone" : "No zone");
+  const filtered = selectedZone === "all" ? sensors : sensors.filter(s => s.zone_id === selectedZone);
 
   return (
     <div className="space-y-6">
-      <Dialog open={!!editSensor} onOpenChange={open => { if (!open) setEditSensor(null); }}>
+      <Dialog open={!!editSensor} onOpenChange={o => { if (!o) setEditSensor(null); }}>
         <DialogContent>
-          <DialogHeader><DialogTitle className="font-display">Update Sensor Zone</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle className="font-display">Update device zone</DialogTitle></DialogHeader>
           <p className="text-sm text-muted-foreground">Change zone for <strong>{editSensor?.name}</strong></p>
           <Select value={editZoneId} onValueChange={setEditZoneId}>
-            <SelectTrigger><SelectValue placeholder="Select Zone" /></SelectTrigger>
+            <SelectTrigger><SelectValue placeholder="Select zone" /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="none">No Zone</SelectItem>
+              <SelectItem value="none">No zone</SelectItem>
               {zones.map(z => <SelectItem key={z.id} value={z.id}>{z.name}</SelectItem>)}
             </SelectContent>
           </Select>
-          <Button onClick={handleUpdateZone} className="w-full">Update Zone</Button>
+          <Button onClick={handleUpdateZone} className="w-full">Update zone</Button>
         </DialogContent>
       </Dialog>
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="font-display text-2xl font-bold">Sensors</h1>
-          <p className="text-muted-foreground">Manage your IoT sensors ({filteredSensors.length} of {sensors.length})</p>
+          <h1 className="font-display text-2xl font-bold">LoRaWAN Devices</h1>
+          <p className="text-muted-foreground">
+            8-in-1 soil probes reporting temperature, moisture, EC, pH, N, P, K and salinity ({filtered.length} of {sensors.length})
+          </p>
         </div>
         <div className="flex items-center gap-3">
-          {/* Zone Filter */}
           <Select value={selectedZone} onValueChange={setSelectedZone}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Filter by Zone" />
-            </SelectTrigger>
+            <SelectTrigger className="w-[180px]"><SelectValue placeholder="Filter by zone" /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Zones</SelectItem>
-              {zones.map(z => (
-                <SelectItem key={z.id} value={z.id}>{z.name}</SelectItem>
-              ))}
+              <SelectItem value="all">All zones</SelectItem>
+              {zones.map(z => <SelectItem key={z.id} value={z.id}>{z.name}</SelectItem>)}
             </SelectContent>
           </Select>
-          
           {canEdit && (
             <Dialog open={open} onOpenChange={setOpen}>
               <DialogTrigger asChild>
-                <Button><Plus className="mr-2 h-4 w-4" />Add Sensor</Button>
+                <Button><Plus className="mr-2 h-4 w-4" />Add Device</Button>
               </DialogTrigger>
               <DialogContent>
-                <DialogHeader><DialogTitle className="font-display">Add New Sensor</DialogTitle></DialogHeader>
+                <DialogHeader><DialogTitle className="font-display">Register LoRaWAN device</DialogTitle></DialogHeader>
                 <div className="space-y-4 pt-2">
-                  <Input placeholder="Sensor Name" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
-                  <Select value={form.sensor_type_id} onValueChange={v => setForm({ ...form, sensor_type_id: v })}>
-                    <SelectTrigger><SelectValue placeholder="Select Sensor Type" /></SelectTrigger>
-                    <SelectContent>
-                      {sensorTypes.map(st => (
-                        <SelectItem key={st.id} value={st.id}>
-                          {st.name} ({st.unit}) — {sensors.filter(s => s.sensor_type_id === st.id).length}/10
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Input placeholder="Device name" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
+                  <Input type="number" placeholder="Device ID (from uplink payload)" value={form.device_id} onChange={e => setForm({ ...form, device_id: e.target.value })} />
                   <Select value={form.zone_id} onValueChange={v => setForm({ ...form, zone_id: v })}>
-                    <SelectTrigger><SelectValue placeholder="Select Zone (optional)" /></SelectTrigger>
-                    <SelectContent>
-                      {zones.map(z => <SelectItem key={z.id} value={z.id}>{z.name}</SelectItem>)}
-                    </SelectContent>
+                    <SelectTrigger><SelectValue placeholder="Select zone (optional)" /></SelectTrigger>
+                    <SelectContent>{zones.map(z => <SelectItem key={z.id} value={z.id}>{z.name}</SelectItem>)}</SelectContent>
                   </Select>
-                  <Input type="number" placeholder="LoRaWAN Device ID (optional)" value={form.device_id} onChange={e => setForm({ ...form, device_id: e.target.value })} />
-                  <Input placeholder="Location (optional)" value={form.location} onChange={e => setForm({ ...form, location: e.target.value })} />
-                  <Input placeholder="IP Address (optional)" value={form.ip_address} onChange={e => setForm({ ...form, ip_address: e.target.value })} />
-                  <Button onClick={handleAdd} className="w-full">Add Sensor</Button>
+                  <Input placeholder="Location description (optional)" value={form.location} onChange={e => setForm({ ...form, location: e.target.value })} />
+                  <Button onClick={handleAdd} className="w-full">Register device</Button>
                 </div>
               </DialogContent>
             </Dialog>
@@ -170,59 +160,67 @@ export default function SensorsPage() {
         </div>
       </div>
 
-      {/* Group by type, filtered by zone */}
-      {sensorTypes.map(st => {
-        const typeSensors = filteredSensors.filter(s => s.sensor_type_id === st.id);
-        if (typeSensors.length === 0) return null;
-        return (
-          <div key={st.id}>
-            <h2 className="font-display text-lg font-semibold mb-3 flex items-center gap-2">
-              {st.name} <span className="text-sm font-normal text-muted-foreground">({typeSensors.length}/10)</span>
-            </h2>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {typeSensors.map(sensor => (
-                <Card key={sensor.id} className="glass-card cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate(`/sensors/${sensor.id}`)}>
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="font-medium">{sensor.name}</span>
-                      {statusBadge(sensor.status)}
-                    </div>
-                    <div className="flex flex-col gap-1 text-sm text-muted-foreground">
-                      <span className="flex items-center gap-1">{statusIcon(sensor.status)} {sensor.ip_address || "No IP"}</span>
-                      <span className="text-xs pl-5">📍 {getZoneName(sensor.zone_id)}</span>
-                      {sensor.device_id != null && <span className="text-xs pl-5 font-mono">Device ID {sensor.device_id}</span>}
-                    </div>
-                    {canEdit && (
-                      <Button variant="ghost" size="sm" className="mt-2 -ml-2 h-7 text-xs"
-                        onClick={e => { e.stopPropagation(); setEditSensor(sensor); setEditZoneId(sensor.zone_id || "none"); }}>
-                        Change zone
-                      </Button>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        );
-      })}
-
-      {filteredSensors.length === 0 && sensors.length > 0 && (
-        <Card className="glass-card">
-          <CardContent className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-            <p className="text-lg font-medium">No sensors in this zone</p>
-            <p className="text-sm">Select a different zone or add sensors</p>
-          </CardContent>
-        </Card>
-      )}
-
-      {sensors.length === 0 && (
+      {loading ? (
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-64" />)}
+        </div>
+      ) : filtered.length === 0 ? (
         <Card className="glass-card">
           <CardContent className="flex flex-col items-center justify-center py-12 text-muted-foreground">
             <Activity className="h-12 w-12 mb-4 opacity-40" />
-            <p className="text-lg font-medium">No sensors yet</p>
-            <p className="text-sm">Add your first sensor to start monitoring</p>
+            <p className="text-lg font-medium">{sensors.length === 0 ? "No devices yet" : "No devices in this zone"}</p>
+            <p className="text-sm">{sensors.length === 0 ? "Register your first LoRaWAN probe to start monitoring" : "Select another zone"}</p>
           </CardContent>
         </Card>
+      ) : (
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          {filtered.map(sensor => {
+            const r = latest[sensor.id];
+            return (
+              <Card key={sensor.id} className="glass-card cursor-pointer transition-shadow hover:shadow-md" onClick={() => navigate(`/sensors/${sensor.id}`)}>
+                <CardContent className="p-5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <Radio className="h-4 w-4 text-primary" />
+                        <span className="font-display font-semibold">{sensor.name}</span>
+                        {sensor.device_id != null && <span className="font-mono text-xs text-muted-foreground">#{sensor.device_id}</span>}
+                      </div>
+                      <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{zoneName(sensor.zone_id)}</span>
+                        {r?.battery_v != null && <span className="flex items-center gap-1"><Battery className="h-3 w-3" />{r.battery_v} V</span>}
+                        {r && <span>{formatDistanceToNow(new Date(r.recorded_at), { addSuffix: true })}</span>}
+                      </div>
+                    </div>
+                    <Badge variant={sensor.status === "online" ? "default" : sensor.status === "offline" ? "destructive" : "secondary"}>
+                      {sensor.status}
+                    </Badge>
+                  </div>
+
+                  <div className="mt-4 grid grid-cols-4 gap-2">
+                    {METRICS.map(m => {
+                      const v = r ? (r[m.key as keyof Reading] as number | null) : null;
+                      return (
+                        <div key={m.key} className="rounded-lg bg-muted/50 p-2 text-center">
+                          <m.icon className="mx-auto h-3.5 w-3.5 text-muted-foreground" />
+                          <p className="mt-1 font-mono text-sm font-semibold">{v ?? "—"}</p>
+                          <p className="text-[10px] leading-tight text-muted-foreground">{m.label}{m.unit ? ` (${m.unit})` : ""}</p>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {canEdit && (
+                    <Button variant="ghost" size="sm" className="mt-3 -ml-2 h-7 text-xs"
+                      onClick={e => { e.stopPropagation(); setEditSensor(sensor); setEditZoneId(sensor.zone_id || "none"); }}>
+                      Change zone
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
       )}
     </div>
   );
