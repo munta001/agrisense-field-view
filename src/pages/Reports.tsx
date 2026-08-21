@@ -124,20 +124,22 @@ export default function ReportsPage() {
       const num = (k: string) =>
         readings.map(r => r[k as keyof Reading] as number | null).filter((v): v is number => v != null);
 
+      const summary = METRICS.map(m => {
+        const v = num(m.key);
+        if (!v.length) return { label: m.label, last: "—", min: "—", max: "—", avg: "—" };
+        return {
+          label: m.label,
+          last: v[v.length - 1].toFixed(2),
+          min: Math.min(...v).toFixed(2),
+          max: Math.max(...v).toFixed(2),
+          avg: (v.reduce((a, b) => a + b, 0) / v.length).toFixed(2),
+        };
+      });
+
       autoTable(doc, {
         startY: 130,
         head: [["Metric", "Last", "Min", "Max", "Average"]],
-        body: METRICS.map(m => {
-          const v = num(m.key);
-          if (!v.length) return [m.label, "—", "—", "—", "—"];
-          return [
-            m.label,
-            v[v.length - 1].toFixed(2),
-            Math.min(...v).toFixed(2),
-            Math.max(...v).toFixed(2),
-            (v.reduce((a, b) => a + b, 0) / v.length).toFixed(2),
-          ];
-        }),
+        body: summary.map(s => [s.label, s.last, s.min, s.max, s.avg]),
         styles: { fontSize: 9 },
         headStyles: { fillColor: [34, 84, 61] },
       });
@@ -170,8 +172,7 @@ export default function ReportsPage() {
         fileName,
       };
       setReports(prev => [report, ...prev]);
-      setPreviewUrl(blobUrl);
-      setPreviewReport(report);
+      setPreview({ report, readings, summary });
       toast({ title: "Report generated", description: `${readings.length} readings exported to PDF` });
     } catch (e: any) {
       toast({ title: "Failed to generate report", description: e.message, variant: "destructive" });
