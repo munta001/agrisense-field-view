@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Radio, Battery, MapPin, Activity, Thermometer, Droplets, Zap, FlaskConical, Leaf, Sprout, Beaker, Waves } from "lucide-react";
+import { Plus, Radio, Battery, MapPin, Activity, Thermometer, Droplets, Zap, FlaskConical, Leaf, Sprout, Beaker, Waves, Pencil, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
 import type { Tables } from "@/integrations/supabase/types";
