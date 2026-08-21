@@ -58,6 +58,8 @@ export default function ReportsPage() {
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [reports, setReports] = useState<Generated[]>([]);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewReport, setPreviewReport] = useState<Generated | null>(null);
 
   useEffect(() => {
     if (!currentOrg) return;
