@@ -10,10 +10,11 @@ import { Calendar } from "@/components/ui/calendar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { CalendarIcon, FileText, Download, Loader2 } from "lucide-react";
+import { CalendarIcon, FileText, Download, Loader2, FileSpreadsheet } from "lucide-react";
 import { format, startOfDay, subDays, subMonths } from "date-fns";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import * as XLSX from "xlsx";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Sensor = Tables<"sensors">;
@@ -43,8 +44,21 @@ type Generated = {
   type: string;
   date: string;
   rows: number;
-  blobUrl: string;
-  fileName: string;
+  pdfUrl: string;
+  pdfName: string;
+  xlsxUrl: string;
+  xlsxName: string;
+};
+
+// Mobile-safe download: anchor click with download attr, fallback to new tab
+const downloadFile = (url: string, fileName: string) => {
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = fileName;
+  a.rel = "noopener";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
 };
 
 type PreviewData = {
