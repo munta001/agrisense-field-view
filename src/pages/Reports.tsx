@@ -154,20 +154,19 @@ export default function ReportsPage() {
 
       const fileName = `${range.label.toLowerCase()}-report-${selected.name.replace(/\s+/g, "-").toLowerCase()}-${format(new Date(), "yyyyMMdd-HHmm")}.pdf`;
       const blobUrl = URL.createObjectURL(doc.output("blob"));
-      doc.save(fileName);
 
-      setReports(prev => [
-        {
-          id: crypto.randomUUID(),
-          name: `${range.label} report — ${selected.name}`,
-          type: range.label,
-          date: format(new Date(), "yyyy-MM-dd HH:mm"),
-          rows: readings.length,
-          blobUrl,
-          fileName,
-        },
-        ...prev,
-      ]);
+      const report: Generated = {
+        id: crypto.randomUUID(),
+        name: `${range.label} report — ${selected.name}`,
+        type: range.label,
+        date: format(new Date(), "yyyy-MM-dd HH:mm"),
+        rows: readings.length,
+        blobUrl,
+        fileName,
+      };
+      setReports(prev => [report, ...prev]);
+      setPreviewUrl(blobUrl);
+      setPreviewReport(report);
       toast({ title: "Report generated", description: `${readings.length} readings exported to PDF` });
     } catch (e: any) {
       toast({ title: "Failed to generate report", description: e.message, variant: "destructive" });
