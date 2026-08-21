@@ -277,6 +277,29 @@ export default function ReportsPage() {
         </CardContent>
       </Card>
 
+      {previewUrl && previewReport && (
+        <Card className="glass-card">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="font-display text-lg">Report preview</CardTitle>
+            <Button variant="outline" size="sm" asChild>
+              <a href={previewReport.blobUrl} download={previewReport.fileName}>
+                <Download className="mr-2 h-4 w-4" />
+                Download PDF
+              </a>
+            </Button>
+          </CardHeader>
+          <CardContent>
+            <div className="w-full overflow-hidden rounded-md border bg-white">
+              <iframe
+                src={previewUrl}
+                title={previewReport.name}
+                className="h-[600px] w-full"
+              />
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <Card className="glass-card">
         <CardHeader><CardTitle className="font-display text-lg">Generated reports</CardTitle></CardHeader>
         <CardContent>
