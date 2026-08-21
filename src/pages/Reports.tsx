@@ -47,6 +47,12 @@ type Generated = {
   fileName: string;
 };
 
+type PreviewData = {
+  report: Generated;
+  readings: Reading[];
+  summary: { label: string; last: string; min: string; max: string; avg: string }[];
+};
+
 export default function ReportsPage() {
   const { currentOrg } = useOrg();
   const { toast } = useToast();
@@ -58,8 +64,7 @@ export default function ReportsPage() {
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [reports, setReports] = useState<Generated[]>([]);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [previewReport, setPreviewReport] = useState<Generated | null>(null);
+  const [preview, setPreview] = useState<PreviewData | null>(null);
 
   useEffect(() => {
     if (!currentOrg) return;
