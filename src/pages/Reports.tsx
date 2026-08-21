@@ -408,12 +408,16 @@ export default function ReportsPage() {
               <CardTitle className="font-display text-lg">Report preview</CardTitle>
               <p className="text-sm text-muted-foreground">{preview.report.name}</p>
             </div>
-            <Button variant="outline" size="sm" asChild>
-              <a href={preview.report.blobUrl} download={preview.report.fileName}>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Button variant="outline" size="sm" className="w-full sm:w-auto" onClick={() => downloadFile(preview.report.pdfUrl, preview.report.pdfName)}>
                 <Download className="mr-2 h-4 w-4" />
                 Download PDF
-              </a>
-            </Button>
+              </Button>
+              <Button variant="outline" size="sm" className="w-full sm:w-auto" onClick={() => downloadFile(preview.report.xlsxUrl, preview.report.xlsxName)}>
+                <FileSpreadsheet className="mr-2 h-4 w-4" />
+                Download Excel
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="w-full overflow-hidden rounded-md border bg-white text-slate-900 shadow-sm">
