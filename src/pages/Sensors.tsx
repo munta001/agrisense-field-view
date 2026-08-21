@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, Radio, Battery, MapPin, Activity, Thermometer, Droplets, Zap, FlaskConical, Leaf, Sprout, Beaker, Waves, Pencil, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -276,9 +277,12 @@ export default function SensorsPage() {
                         {r && <span>{formatDistanceToNow(new Date(r.recorded_at), { addSuffix: true })}</span>}
                       </div>
                     </div>
-                    <Badge variant={sensor.status === "online" ? "default" : sensor.status === "offline" ? "destructive" : "secondary"}>
-                      {sensor.status}
-                    </Badge>
+                    <div className="flex flex-col items-end gap-1">
+                      <Badge variant={sensor.status === "online" ? "default" : "destructive"}>
+                        {sensor.status}
+                      </Badge>
+                      {!sensor.is_active && <Badge variant="secondary">inactive</Badge>}
+                    </div>
                   </div>
 
                   <div className="mt-4 grid grid-cols-4 gap-2">
