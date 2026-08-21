@@ -384,9 +384,14 @@ export default function ReportsPage() {
                     <TableCell>{r.date}</TableCell>
                     <TableCell>{r.rows}</TableCell>
                     <TableCell>
-                      <Button variant="ghost" size="sm" asChild>
-                        <a href={r.blobUrl} download={r.fileName}><Download className="h-4 w-4" /></a>
-                      </Button>
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="sm" title="Download PDF" onClick={() => downloadFile(r.pdfUrl, r.pdfName)}>
+                          <Download className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" title="Download Excel" onClick={() => downloadFile(r.xlsxUrl, r.xlsxName)}>
+                          <FileSpreadsheet className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
