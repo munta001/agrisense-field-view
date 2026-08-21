@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, Radio, Battery, MapPin, Activity, Thermometer, Droplets, Zap, FlaskConical, Leaf, Sprout, Beaker, Waves, Pencil, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -37,6 +38,7 @@ export default function SensorsPage() {
   const [zones, setZones] = useState<Tables<"zones">[]>([]);
   const [loraTypeId, setLoraTypeId] = useState<string>("");
   const [selectedZone, setSelectedZone] = useState<string>("all");
+  const [showInactive, setShowInactive] = useState(false);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ name: "", device_id: "", zone_id: "", location: "" });
@@ -129,7 +131,9 @@ export default function SensorsPage() {
   };
 
   const zoneName = (zoneId: string | null) => (zoneId ? zones.find(z => z.id === zoneId)?.name || "Unknown zone" : "No zone");
-  const filtered = selectedZone === "all" ? sensors : sensors.filter(s => s.zone_id === selectedZone);
+  const visible = showInactive ? sensors : sensors.filter(s => s.status !== "inactive");
+  const inactiveCount = sensors.filter(s => s.status === "inactive").length;
+  const filtered = selectedZone === "all" ? visible : visible.filter(s => s.zone_id === selectedZone);
 
   return (
     <div className="space-y-6">
@@ -195,10 +199,14 @@ export default function SensorsPage() {
         <div>
           <h1 className="font-display text-2xl font-bold">LoRaWAN Devices</h1>
           <p className="text-muted-foreground">
-            8-in-1 soil probes reporting temperature, moisture, EC, pH, N, P, K and salinity ({filtered.length} of {sensors.length})
+            8-in-1 soil probes reporting temperature, moisture, EC, pH, N, P, K and salinity ({filtered.length} of {visible.length})
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
+            <Checkbox checked={showInactive} onCheckedChange={v => setShowInactive(v === true)} />
+            Show inactive{inactiveCount ? ` (${inactiveCount})` : ""}
+          </label>
           <Select value={selectedZone} onValueChange={setSelectedZone}>
             <SelectTrigger className="w-[180px]"><SelectValue placeholder="Filter by zone" /></SelectTrigger>
             <SelectContent>
@@ -237,8 +245,8 @@ export default function SensorsPage() {
         <Card className="glass-card">
           <CardContent className="flex flex-col items-center justify-center py-12 text-muted-foreground">
             <Activity className="h-12 w-12 mb-4 opacity-40" />
-            <p className="text-lg font-medium">{sensors.length === 0 ? "No devices yet" : "No devices in this zone"}</p>
-            <p className="text-sm">{sensors.length === 0 ? "Register your first LoRaWAN probe to start monitoring" : "Select another zone"}</p>
+            <p className="text-lg font-medium">{sensors.length === 0 ? "No devices yet" : visible.length === 0 ? "No active devices" : "No devices in this zone"}</p>
+            <p className="text-sm">{sensors.length === 0 ? "Register your first LoRaWAN probe to start monitoring" : visible.length === 0 ? "Tick “Show inactive” to see inactive devices" : "Select another zone"}</p>
           </CardContent>
         </Card>
       ) : (
