@@ -42,7 +42,12 @@ export default function SensorsPage() {
   const [form, setForm] = useState({ name: "", device_id: "", zone_id: "", location: "" });
   const [editSensor, setEditSensor] = useState<Sensor | null>(null);
   const [editZoneId, setEditZoneId] = useState<string>("");
+  const [manageSensor, setManageSensor] = useState<Sensor | null>(null);
+  const [manageName, setManageName] = useState("");
+  const [manageStatus, setManageStatus] = useState("online");
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const canEdit = currentRole?.role === "admin" || currentRole?.role === "operator";
+  const isAdmin = currentRole?.role === "admin";
 
   const fetchAll = async () => {
     if (!currentOrg) return;
