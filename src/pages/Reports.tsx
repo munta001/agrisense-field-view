@@ -47,6 +47,12 @@ type Generated = {
   fileName: string;
 };
 
+type PreviewData = {
+  report: Generated;
+  readings: Reading[];
+  summary: { label: string; last: string; min: string; max: string; avg: string }[];
+};
+
 export default function ReportsPage() {
   const { currentOrg } = useOrg();
   const { toast } = useToast();
@@ -58,8 +64,7 @@ export default function ReportsPage() {
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [reports, setReports] = useState<Generated[]>([]);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [previewReport, setPreviewReport] = useState<Generated | null>(null);
+  const [preview, setPreview] = useState<PreviewData | null>(null);
 
   useEffect(() => {
     if (!currentOrg) return;
@@ -119,20 +124,22 @@ export default function ReportsPage() {
       const num = (k: string) =>
         readings.map(r => r[k as keyof Reading] as number | null).filter((v): v is number => v != null);
 
+      const summary = METRICS.map(m => {
+        const v = num(m.key);
+        if (!v.length) return { label: m.label, last: "—", min: "—", max: "—", avg: "—" };
+        return {
+          label: m.label,
+          last: v[v.length - 1].toFixed(2),
+          min: Math.min(...v).toFixed(2),
+          max: Math.max(...v).toFixed(2),
+          avg: (v.reduce((a, b) => a + b, 0) / v.length).toFixed(2),
+        };
+      });
+
       autoTable(doc, {
         startY: 130,
         head: [["Metric", "Last", "Min", "Max", "Average"]],
-        body: METRICS.map(m => {
-          const v = num(m.key);
-          if (!v.length) return [m.label, "—", "—", "—", "—"];
-          return [
-            m.label,
-            v[v.length - 1].toFixed(2),
-            Math.min(...v).toFixed(2),
-            Math.max(...v).toFixed(2),
-            (v.reduce((a, b) => a + b, 0) / v.length).toFixed(2),
-          ];
-        }),
+        body: summary.map(s => [s.label, s.last, s.min, s.max, s.avg]),
         styles: { fontSize: 9 },
         headStyles: { fillColor: [34, 84, 61] },
       });
@@ -165,8 +172,7 @@ export default function ReportsPage() {
         fileName,
       };
       setReports(prev => [report, ...prev]);
-      setPreviewUrl(blobUrl);
-      setPreviewReport(report);
+      setPreview({ report, readings, summary });
       toast({ title: "Report generated", description: `${readings.length} readings exported to PDF` });
     } catch (e: any) {
       toast({ title: "Failed to generate report", description: e.message, variant: "destructive" });
@@ -218,9 +224,9 @@ export default function ReportsPage() {
             <p className="py-6 text-center text-muted-foreground">No devices registered yet</p>
           ) : (
             <>
-              <div className="flex flex-wrap items-center gap-3">
+              <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
                 <Select value={sensorId} onValueChange={setSensorId}>
-                  <SelectTrigger className="w-[240px]"><SelectValue placeholder="Select device" /></SelectTrigger>
+                  <SelectTrigger className="w-full sm:w-[240px]"><SelectValue placeholder="Select device" /></SelectTrigger>
                   <SelectContent>
                     {sensors.map(s => (
                       <SelectItem key={s.id} value={s.id}>
@@ -231,7 +237,7 @@ export default function ReportsPage() {
                 </Select>
 
                 <Select value={period} onValueChange={setPeriod}>
-                  <SelectTrigger className="w-[220px]"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="w-full sm:w-[220px]"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {PERIODS.map(p => <SelectItem key={p.key} value={p.key}>{p.label}</SelectItem>)}
                   </SelectContent>
@@ -241,7 +247,7 @@ export default function ReportsPage() {
                   <>
                     <Popover>
                       <PopoverTrigger asChild>
-                        <Button variant="outline" className={cn("w-[190px] justify-start text-left font-normal", !from && "text-muted-foreground")}>
+                        <Button variant="outline" className={cn("w-full justify-start text-left font-normal sm:w-[190px]", !from && "text-muted-foreground")}>
                           <CalendarIcon className="mr-2 h-4 w-4" />
                           {from ? format(from, "PPP") : "From date"}
                         </Button>
@@ -252,7 +258,7 @@ export default function ReportsPage() {
                     </Popover>
                     <Popover>
                       <PopoverTrigger asChild>
-                        <Button variant="outline" className={cn("w-[190px] justify-start text-left font-normal", !to && "text-muted-foreground")}>
+                        <Button variant="outline" className={cn("w-full justify-start text-left font-normal sm:w-[190px]", !to && "text-muted-foreground")}>
                           <CalendarIcon className="mr-2 h-4 w-4" />
                           {to ? format(to, "PPP") : "To date"}
                         </Button>
@@ -264,7 +270,7 @@ export default function ReportsPage() {
                   </>
                 )}
 
-                <Button onClick={generate} disabled={generating || !sensorId}>
+                <Button onClick={generate} disabled={generating || !sensorId} className="w-full sm:w-auto">
                   {generating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
                   Generate Report
                 </Button>
@@ -277,24 +283,88 @@ export default function ReportsPage() {
         </CardContent>
       </Card>
 
-      {previewUrl && previewReport && (
+      {preview && (
         <Card className="glass-card">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="font-display text-lg">Report preview</CardTitle>
+          <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <CardTitle className="font-display text-lg">Report preview</CardTitle>
+              <p className="text-sm text-muted-foreground">{preview.report.name}</p>
+            </div>
             <Button variant="outline" size="sm" asChild>
-              <a href={previewReport.blobUrl} download={previewReport.fileName}>
+              <a href={preview.report.blobUrl} download={preview.report.fileName}>
                 <Download className="mr-2 h-4 w-4" />
                 Download PDF
               </a>
             </Button>
           </CardHeader>
           <CardContent>
-            <div className="w-full overflow-hidden rounded-md border bg-white">
-              <iframe
-                src={previewUrl}
-                title={previewReport.name}
-                className="h-[600px] w-full"
-              />
+            <div className="w-full overflow-hidden rounded-md border bg-white text-slate-900 shadow-sm">
+              <div className="max-h-[600px] overflow-auto p-4 sm:p-6">
+                <div className="mb-6 border-b pb-4">
+                  <h2 className="text-xl font-bold text-slate-900 sm:text-2xl">{preview.report.type} Sensor Report</h2>
+                  <div className="mt-2 space-y-1 text-sm text-slate-600">
+                    <p><span className="font-medium">Organisation:</span> {currentOrg?.name ?? "-"}</p>
+                    <p><span className="font-medium">Device:</span> {selected?.name}{selected?.device_id != null ? ` (#${selected.device_id})` : ""}</p>
+                    <p><span className="font-medium">Period:</span> {format(preview.readings[0]?.recorded_at ? new Date(preview.readings[0].recorded_at) : range.start, "dd MMM yyyy HH:mm")} — {format(preview.readings[preview.readings.length - 1]?.recorded_at ? new Date(preview.readings[preview.readings.length - 1].recorded_at) : range.end, "dd MMM yyyy HH:mm")}</p>
+                    <p><span className="font-medium">Readings:</span> {preview.readings.length} · Generated {format(new Date(), "dd MMM yyyy HH:mm")}</p>
+                  </div>
+                </div>
+
+                <div className="mb-6">
+                  <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">Summary</h3>
+                  <div className="overflow-x-auto rounded-md border">
+                    <table className="min-w-full divide-y divide-slate-200 text-sm">
+                      <thead className="bg-emerald-900">
+                        <tr>
+                          {["Metric", "Last", "Min", "Max", "Average"].map(h => (
+                            <th key={h} className="px-3 py-2 text-left font-medium text-white">{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-200 bg-white">
+                        {preview.summary.map((s, i) => (
+                          <tr key={i} className={i % 2 === 1 ? "bg-slate-50" : ""}>
+                            <td className="px-3 py-2 font-medium">{s.label}</td>
+                            <td className="px-3 py-2">{s.last}</td>
+                            <td className="px-3 py-2">{s.min}</td>
+                            <td className="px-3 py-2">{s.max}</td>
+                            <td className="px-3 py-2">{s.avg}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">Readings</h3>
+                  <div className="overflow-x-auto rounded-md border">
+                    <table className="min-w-full divide-y divide-slate-200 text-xs sm:text-sm">
+                      <thead className="bg-emerald-900">
+                        <tr>
+                          <th className="sticky top-0 px-3 py-2 text-left font-medium text-white">Recorded at</th>
+                          {METRICS.map(m => (
+                            <th key={m.key} className="sticky top-0 px-3 py-2 text-left font-medium text-white">{m.label}</th>
+                          ))}
+                          <th className="sticky top-0 px-3 py-2 text-left font-medium text-white">Battery (V)</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-200 bg-white">
+                        {preview.readings.map((r, i) => (
+                          <tr key={r.id ?? i} className={i % 2 === 1 ? "bg-slate-50" : ""}>
+                            <td className="whitespace-nowrap px-3 py-2">{format(new Date(r.recorded_at), "dd MMM HH:mm")}</td>
+                            {METRICS.map(m => {
+                              const v = r[m.key as keyof Reading] as number | null;
+                              return <td key={m.key} className="whitespace-nowrap px-3 py-2">{v == null ? "—" : String(v)}</td>;
+                            })}
+                            <td className="px-3 py-2">{r.battery_v == null ? "—" : String(r.battery_v)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
