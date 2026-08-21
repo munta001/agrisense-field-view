@@ -430,6 +430,7 @@ export type Database = {
           device_id: number | null
           id: string
           ip_address: string | null
+          is_active: boolean
           latitude: number | null
           location: string | null
           longitude: number | null
@@ -448,6 +449,7 @@ export type Database = {
           device_id?: number | null
           id?: string
           ip_address?: string | null
+          is_active?: boolean
           latitude?: number | null
           location?: string | null
           longitude?: number | null
@@ -466,6 +468,7 @@ export type Database = {
           device_id?: number | null
           id?: string
           ip_address?: string | null
+          is_active?: boolean
           latitude?: number | null
           location?: string | null
           longitude?: number | null
