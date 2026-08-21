@@ -245,8 +245,8 @@ export default function SensorsPage() {
         <Card className="glass-card">
           <CardContent className="flex flex-col items-center justify-center py-12 text-muted-foreground">
             <Activity className="h-12 w-12 mb-4 opacity-40" />
-            <p className="text-lg font-medium">{sensors.length === 0 ? "No devices yet" : "No devices in this zone"}</p>
-            <p className="text-sm">{sensors.length === 0 ? "Register your first LoRaWAN probe to start monitoring" : "Select another zone"}</p>
+            <p className="text-lg font-medium">{sensors.length === 0 ? "No devices yet" : visible.length === 0 ? "No active devices" : "No devices in this zone"}</p>
+            <p className="text-sm">{sensors.length === 0 ? "Register your first LoRaWAN probe to start monitoring" : visible.length === 0 ? "Tick “Show inactive” to see inactive devices" : "Select another zone"}</p>
           </CardContent>
         </Card>
       ) : (
