@@ -27,14 +27,16 @@ const OrgContext = createContext<OrgContextType>({
 export const useOrg = () => useContext(OrgContext);
 
 export function OrgProvider({ children }: { children: ReactNode }) {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [orgs, setOrgs] = useState<Organization[]>([]);
   const [currentOrg, setCurrentOrg] = useState<Organization | null>(null);
   const [currentRole, setCurrentRole] = useState<UserRole | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchOrgs = async () => {
+    if (authLoading) { setLoading(true); return; }
     if (!user) { setOrgs([]); setCurrentOrg(null); setCurrentRole(null); setLoading(false); return; }
+    setLoading(true);
     const { data: roles } = await supabase.from("user_roles").select("*").eq("user_id", user.id);
     if (!roles?.length) { setOrgs([]); setCurrentOrg(null); setCurrentRole(null); setLoading(false); return; }
     const orgIds = roles.map(r => r.org_id);
@@ -52,7 +54,7 @@ export function OrgProvider({ children }: { children: ReactNode }) {
     setLoading(false);
   };
 
-  useEffect(() => { fetchOrgs(); }, [user]);
+  useEffect(() => { fetchOrgs(); }, [user?.id, authLoading]);
 
   const handleSetOrg = (org: Organization) => {
     setCurrentOrg(org);
