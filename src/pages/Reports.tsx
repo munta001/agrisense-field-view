@@ -224,9 +224,9 @@ export default function ReportsPage() {
             <p className="py-6 text-center text-muted-foreground">No devices registered yet</p>
           ) : (
             <>
-              <div className="flex flex-wrap items-center gap-3">
+              <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
                 <Select value={sensorId} onValueChange={setSensorId}>
-                  <SelectTrigger className="w-[240px]"><SelectValue placeholder="Select device" /></SelectTrigger>
+                  <SelectTrigger className="w-full sm:w-[240px]"><SelectValue placeholder="Select device" /></SelectTrigger>
                   <SelectContent>
                     {sensors.map(s => (
                       <SelectItem key={s.id} value={s.id}>
@@ -237,7 +237,7 @@ export default function ReportsPage() {
                 </Select>
 
                 <Select value={period} onValueChange={setPeriod}>
-                  <SelectTrigger className="w-[220px]"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="w-full sm:w-[220px]"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {PERIODS.map(p => <SelectItem key={p.key} value={p.key}>{p.label}</SelectItem>)}
                   </SelectContent>
@@ -247,7 +247,7 @@ export default function ReportsPage() {
                   <>
                     <Popover>
                       <PopoverTrigger asChild>
-                        <Button variant="outline" className={cn("w-[190px] justify-start text-left font-normal", !from && "text-muted-foreground")}>
+                        <Button variant="outline" className={cn("w-full justify-start text-left font-normal sm:w-[190px]", !from && "text-muted-foreground")}>
                           <CalendarIcon className="mr-2 h-4 w-4" />
                           {from ? format(from, "PPP") : "From date"}
                         </Button>
@@ -258,7 +258,7 @@ export default function ReportsPage() {
                     </Popover>
                     <Popover>
                       <PopoverTrigger asChild>
-                        <Button variant="outline" className={cn("w-[190px] justify-start text-left font-normal", !to && "text-muted-foreground")}>
+                        <Button variant="outline" className={cn("w-full justify-start text-left font-normal sm:w-[190px]", !to && "text-muted-foreground")}>
                           <CalendarIcon className="mr-2 h-4 w-4" />
                           {to ? format(to, "PPP") : "To date"}
                         </Button>
@@ -270,7 +270,7 @@ export default function ReportsPage() {
                   </>
                 )}
 
-                <Button onClick={generate} disabled={generating || !sensorId}>
+                <Button onClick={generate} disabled={generating || !sensorId} className="w-full sm:w-auto">
                   {generating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
                   Generate Report
                 </Button>
