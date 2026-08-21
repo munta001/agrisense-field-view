@@ -162,7 +162,7 @@ export default function SensorsPage() {
               <Input value={manageName} onChange={e => setManageName(e.target.value)} placeholder="Device name" />
             </div>
             <div className="space-y-1.5">
-              <label className="text-sm font-medium">Status</label>
+              <label className="text-sm font-medium">Connection status</label>
               <Select value={manageStatus} onValueChange={setManageStatus}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -170,6 +170,13 @@ export default function SensorsPage() {
                   <SelectItem value="offline">Offline</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+            <div className="flex items-center justify-between rounded-lg border p-3">
+              <div>
+                <p className="text-sm font-medium">Active</p>
+                <p className="text-xs text-muted-foreground">Inactive devices are hidden from the list</p>
+              </div>
+              <Switch checked={manageActive} onCheckedChange={setManageActive} />
             </div>
             <Button onClick={handleSaveManage} className="w-full">Save changes</Button>
 
