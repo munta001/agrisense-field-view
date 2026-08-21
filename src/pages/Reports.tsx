@@ -283,24 +283,88 @@ export default function ReportsPage() {
         </CardContent>
       </Card>
 
-      {previewUrl && previewReport && (
+      {preview && (
         <Card className="glass-card">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="font-display text-lg">Report preview</CardTitle>
+          <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <CardTitle className="font-display text-lg">Report preview</CardTitle>
+              <p className="text-sm text-muted-foreground">{preview.report.name}</p>
+            </div>
             <Button variant="outline" size="sm" asChild>
-              <a href={previewReport.blobUrl} download={previewReport.fileName}>
+              <a href={preview.report.blobUrl} download={preview.report.fileName}>
                 <Download className="mr-2 h-4 w-4" />
                 Download PDF
               </a>
             </Button>
           </CardHeader>
           <CardContent>
-            <div className="w-full overflow-hidden rounded-md border bg-white">
-              <iframe
-                src={previewUrl}
-                title={previewReport.name}
-                className="h-[600px] w-full"
-              />
+            <div className="w-full overflow-hidden rounded-md border bg-white text-slate-900 shadow-sm">
+              <div className="max-h-[600px] overflow-auto p-4 sm:p-6">
+                <div className="mb-6 border-b pb-4">
+                  <h2 className="text-xl font-bold text-slate-900 sm:text-2xl">{preview.report.type} Sensor Report</h2>
+                  <div className="mt-2 space-y-1 text-sm text-slate-600">
+                    <p><span className="font-medium">Organisation:</span> {currentOrg?.name ?? "-"}</p>
+                    <p><span className="font-medium">Device:</span> {selected?.name}{selected?.device_id != null ? ` (#${selected.device_id})` : ""}</p>
+                    <p><span className="font-medium">Period:</span> {format(preview.readings[0]?.recorded_at ? new Date(preview.readings[0].recorded_at) : range.start, "dd MMM yyyy HH:mm")} — {format(preview.readings[preview.readings.length - 1]?.recorded_at ? new Date(preview.readings[preview.readings.length - 1].recorded_at) : range.end, "dd MMM yyyy HH:mm")}</p>
+                    <p><span className="font-medium">Readings:</span> {preview.readings.length} · Generated {format(new Date(), "dd MMM yyyy HH:mm")}</p>
+                  </div>
+                </div>
+
+                <div className="mb-6">
+                  <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">Summary</h3>
+                  <div className="overflow-x-auto rounded-md border">
+                    <table className="min-w-full divide-y divide-slate-200 text-sm">
+                      <thead className="bg-emerald-900">
+                        <tr>
+                          {["Metric", "Last", "Min", "Max", "Average"].map(h => (
+                            <th key={h} className="px-3 py-2 text-left font-medium text-white">{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-200 bg-white">
+                        {preview.summary.map((s, i) => (
+                          <tr key={i} className={i % 2 === 1 ? "bg-slate-50" : ""}>
+                            <td className="px-3 py-2 font-medium">{s.label}</td>
+                            <td className="px-3 py-2">{s.last}</td>
+                            <td className="px-3 py-2">{s.min}</td>
+                            <td className="px-3 py-2">{s.max}</td>
+                            <td className="px-3 py-2">{s.avg}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">Readings</h3>
+                  <div className="overflow-x-auto rounded-md border">
+                    <table className="min-w-full divide-y divide-slate-200 text-xs sm:text-sm">
+                      <thead className="bg-emerald-900">
+                        <tr>
+                          <th className="sticky top-0 px-3 py-2 text-left font-medium text-white">Recorded at</th>
+                          {METRICS.map(m => (
+                            <th key={m.key} className="sticky top-0 px-3 py-2 text-left font-medium text-white">{m.label}</th>
+                          ))}
+                          <th className="sticky top-0 px-3 py-2 text-left font-medium text-white">Battery (V)</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-200 bg-white">
+                        {preview.readings.map((r, i) => (
+                          <tr key={r.id ?? i} className={i % 2 === 1 ? "bg-slate-50" : ""}>
+                            <td className="whitespace-nowrap px-3 py-2">{format(new Date(r.recorded_at), "dd MMM HH:mm")}</td>
+                            {METRICS.map(m => {
+                              const v = r[m.key as keyof Reading] as number | null;
+                              return <td key={m.key} className="whitespace-nowrap px-3 py-2">{v == null ? "—" : String(v)}</td>;
+                            })}
+                            <td className="px-3 py-2">{r.battery_v == null ? "—" : String(r.battery_v)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
