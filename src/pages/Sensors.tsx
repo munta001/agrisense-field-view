@@ -107,6 +107,27 @@ export default function SensorsPage() {
     fetchAll();
   };
 
+  const handleSaveManage = async () => {
+    if (!manageSensor || !manageName.trim()) return;
+    const { error } = await supabase.from("sensors")
+      .update({ name: manageName.trim(), status: manageStatus })
+      .eq("id", manageSensor.id);
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Device updated" });
+    setManageSensor(null);
+    fetchAll();
+  };
+
+  const handleDelete = async () => {
+    if (!manageSensor) return;
+    const { error } = await supabase.from("sensors").delete().eq("id", manageSensor.id);
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Device deleted", description: "All readings for this device were removed." });
+    setConfirmDelete(false);
+    setManageSensor(null);
+    fetchAll();
+  };
+
   const zoneName = (zoneId: string | null) => (zoneId ? zones.find(z => z.id === zoneId)?.name || "Unknown zone" : "No zone");
   const filtered = selectedZone === "all" ? sensors : sensors.filter(s => s.zone_id === selectedZone);
 
