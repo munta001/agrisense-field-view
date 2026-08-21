@@ -173,8 +173,40 @@ export default function ReportsPage() {
         headStyles: { fillColor: [34, 84, 61] },
       });
 
-      const fileName = `${range.label.toLowerCase()}-report-${selected.name.replace(/\s+/g, "-").toLowerCase()}-${format(new Date(), "yyyyMMdd-HHmm")}.pdf`;
-      const blobUrl = URL.createObjectURL(doc.output("blob"));
+      const baseName = `${range.label.toLowerCase()}-report-${selected.name.replace(/\s+/g, "-").toLowerCase()}-${format(new Date(), "yyyyMMdd-HHmm")}`;
+      const pdfUrl = URL.createObjectURL(doc.output("blob"));
+
+      // Excel workbook: Summary + Readings sheets
+      const wb = XLSX.utils.book_new();
+      const infoRows = [
+        ["Organisation", currentOrg?.name ?? "-"],
+        ["Device", `${selected.name}${selected.device_id != null ? ` (#${selected.device_id})` : ""}`],
+        ["Period", `${format(range.start, "dd MMM yyyy HH:mm")} — ${format(range.end, "dd MMM yyyy HH:mm")}`],
+        ["Readings", readings.length],
+        ["Generated", format(new Date(), "dd MMM yyyy HH:mm")],
+        [],
+        ["Metric", "Last", "Min", "Max", "Average"],
+        ...summary.map(s => [s.label, s.last, s.min, s.max, s.avg]),
+      ];
+      const wsSummary = XLSX.utils.aoa_to_sheet(infoRows);
+      wsSummary["!cols"] = [{ wch: 24 }, { wch: 28 }, { wch: 12 }, { wch: 12 }, { wch: 12 }];
+      XLSX.utils.book_append_sheet(wb, wsSummary, "Summary");
+
+      const wsReadings = XLSX.utils.aoa_to_sheet([
+        ["Recorded at", ...METRICS.map(m => m.label), "Battery (V)"],
+        ...readings.map(r => [
+          format(new Date(r.recorded_at), "dd MMM yyyy HH:mm"),
+          ...METRICS.map(m => (r[m.key as keyof Reading] as number | null) ?? ""),
+          r.battery_v ?? "",
+        ]),
+      ]);
+      wsReadings["!cols"] = [{ wch: 20 }, ...METRICS.map(() => ({ wch: 14 })), { wch: 12 }];
+      XLSX.utils.book_append_sheet(wb, wsReadings, "Readings");
+
+      const xlsxArray = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+      const xlsxUrl = URL.createObjectURL(
+        new Blob([xlsxArray], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" })
+      );
 
       const report: Generated = {
         id: crypto.randomUUID(),
@@ -182,12 +214,14 @@ export default function ReportsPage() {
         type: range.label,
         date: format(new Date(), "yyyy-MM-dd HH:mm"),
         rows: readings.length,
-        blobUrl,
-        fileName,
+        pdfUrl,
+        pdfName: `${baseName}.pdf`,
+        xlsxUrl,
+        xlsxName: `${baseName}.xlsx`,
       };
       setReports(prev => [report, ...prev]);
       setPreview({ report, readings, summary });
-      toast({ title: "Report generated", description: `${readings.length} readings exported to PDF` });
+      toast({ title: "Report generated", description: `${readings.length} readings ready as PDF or Excel` });
     } catch (e: any) {
       toast({ title: "Failed to generate report", description: e.message, variant: "destructive" });
     } finally {
