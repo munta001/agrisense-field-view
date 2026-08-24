@@ -206,7 +206,7 @@ export default function ReportsPage() {
         autoTable(doc, {
           startY: idx === 0 ? y : 60,
           head: [["Metric", "Last", "Min", "Max", "Average"]],
-          body: g.summary.map(s => [s.label, s.min, s.max, s.avg].length ? [s.label, s.last, s.min, s.max, s.avg] : []),
+          body: g.summary.map(s => [s.label, s.last, s.min, s.max, s.avg]),
           styles: { fontSize: 9 },
           headStyles: { fillColor: [34, 84, 61] },
         });
