@@ -18,6 +18,7 @@ import * as XLSX from "xlsx";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Sensor = Tables<"sensors">;
+type Zone = Tables<"zones">;
 type Reading = Tables<"sensor_readings">;
 
 const METRICS = [
@@ -38,10 +39,15 @@ const PERIODS = [
   { key: "custom", label: "Custom date range" },
 ];
 
+type SummaryRow = { label: string; last: string; min: string; max: string; avg: string };
+
+type Group = { sensor: Sensor; readings: Reading[]; summary: SummaryRow[] };
+
 type Generated = {
   id: string;
   name: string;
   type: string;
+  scope: string;
   date: string;
   rows: number;
   pdfUrl: string;
@@ -63,15 +69,21 @@ const downloadFile = (url: string, fileName: string) => {
 
 type PreviewData = {
   report: Generated;
-  readings: Reading[];
-  summary: { label: string; last: string; min: string; max: string; avg: string }[];
+  groups: Group[];
+  scope: string;
+  start: Date;
+  end: Date;
 };
+
+const deviceLabel = (s: Sensor) => `${s.name}${s.device_id != null ? ` (#${s.device_id})` : ""}`;
 
 export default function ReportsPage() {
   const { currentOrg } = useOrg();
   const { toast } = useToast();
   const [sensors, setSensors] = useState<Sensor[]>([]);
-  const [sensorId, setSensorId] = useState("");
+  const [zones, setZones] = useState<Zone[]>([]);
+  const [zoneId, setZoneId] = useState("all");
+  const [sensorId, setSensorId] = useState("all");
   const [period, setPeriod] = useState("daily");
   const [from, setFrom] = useState<Date | undefined>(subDays(new Date(), 7));
   const [to, setTo] = useState<Date | undefined>(new Date());
@@ -83,13 +95,25 @@ export default function ReportsPage() {
   useEffect(() => {
     if (!currentOrg) return;
     setLoading(true);
-    supabase.from("sensors").select("*").eq("org_id", currentOrg.id).order("device_id").then(({ data }) => {
-      const list = data || [];
-      setSensors(list);
-      setSensorId(prev => prev || list[0]?.id || "");
+    Promise.all([
+      supabase.from("sensors").select("*").eq("org_id", currentOrg.id).order("device_id"),
+      supabase.from("zones").select("*").eq("org_id", currentOrg.id).order("name"),
+    ]).then(([s, z]) => {
+      setSensors(s.data || []);
+      setZones(z.data || []);
       setLoading(false);
     });
   }, [currentOrg]);
+
+  const zoneSensors = useMemo(
+    () => (zoneId === "all" ? sensors : sensors.filter(s => s.zone_id === zoneId)),
+    [sensors, zoneId]
+  );
+
+  // reset device selection when zone changes and the device is no longer in scope
+  useEffect(() => {
+    if (sensorId !== "all" && !zoneSensors.some(s => s.id === sensorId)) setSensorId("all");
+  }, [zoneSensors, sensorId]);
 
   const range = useMemo(() => {
     const now = new Date();
@@ -99,26 +123,65 @@ export default function ReportsPage() {
     return { start: from ? startOfDay(from) : subDays(now, 7), end: to ?? now, label: "Custom" };
   }, [period, from, to]);
 
-  const selected = sensors.find(s => s.id === sensorId);
+  const zoneName = (id: string | null) => (id ? zones.find(z => z.id === id)?.name || "Unknown zone" : "No zone");
+
+  const targets = useMemo(
+    () => (sensorId === "all" ? zoneSensors : zoneSensors.filter(s => s.id === sensorId)),
+    [zoneSensors, sensorId]
+  );
+
+  const scopeLabel =
+    zoneId === "all"
+      ? sensorId === "all"
+        ? "All zones · all devices"
+        : `All zones · ${deviceLabel(targets[0] ?? ({} as Sensor))}`
+      : sensorId === "all"
+      ? `${zoneName(zoneId)} · all devices`
+      : `${zoneName(zoneId)} · ${targets[0] ? deviceLabel(targets[0]) : "-"}`;
+
+  const summarise = (readings: Reading[]): SummaryRow[] =>
+    METRICS.map(m => {
+      const v = readings
+        .map(r => r[m.key as keyof Reading] as number | null)
+        .filter((x): x is number => x != null);
+      if (!v.length) return { label: m.label, last: "—", min: "—", max: "—", avg: "—" };
+      return {
+        label: m.label,
+        last: v[v.length - 1].toFixed(2),
+        min: Math.min(...v).toFixed(2),
+        max: Math.max(...v).toFixed(2),
+        avg: (v.reduce((a, b) => a + b, 0) / v.length).toFixed(2),
+      };
+    });
 
   const generate = async () => {
-    if (!selected) return;
+    if (!targets.length) {
+      toast({ title: "No devices", description: "No devices in the selected scope", variant: "destructive" });
+      return;
+    }
     setGenerating(true);
     try {
       const { data, error } = await supabase
         .from("sensor_readings")
         .select("*")
-        .eq("sensor_id", selected.id)
+        .in("sensor_id", targets.map(s => s.id))
         .gte("recorded_at", range.start.toISOString())
         .lte("recorded_at", range.end.toISOString())
         .order("recorded_at", { ascending: true })
-        .limit(5000);
+        .limit(10000);
       if (error) throw error;
-      const readings = (data || []) as Reading[];
-      if (!readings.length) {
-        toast({ title: "No data", description: "No readings for this device in the selected period", variant: "destructive" });
+      const all = (data || []) as Reading[];
+      if (!all.length) {
+        toast({ title: "No data", description: "No readings for this selection in the period", variant: "destructive" });
         return;
       }
+
+      const groups: Group[] = targets
+        .map(sensor => {
+          const readings = all.filter(r => r.sensor_id === sensor.id);
+          return { sensor, readings, summary: summarise(readings) };
+        })
+        .filter(g => g.readings.length > 0);
 
       const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
       doc.setFontSize(18);
@@ -127,80 +190,87 @@ export default function ReportsPage() {
       doc.text(
         [
           `Organisation: ${currentOrg?.name ?? "-"}`,
-          `Device: ${selected.name}${selected.device_id != null ? ` (#${selected.device_id})` : ""}`,
+          `Scope: ${scopeLabel}`,
           `Period: ${format(range.start, "dd MMM yyyy HH:mm")} — ${format(range.end, "dd MMM yyyy HH:mm")}`,
-          `Readings: ${readings.length} · Generated ${format(new Date(), "dd MMM yyyy HH:mm")}`,
+          `Devices: ${groups.length} · Readings: ${all.length} · Generated ${format(new Date(), "dd MMM yyyy HH:mm")}`,
         ],
         40,
         65
       );
 
-      const num = (k: string) =>
-        readings.map(r => r[k as keyof Reading] as number | null).filter((v): v is number => v != null);
-
-      const summary = METRICS.map(m => {
-        const v = num(m.key);
-        if (!v.length) return { label: m.label, last: "—", min: "—", max: "—", avg: "—" };
-        return {
-          label: m.label,
-          last: v[v.length - 1].toFixed(2),
-          min: Math.min(...v).toFixed(2),
-          max: Math.max(...v).toFixed(2),
-          avg: (v.reduce((a, b) => a + b, 0) / v.length).toFixed(2),
-        };
+      let y = 130;
+      groups.forEach((g, idx) => {
+        if (idx > 0) doc.addPage();
+        doc.setFontSize(12);
+        doc.text(`${deviceLabel(g.sensor)} — ${zoneName(g.sensor.zone_id)}`, 40, idx === 0 ? y - 12 : 45);
+        autoTable(doc, {
+          startY: idx === 0 ? y : 60,
+          head: [["Metric", "Last", "Min", "Max", "Average"]],
+          body: g.summary.map(s => [s.label, s.last, s.min, s.max, s.avg]),
+          styles: { fontSize: 9 },
+          headStyles: { fillColor: [34, 84, 61] },
+        });
+        autoTable(doc, {
+          startY: (doc as any).lastAutoTable.finalY + 20,
+          head: [["Recorded at", ...METRICS.map(m => m.label), "Battery (V)"]],
+          body: g.readings.map(r => [
+            format(new Date(r.recorded_at), "dd MMM HH:mm"),
+            ...METRICS.map(m => {
+              const v = r[m.key as keyof Reading] as number | null;
+              return v == null ? "—" : String(v);
+            }),
+            r.battery_v == null ? "—" : String(r.battery_v),
+          ]),
+          styles: { fontSize: 7 },
+          headStyles: { fillColor: [34, 84, 61] },
+        });
       });
 
-      autoTable(doc, {
-        startY: 130,
-        head: [["Metric", "Last", "Min", "Max", "Average"]],
-        body: summary.map(s => [s.label, s.last, s.min, s.max, s.avg]),
-        styles: { fontSize: 9 },
-        headStyles: { fillColor: [34, 84, 61] },
-      });
-
-      autoTable(doc, {
-        startY: (doc as any).lastAutoTable.finalY + 24,
-        head: [["Recorded at", ...METRICS.map(m => m.label), "Battery (V)"]],
-        body: readings.map(r => [
-          format(new Date(r.recorded_at), "dd MMM HH:mm"),
-          ...METRICS.map(m => {
-            const v = r[m.key as keyof Reading] as number | null;
-            return v == null ? "—" : String(v);
-          }),
-          r.battery_v == null ? "—" : String(r.battery_v),
-        ]),
-        styles: { fontSize: 7 },
-        headStyles: { fillColor: [34, 84, 61] },
-      });
-
-      const baseName = `${range.label.toLowerCase()}-report-${selected.name.replace(/\s+/g, "-").toLowerCase()}-${format(new Date(), "yyyyMMdd-HHmm")}`;
+      const scopeSlug =
+        (sensorId === "all"
+          ? zoneId === "all"
+            ? "all-zones"
+            : zoneName(zoneId)
+          : deviceLabel(targets[0])
+        )
+          .replace(/[^a-z0-9]+/gi, "-")
+          .toLowerCase();
+      const baseName = `${range.label.toLowerCase()}-report-${scopeSlug}-${format(new Date(), "yyyyMMdd-HHmm")}`;
       const pdfUrl = URL.createObjectURL(doc.output("blob"));
 
-      // Excel workbook: Summary + Readings sheets
+      // Excel workbook: Summary + one Readings sheet per device
       const wb = XLSX.utils.book_new();
-      const infoRows = [
+      const infoRows: (string | number)[][] = [
         ["Organisation", currentOrg?.name ?? "-"],
-        ["Device", `${selected.name}${selected.device_id != null ? ` (#${selected.device_id})` : ""}`],
+        ["Scope", scopeLabel],
         ["Period", `${format(range.start, "dd MMM yyyy HH:mm")} — ${format(range.end, "dd MMM yyyy HH:mm")}`],
-        ["Readings", readings.length],
+        ["Devices", groups.length],
+        ["Readings", all.length],
         ["Generated", format(new Date(), "dd MMM yyyy HH:mm")],
-        [],
-        ["Metric", "Last", "Min", "Max", "Average"],
-        ...summary.map(s => [s.label, s.last, s.min, s.max, s.avg]),
       ];
+      groups.forEach(g => {
+        infoRows.push([]);
+        infoRows.push([`${deviceLabel(g.sensor)} — ${zoneName(g.sensor.zone_id)}`]);
+        infoRows.push(["Metric", "Last", "Min", "Max", "Average"]);
+        g.summary.forEach(s => infoRows.push([s.label, s.last, s.min, s.max, s.avg]));
+      });
       const wsSummary = XLSX.utils.aoa_to_sheet(infoRows);
-      wsSummary["!cols"] = [{ wch: 24 }, { wch: 28 }, { wch: 12 }, { wch: 12 }, { wch: 12 }];
+      wsSummary["!cols"] = [{ wch: 28 }, { wch: 28 }, { wch: 12 }, { wch: 12 }, { wch: 12 }];
       XLSX.utils.book_append_sheet(wb, wsSummary, "Summary");
 
       const wsReadings = XLSX.utils.aoa_to_sheet([
-        ["Recorded at", ...METRICS.map(m => m.label), "Battery (V)"],
-        ...readings.map(r => [
-          format(new Date(r.recorded_at), "dd MMM yyyy HH:mm"),
-          ...METRICS.map(m => (r[m.key as keyof Reading] as number | null) ?? ""),
-          r.battery_v ?? "",
-        ]),
+        ["Device", "Zone", "Recorded at", ...METRICS.map(m => m.label), "Battery (V)"],
+        ...groups.flatMap(g =>
+          g.readings.map(r => [
+            deviceLabel(g.sensor),
+            zoneName(g.sensor.zone_id),
+            format(new Date(r.recorded_at), "dd MMM yyyy HH:mm"),
+            ...METRICS.map(m => (r[m.key as keyof Reading] as number | null) ?? ""),
+            r.battery_v ?? "",
+          ])
+        ),
       ]);
-      wsReadings["!cols"] = [{ wch: 20 }, ...METRICS.map(() => ({ wch: 14 })), { wch: 12 }];
+      wsReadings["!cols"] = [{ wch: 22 }, { wch: 18 }, { wch: 20 }, ...METRICS.map(() => ({ wch: 14 })), { wch: 12 }];
       XLSX.utils.book_append_sheet(wb, wsReadings, "Readings");
 
       const xlsxArray = XLSX.write(wb, { bookType: "xlsx", type: "array" });
@@ -210,18 +280,19 @@ export default function ReportsPage() {
 
       const report: Generated = {
         id: crypto.randomUUID(),
-        name: `${range.label} report — ${selected.name}`,
+        name: `${range.label} report — ${scopeLabel}`,
         type: range.label,
+        scope: scopeLabel,
         date: format(new Date(), "yyyy-MM-dd HH:mm"),
-        rows: readings.length,
+        rows: all.length,
         pdfUrl,
         pdfName: `${baseName}.pdf`,
         xlsxUrl,
         xlsxName: `${baseName}.xlsx`,
       };
       setReports(prev => [report, ...prev]);
-      setPreview({ report, readings, summary });
-      toast({ title: "Report generated", description: `${readings.length} readings ready as PDF or Excel` });
+      setPreview({ report, groups, scope: scopeLabel, start: range.start, end: range.end });
+      toast({ title: "Report generated", description: `${all.length} readings across ${groups.length} device(s)` });
     } catch (e: any) {
       toast({ title: "Failed to generate report", description: e.message, variant: "destructive" });
     } finally {
@@ -235,7 +306,7 @@ export default function ReportsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="font-display text-2xl font-bold">Reports</h1>
-        <p className="text-muted-foreground">Generate PDF sensor reports for {currentOrg?.name}</p>
+        <p className="text-muted-foreground">Generate sensor reports by zone or device for {currentOrg?.name}</p>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -276,13 +347,22 @@ export default function ReportsPage() {
           ) : (
             <>
               <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+                <Select value={zoneId} onValueChange={setZoneId}>
+                  <SelectTrigger className="w-full sm:w-[200px]"><SelectValue placeholder="Select zone" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All zones</SelectItem>
+                    {zones.map(z => <SelectItem key={z.id} value={z.id}>{z.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+
                 <Select value={sensorId} onValueChange={setSensorId}>
                   <SelectTrigger className="w-full sm:w-[240px]"><SelectValue placeholder="Select device" /></SelectTrigger>
                   <SelectContent>
-                    {sensors.map(s => (
-                      <SelectItem key={s.id} value={s.id}>
-                        {s.name}{s.device_id != null ? ` (#${s.device_id})` : ""}
-                      </SelectItem>
+                    <SelectItem value="all">
+                      {zoneId === "all" ? "All devices" : "All devices in zone"}
+                    </SelectItem>
+                    {zoneSensors.map(s => (
+                      <SelectItem key={s.id} value={s.id}>{deviceLabel(s)}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -347,13 +427,13 @@ export default function ReportsPage() {
                   </div>
                 )}
 
-                <Button onClick={generate} disabled={generating || !sensorId} className="w-full sm:w-auto">
+                <Button onClick={generate} disabled={generating || !targets.length} className="w-full sm:w-auto">
                   {generating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
                   Generate Report
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">
-                Range: {format(range.start, "dd MMM yyyy HH:mm")} — {format(range.end, "dd MMM yyyy HH:mm")}
+                {scopeLabel} · {targets.length} device{targets.length === 1 ? "" : "s"} · Range: {format(range.start, "dd MMM yyyy HH:mm")} — {format(range.end, "dd MMM yyyy HH:mm")}
               </p>
             </>
           )}
@@ -371,6 +451,7 @@ export default function ReportsPage() {
                 <TableRow>
                   <TableHead>Report name</TableHead>
                   <TableHead>Type</TableHead>
+                  <TableHead>Scope</TableHead>
                   <TableHead>Generated</TableHead>
                   <TableHead>Readings</TableHead>
                   <TableHead></TableHead>
@@ -381,6 +462,7 @@ export default function ReportsPage() {
                   <TableRow key={r.id}>
                     <TableCell className="font-medium">{r.name}</TableCell>
                     <TableCell>{r.type}</TableCell>
+                    <TableCell>{r.scope}</TableCell>
                     <TableCell>{r.date}</TableCell>
                     <TableCell>{r.rows}</TableCell>
                     <TableCell>
@@ -426,66 +508,68 @@ export default function ReportsPage() {
                   <h2 className="text-xl font-bold text-slate-900 sm:text-2xl">{preview.report.type} Sensor Report</h2>
                   <div className="mt-2 space-y-1 text-sm text-slate-600">
                     <p><span className="font-medium">Organisation:</span> {currentOrg?.name ?? "-"}</p>
-                    <p><span className="font-medium">Device:</span> {selected?.name}{selected?.device_id != null ? ` (#${selected.device_id})` : ""}</p>
-                    <p><span className="font-medium">Period:</span> {format(preview.readings[0]?.recorded_at ? new Date(preview.readings[0].recorded_at) : range.start, "dd MMM yyyy HH:mm")} — {format(preview.readings[preview.readings.length - 1]?.recorded_at ? new Date(preview.readings[preview.readings.length - 1].recorded_at) : range.end, "dd MMM yyyy HH:mm")}</p>
-                    <p><span className="font-medium">Readings:</span> {preview.readings.length} · Generated {format(new Date(), "dd MMM yyyy HH:mm")}</p>
+                    <p><span className="font-medium">Scope:</span> {preview.scope}</p>
+                    <p><span className="font-medium">Period:</span> {format(preview.start, "dd MMM yyyy HH:mm")} — {format(preview.end, "dd MMM yyyy HH:mm")}</p>
+                    <p><span className="font-medium">Devices:</span> {preview.groups.length} · <span className="font-medium">Readings:</span> {preview.report.rows} · Generated {preview.report.date}</p>
                   </div>
                 </div>
 
-                <div className="mb-6">
-                  <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">Summary</h3>
-                  <div className="overflow-x-auto rounded-md border">
-                    <table className="min-w-full divide-y divide-slate-200 text-sm">
-                      <thead className="bg-emerald-900">
-                        <tr>
-                          {["Metric", "Last", "Min", "Max", "Average"].map(h => (
-                            <th key={h} className="px-3 py-2 text-left font-medium text-white">{h}</th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-200 bg-white">
-                        {preview.summary.map((s, i) => (
-                          <tr key={i} className={i % 2 === 1 ? "bg-slate-50" : ""}>
-                            <td className="px-3 py-2 font-medium">{s.label}</td>
-                            <td className="px-3 py-2">{s.last}</td>
-                            <td className="px-3 py-2">{s.min}</td>
-                            <td className="px-3 py-2">{s.max}</td>
-                            <td className="px-3 py-2">{s.avg}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
+                {preview.groups.map(g => (
+                  <div key={g.sensor.id} className="mb-8">
+                    <h3 className="mb-3 text-base font-semibold text-slate-900">
+                      {deviceLabel(g.sensor)} <span className="text-sm font-normal text-slate-500">— {zoneName(g.sensor.zone_id)}</span>
+                    </h3>
 
-                <div>
-                  <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">Readings</h3>
-                  <div className="overflow-x-auto rounded-md border">
-                    <table className="min-w-full divide-y divide-slate-200 text-xs sm:text-sm">
-                      <thead className="bg-emerald-900">
-                        <tr>
-                          <th className="sticky top-0 px-3 py-2 text-left font-medium text-white">Recorded at</th>
-                          {METRICS.map(m => (
-                            <th key={m.key} className="sticky top-0 px-3 py-2 text-left font-medium text-white">{m.label}</th>
-                          ))}
-                          <th className="sticky top-0 px-3 py-2 text-left font-medium text-white">Battery (V)</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-200 bg-white">
-                        {preview.readings.map((r, i) => (
-                          <tr key={r.id ?? i} className={i % 2 === 1 ? "bg-slate-50" : ""}>
-                            <td className="whitespace-nowrap px-3 py-2">{format(new Date(r.recorded_at), "dd MMM HH:mm")}</td>
-                            {METRICS.map(m => {
-                              const v = r[m.key as keyof Reading] as number | null;
-                              return <td key={m.key} className="whitespace-nowrap px-3 py-2">{v == null ? "—" : String(v)}</td>;
-                            })}
-                            <td className="px-3 py-2">{r.battery_v == null ? "—" : String(r.battery_v)}</td>
+                    <div className="mb-4 overflow-x-auto rounded-md border">
+                      <table className="min-w-full divide-y divide-slate-200 text-sm">
+                        <thead className="bg-emerald-900">
+                          <tr>
+                            {["Metric", "Last", "Min", "Max", "Average"].map(h => (
+                              <th key={h} className="px-3 py-2 text-left font-medium text-white">{h}</th>
+                            ))}
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody className="divide-y divide-slate-200 bg-white">
+                          {g.summary.map((s, i) => (
+                            <tr key={i} className={i % 2 === 1 ? "bg-slate-50" : ""}>
+                              <td className="px-3 py-2 font-medium">{s.label}</td>
+                              <td className="px-3 py-2">{s.last}</td>
+                              <td className="px-3 py-2">{s.min}</td>
+                              <td className="px-3 py-2">{s.max}</td>
+                              <td className="px-3 py-2">{s.avg}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <div className="overflow-x-auto rounded-md border">
+                      <table className="min-w-full divide-y divide-slate-200 text-xs sm:text-sm">
+                        <thead className="bg-emerald-900">
+                          <tr>
+                            <th className="px-3 py-2 text-left font-medium text-white">Recorded at</th>
+                            {METRICS.map(m => (
+                              <th key={m.key} className="px-3 py-2 text-left font-medium text-white">{m.label}</th>
+                            ))}
+                            <th className="px-3 py-2 text-left font-medium text-white">Battery (V)</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-200 bg-white">
+                          {g.readings.map((r, i) => (
+                            <tr key={r.id ?? i} className={i % 2 === 1 ? "bg-slate-50" : ""}>
+                              <td className="whitespace-nowrap px-3 py-2">{format(new Date(r.recorded_at), "dd MMM HH:mm")}</td>
+                              {METRICS.map(m => {
+                                const v = r[m.key as keyof Reading] as number | null;
+                                return <td key={m.key} className="whitespace-nowrap px-3 py-2">{v == null ? "—" : String(v)}</td>;
+                              })}
+                              <td className="px-3 py-2">{r.battery_v == null ? "—" : String(r.battery_v)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
-                </div>
+                ))}
               </div>
             </div>
           </CardContent>
