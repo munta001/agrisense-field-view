@@ -6,6 +6,8 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  isMasterAdmin: boolean;
+  masterAdminLoading: boolean;
   signOut: () => Promise<void>;
 }
 
@@ -13,6 +15,8 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   session: null,
   loading: true,
+  isMasterAdmin: false,
+  masterAdminLoading: true,
   signOut: async () => {},
 });
 
