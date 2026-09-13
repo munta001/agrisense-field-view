@@ -39,7 +39,7 @@ Deno.serve(async (req) => {
     if (action === "list_users") {
       const [{ data: list }, { data: roles }, { data: profiles }, { data: orgs }] = await Promise.all([
         admin.auth.admin.listUsers({ page: 1, perPage: 1000 }),
-        admin.from("user_roles").select("user_id, org_id, role"),
+        admin.from("user_roles").select("user_id, org_id, role, is_active"),
         admin.from("profiles").select("user_id, full_name"),
         admin.from("organizations").select("id, name").order("name"),
       ]);
@@ -51,6 +51,7 @@ Deno.serve(async (req) => {
             org_id: x.org_id,
             org_name: orgs?.find((o) => o.id === x.org_id)?.name ?? null,
             role: x.role,
+            is_active: (x as { is_active?: boolean }).is_active !== false,
           }))
           .sort((a, b) => (a.org_name ?? "").localeCompare(b.org_name ?? ""));
         const p = (profiles ?? []).find((x) => x.user_id === u.id);
@@ -150,6 +151,19 @@ Deno.serve(async (req) => {
 
       await admin.from("user_roles").delete().eq("user_id", userId).eq("org_id", orgId);
       const { error } = await admin.from("user_roles").insert({ user_id: userId, org_id: orgId, role });
+      if (error) return json({ error: error.message }, 400);
+      return json({ success: true });
+    }
+
+    if (action === "set_membership_active") {
+      const userId = String(body.user_id);
+      const orgId = String(body.org_id ?? "");
+      if (!orgId) return json({ error: "Choose an organisation" }, 400);
+      const { error } = await admin
+        .from("user_roles")
+        .update({ is_active: Boolean(body.active) })
+        .eq("user_id", userId)
+        .eq("org_id", orgId);
       if (error) return json({ error: error.message }, 400);
       return json({ success: true });
     }

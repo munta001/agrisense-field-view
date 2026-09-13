@@ -19,7 +19,7 @@ import { Loader2, Plus, Settings2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
-type Membership = { org_id: string; org_name: string | null; role: string };
+type Membership = { org_id: string; org_name: string | null; role: string; is_active: boolean };
 
 type PlatformUser = {
   user_id: string;
@@ -92,6 +92,21 @@ export default function MasterAdminUsersPage() {
     load(editing.user_id);
   };
 
+  const toggleMembershipActive = async (m: Membership) => {
+    if (!editing) return;
+    setBusy(true);
+    const ok = await call({
+      action: "set_membership_active",
+      user_id: editing.user_id,
+      org_id: m.org_id,
+      active: !m.is_active,
+    });
+    setBusy(false);
+    if (!ok) return;
+    toast.success(m.is_active ? `Deactivated in ${m.org_name}` : `Reactivated in ${m.org_name}`);
+    load(editing.user_id);
+  };
+
   const removeMembership = async (m: Membership) => {
     if (!editing) return;
     setBusy(true);
@@ -161,7 +176,11 @@ export default function MasterAdminUsersPage() {
                         {u.memberships.length ? (
                           <div className="flex flex-wrap gap-1.5">
                             {u.memberships.map(m => (
-                              <Badge key={m.org_id} variant="secondary" className="font-normal">
+                              <Badge
+                                key={m.org_id}
+                                variant={m.is_active ? "secondary" : "outline"}
+                                className={m.is_active ? "font-normal" : "font-normal text-muted-foreground line-through"}
+                              >
                                 {m.org_name} · {m.role}
                               </Badge>
                             ))}
@@ -188,7 +207,7 @@ export default function MasterAdminUsersPage() {
                             variant={u.is_active ? "destructive" : "secondary"}
                             onClick={() => toggleActive(u)}
                           >
-                            {u.is_active ? "Deactivate" : "Activate"}
+                            {u.is_active ? "Deactivate everywhere" : "Activate"}
                           </Button>
                         </div>
                       </TableCell>
@@ -225,6 +244,14 @@ export default function MasterAdminUsersPage() {
                           <SelectItem value="viewer">Viewer</SelectItem>
                         </SelectContent>
                       </Select>
+                      <Button
+                        size="sm"
+                        variant={m.is_active ? "destructive" : "secondary"}
+                        disabled={busy}
+                        onClick={() => toggleMembershipActive(m)}
+                      >
+                        {m.is_active ? "Deactivate" : "Activate"}
+                      </Button>
                       <Button size="icon" variant="ghost" disabled={busy} onClick={() => removeMembership(m)}>
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
