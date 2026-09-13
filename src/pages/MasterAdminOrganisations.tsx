@@ -35,10 +35,6 @@ export default function MasterAdminOrganisationsPage() {
   const { isMasterAdmin } = useAuth();
   const [orgs, setOrgs] = useState<Org[]>([]);
   const [loading, setLoading] = useState(true);
-  const [open, setOpen] = useState(false);
-  const [name, setName] = useState("");
-  const [slug, setSlug] = useState("");
-  const [saving, setSaving] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -50,24 +46,6 @@ export default function MasterAdminOrganisationsPage() {
   useEffect(() => {
     if (isMasterAdmin) load();
   }, [isMasterAdmin]);
-
-  const createOrg = async () => {
-    if (!name.trim()) return toast.error("Enter an organisation name");
-    setSaving(true);
-    const { data, error } = await supabase.functions.invoke("master-admin-manage", {
-      body: { action: "create_org", name, slug },
-    });
-    setSaving(false);
-    if (error || (data as any)?.error) {
-      toast.error((data as any)?.error || error?.message || "Could not create organisation");
-      return;
-    }
-    toast.success("Organisation created");
-    setName("");
-    setSlug("");
-    setOpen(false);
-    load();
-  };
 
   return (
     <MasterAdminLayout>
