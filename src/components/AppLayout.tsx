@@ -6,7 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Leaf, Loader2 } from "lucide-react";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
-  const { currentOrg, loading } = useOrg();
+  const { currentOrg, loading, deactivated } = useOrg();
   const { isMasterAdmin, masterAdminLoading } = useAuth();
 
   if (loading || masterAdminLoading) {

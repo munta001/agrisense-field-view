@@ -70,7 +70,7 @@ export function OrgProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <OrgContext.Provider value={{ orgs, currentOrg, currentRole, setCurrentOrg: handleSetOrg, loading, refetchOrgs: fetchOrgs }}>
+    <OrgContext.Provider value={{ orgs, currentOrg, currentRole, setCurrentOrg: handleSetOrg, loading, deactivated, refetchOrgs: fetchOrgs }}>
       {children}
     </OrgContext.Provider>
   );
