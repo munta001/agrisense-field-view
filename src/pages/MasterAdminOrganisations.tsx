@@ -16,6 +16,7 @@ type Org = {
   id: string;
   name: string;
   slug: string;
+  logo_url: string | null;
   created_at: string;
   sensor_count: number;
   active_sensor_count: number;
@@ -76,7 +77,16 @@ export default function MasterAdminOrganisationsPage() {
                 <TableBody>
                   {orgs.map(o => (
                     <TableRow key={o.id}>
-                      <TableCell className="font-medium">{o.name}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          {o.logo_url ? (
+                            <img src={o.logo_url} alt={`${o.name} logo`} className="h-7 w-7 rounded object-cover" />
+                          ) : (
+                            <div className="flex h-7 w-7 items-center justify-center rounded bg-muted"><Building2 className="h-4 w-4 text-muted-foreground" /></div>
+                          )}
+                          <span className="font-medium">{o.name}</span>
+                        </div>
+                      </TableCell>
                       <TableCell>{o.users.length}</TableCell>
                       <TableCell>
                         {o.sensor_count} <Badge variant="outline" className="ml-1">{o.active_sensor_count} active</Badge>
