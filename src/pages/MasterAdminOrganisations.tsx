@@ -1,20 +1,15 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { MasterAdminLayout } from "@/components/MasterAdminLayout";
 import { formatBytes } from "@/pages/MasterAdmin";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
-} from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Loader2 } from "lucide-react";
-import { toast } from "sonner";
+import { Plus, Building2 } from "lucide-react";
 import { format } from "date-fns";
 
 type Org = {
@@ -54,30 +49,9 @@ export default function MasterAdminOrganisationsPage() {
           <h1 className="font-display text-2xl font-bold text-foreground">Organisations</h1>
           <p className="text-muted-foreground">Create organisations and review their usage</p>
         </div>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button className="w-full sm:w-auto"><Plus className="mr-2 h-4 w-4" /> New organisation</Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader><DialogTitle>Create organisation</DialogTitle></DialogHeader>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="org-name">Name</Label>
-                <Input id="org-name" value={name} onChange={e => setName(e.target.value)} placeholder="Green Valley Farm" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="org-slug">Short code (optional)</Label>
-                <Input id="org-slug" value={slug} onChange={e => setSlug(e.target.value)} placeholder="green-valley-farm" />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-              <Button onClick={createOrg} disabled={saving}>
-                {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Create
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <Button className="w-full sm:w-auto" asChild>
+          <Link to="/master-admin/organisations/new"><Plus className="mr-2 h-4 w-4" /> New organisation</Link>
+        </Button>
       </div>
 
       <Card className="glass-card">
