@@ -32,6 +32,7 @@ type OrgOverview = {
   reading_count: number;
   storage_bytes: number;
   storage_files: number;
+  readings_bytes?: number;
   users: OrgUser[];
 };
 
@@ -139,7 +140,9 @@ export default function MasterAdminPage() {
                 <Badge variant="secondary">{org.sensor_count} devices ({org.active_sensor_count} active)</Badge>
                 <Badge variant="secondary">{org.zone_count} zones</Badge>
                 <Badge variant="secondary">{org.reading_count} readings</Badge>
-                <Badge variant="outline">{formatBytes(Number(org.storage_bytes || 0))} · {org.storage_files} files</Badge>
+                <Badge variant="outline" title={`Files + ${Number(org.reading_count || 0).toLocaleString()} readings`}>
+                  {formatBytes(Number(org.storage_bytes || 0))} total · {org.storage_files} files + {(Number(org.reading_count || 0)).toLocaleString()} readings
+                </Badge>
               </div>
             </CardHeader>
             <CardContent>
