@@ -114,14 +114,15 @@ export default function MasterAdminCreateOrganisationPage() {
   const shownLogo = logoPreview ?? existingLogo;
 
   return (
-    <MasterAdminLayout
-      title={isEdit ? "Edit organisation" : "New organisation"}
-      subtitle={isEdit ? "Update the organisation's name, short code and logo" : "Create a new organisation for the platform"}
-    >
+    <MasterAdminLayout>
       <div className="max-w-xl">
         <Button variant="ghost" size="sm" className="mb-4 -ml-2" asChild>
           <Link to="/master-admin/organisations"><ArrowLeft className="mr-2 h-4 w-4" /> Back to organisations</Link>
         </Button>
+        <div className="mb-4">
+          <h1 className="font-display text-2xl font-bold text-foreground">{isEdit ? "Edit organisation" : "New organisation"}</h1>
+          <p className="text-muted-foreground">{isEdit ? "Update the organisation's name, short code and logo" : "Create a new organisation for the platform"}</p>
+        </div>
 
         <Card>
           <CardHeader>
