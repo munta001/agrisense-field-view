@@ -20,6 +20,7 @@ import ReportsPage from "@/pages/Reports";
 import AdminPage from "@/pages/Admin";
 import CropsPage from "@/pages/Crops";
 import ZonesPage from "@/pages/Zones";
+import MasterAdminPage from "@/pages/MasterAdmin";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -43,6 +44,7 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
               <Route path="/login" element={<LoginPage />} />
+              <Route path="/master-admin" element={<ProtectedRoute><MasterAdminPage /></ProtectedRoute>} />
               
               <Route path="/dashboard" element={<ProtectedAppRoute><DashboardPage /></ProtectedAppRoute>} />
               <Route path="/sensors" element={<ProtectedAppRoute><SensorsPage /></ProtectedAppRoute>} />

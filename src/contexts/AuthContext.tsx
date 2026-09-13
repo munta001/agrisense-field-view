@@ -6,6 +6,8 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  isMasterAdmin: boolean;
+  masterAdminLoading: boolean;
   signOut: () => Promise<void>;
 }
 
@@ -13,6 +15,8 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   session: null,
   loading: true,
+  isMasterAdmin: false,
+  masterAdminLoading: true,
   signOut: async () => {},
 });
 
@@ -22,6 +26,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isMasterAdmin, setIsMasterAdmin] = useState(false);
+  const [masterAdminLoading, setMasterAdminLoading] = useState(true);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -39,12 +45,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
+  useEffect(() => {
+    if (loading) return;
+    if (!user) { setIsMasterAdmin(false); setMasterAdminLoading(false); return; }
+    setMasterAdminLoading(true);
+    (supabase as any)
+      .from("platform_admins")
+      .select("user_id")
+      .eq("user_id", user.id)
+      .maybeSingle()
+      .then(({ data }: any) => {
+        setIsMasterAdmin(!!data);
+        setMasterAdminLoading(false);
+      });
+  }, [user?.id, loading]);
+
   const signOut = async () => {
     await supabase.auth.signOut();
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, isMasterAdmin, masterAdminLoading, signOut }}>
       {children}
     </AuthContext.Provider>
   );
