@@ -323,6 +323,7 @@ export type Database = {
           channel: string | null
           checksum_valid: boolean | null
           conductivity: number | null
+          dev_eui: string | null
           device_id: number | null
           id: string
           moisture_pct: number | null
@@ -344,6 +345,7 @@ export type Database = {
           channel?: string | null
           checksum_valid?: boolean | null
           conductivity?: number | null
+          dev_eui?: string | null
           device_id?: number | null
           id?: string
           moisture_pct?: number | null
@@ -365,6 +367,7 @@ export type Database = {
           channel?: string | null
           checksum_valid?: boolean | null
           conductivity?: number | null
+          dev_eui?: string | null
           device_id?: number | null
           id?: string
           moisture_pct?: number | null
@@ -427,6 +430,7 @@ export type Database = {
       sensors: {
         Row: {
           created_at: string
+          dev_eui: string | null
           device_id: number | null
           id: string
           ip_address: string | null
@@ -446,6 +450,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          dev_eui?: string | null
           device_id?: number | null
           id?: string
           ip_address?: string | null
@@ -465,6 +470,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          dev_eui?: string | null
           device_id?: number | null
           id?: string
           ip_address?: string | null
@@ -612,6 +618,27 @@ export type Database = {
         }
         Returns: boolean
       }
+      insert_sensor_reading: {
+        Args: {
+          p_battery_v: number
+          p_channel: string
+          p_checksum_valid: boolean
+          p_conductivity: number
+          p_dev_eui: string
+          p_device_id: number
+          p_moisture_pct: number
+          p_nitrogen: number
+          p_packet_type: number
+          p_ph: number
+          p_phosphorus: number
+          p_potassium: number
+          p_report_cycle_s: number
+          p_salinity: number
+          p_serial_number: number
+          p_temperature_c: number
+        }
+        Returns: Json
+      }
       is_org_member: {
         Args: { _org_id: string; _user_id: string }
         Returns: boolean
@@ -634,12 +661,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -663,11 +690,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -688,11 +715,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -713,11 +740,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -730,11 +757,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
