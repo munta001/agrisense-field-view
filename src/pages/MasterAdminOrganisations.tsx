@@ -121,7 +121,12 @@ export default function MasterAdminOrganisationsPage() {
                       </TableCell>
                       <TableCell>{o.zone_count}</TableCell>
                       <TableCell>{o.reading_count}</TableCell>
-                      <TableCell>{formatBytes(Number(o.storage_bytes || 0))} · {o.storage_files} files</TableCell>
+                      <TableCell>
+                        {formatBytes(Number(o.storage_bytes || 0))}
+                        <span className="block text-xs text-muted-foreground">
+                          {o.storage_files} files + {(Number(o.reading_count || 0)).toLocaleString()} readings ({formatBytes(Number(o.readings_bytes || 0))})
+                        </span>
+                      </TableCell>
                       <TableCell className="text-muted-foreground">{format(new Date(o.created_at), "dd MMM yyyy")}</TableCell>
                       <TableCell>
                         {o.is_active
