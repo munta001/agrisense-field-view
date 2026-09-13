@@ -45,7 +45,14 @@ Deno.serve(async (req) => {
       ]);
 
       const users = (list?.users ?? []).map((u) => {
-        const r = (roles ?? []).find((x) => x.user_id === u.id);
+        const memberships = (roles ?? [])
+          .filter((x) => x.user_id === u.id)
+          .map((x) => ({
+            org_id: x.org_id,
+            org_name: orgs?.find((o) => o.id === x.org_id)?.name ?? null,
+            role: x.role,
+          }))
+          .sort((a, b) => (a.org_name ?? "").localeCompare(b.org_name ?? ""));
         const p = (profiles ?? []).find((x) => x.user_id === u.id);
         const bannedUntil = (u as unknown as { banned_until?: string }).banned_until;
         return {
@@ -54,9 +61,7 @@ Deno.serve(async (req) => {
           full_name: p?.full_name ?? null,
           created_at: u.created_at,
           last_sign_in_at: u.last_sign_in_at ?? null,
-          org_id: r?.org_id ?? null,
-          org_name: orgs?.find((o) => o.id === r?.org_id)?.name ?? null,
-          role: r?.role ?? null,
+          memberships,
           is_active: !bannedUntil || new Date(bannedUntil).getTime() <= Date.now(),
         };
       });
@@ -80,16 +85,24 @@ Deno.serve(async (req) => {
       return json({ organization: data });
     }
 
-    if (action === "set_user_org") {
+    if (action === "set_membership") {
       const userId = String(body.user_id);
-      const orgId = body.org_id ? String(body.org_id) : null;
+      const orgId = String(body.org_id ?? "");
       const role = String(body.role ?? "viewer");
+      if (!orgId) return json({ error: "Choose an organisation" }, 400);
 
-      await admin.from("user_roles").delete().eq("user_id", userId);
-      if (orgId) {
-        const { error } = await admin.from("user_roles").insert({ user_id: userId, org_id: orgId, role });
-        if (error) return json({ error: error.message }, 400);
-      }
+      await admin.from("user_roles").delete().eq("user_id", userId).eq("org_id", orgId);
+      const { error } = await admin.from("user_roles").insert({ user_id: userId, org_id: orgId, role });
+      if (error) return json({ error: error.message }, 400);
+      return json({ success: true });
+    }
+
+    if (action === "remove_membership") {
+      const userId = String(body.user_id);
+      const orgId = String(body.org_id ?? "");
+      if (!orgId) return json({ error: "Choose an organisation" }, 400);
+      const { error } = await admin.from("user_roles").delete().eq("user_id", userId).eq("org_id", orgId);
+      if (error) return json({ error: error.message }, 400);
       return json({ success: true });
     }
 

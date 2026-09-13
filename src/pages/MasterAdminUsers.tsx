@@ -15,9 +15,11 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Loader2, Settings2 } from "lucide-react";
+import { Loader2, Plus, Settings2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+
+type Membership = { org_id: string; org_name: string | null; role: string };
 
 type PlatformUser = {
   user_id: string;
@@ -25,15 +27,11 @@ type PlatformUser = {
   full_name: string | null;
   created_at: string;
   last_sign_in_at: string | null;
-  org_id: string | null;
-  org_name: string | null;
-  role: string | null;
+  memberships: Membership[];
   is_active: boolean;
 };
 
 type Org = { id: string; name: string };
-
-const NONE = "__none__";
 
 export default function MasterAdminUsersPage() {
   const { isMasterAdmin } = useAuth();
@@ -42,20 +40,27 @@ export default function MasterAdminUsersPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<PlatformUser | null>(null);
-  const [orgId, setOrgId] = useState<string>(NONE);
-  const [role, setRole] = useState("viewer");
-  const [saving, setSaving] = useState(false);
+  const [newOrgId, setNewOrgId] = useState("");
+  const [newRole, setNewRole] = useState("viewer");
+  const [busy, setBusy] = useState(false);
 
-  const load = async () => {
-    setLoading(true);
-    const { data, error } = await supabase.functions.invoke("master-admin-manage", {
-      body: { action: "list_users" },
-    });
+  const call = async (body: Record<string, unknown>) => {
+    const { data, error } = await supabase.functions.invoke("master-admin-manage", { body });
     if (error || (data as any)?.error) {
-      toast.error((data as any)?.error || error?.message || "Could not load users");
-    } else {
-      setUsers((data as any).users || []);
-      setOrgs((data as any).organizations || []);
+      toast.error((data as any)?.error || error?.message || "Something went wrong");
+      return null;
+    }
+    return data as any;
+  };
+
+  const load = async (keepEditingId?: string) => {
+    setLoading(true);
+    const data = await call({ action: "list_users" });
+    if (data) {
+      const list: PlatformUser[] = data.users || [];
+      setUsers(list);
+      setOrgs(data.organizations || []);
+      if (keepEditingId) setEditing(list.find(u => u.user_id === keepEditingId) ?? null);
     }
     setLoading(false);
   };
@@ -64,36 +69,42 @@ export default function MasterAdminUsersPage() {
     if (isMasterAdmin) load();
   }, [isMasterAdmin]);
 
-  const openEdit = (u: PlatformUser) => {
-    setEditing(u);
-    setOrgId(u.org_id ?? NONE);
-    setRole(u.role ?? "viewer");
+  const addMembership = async () => {
+    if (!editing) return;
+    if (!newOrgId) return toast.error("Choose an organisation");
+    setBusy(true);
+    const ok = await call({ action: "set_membership", user_id: editing.user_id, org_id: newOrgId, role: newRole });
+    setBusy(false);
+    if (!ok) return;
+    toast.success("Organisation assigned");
+    setNewOrgId("");
+    setNewRole("viewer");
+    load(editing.user_id);
   };
 
-  const saveOrg = async () => {
+  const changeRole = async (m: Membership, role: string) => {
     if (!editing) return;
-    setSaving(true);
-    const { data, error } = await supabase.functions.invoke("master-admin-manage", {
-      body: { action: "set_user_org", user_id: editing.user_id, org_id: orgId === NONE ? null : orgId, role },
-    });
-    setSaving(false);
-    if (error || (data as any)?.error) {
-      toast.error((data as any)?.error || error?.message || "Could not update user");
-      return;
-    }
-    toast.success("User updated");
-    setEditing(null);
-    load();
+    setBusy(true);
+    const ok = await call({ action: "set_membership", user_id: editing.user_id, org_id: m.org_id, role });
+    setBusy(false);
+    if (!ok) return;
+    toast.success("Role updated");
+    load(editing.user_id);
+  };
+
+  const removeMembership = async (m: Membership) => {
+    if (!editing) return;
+    setBusy(true);
+    const ok = await call({ action: "remove_membership", user_id: editing.user_id, org_id: m.org_id });
+    setBusy(false);
+    if (!ok) return;
+    toast.success("Removed from organisation");
+    load(editing.user_id);
   };
 
   const toggleActive = async (u: PlatformUser) => {
-    const { data, error } = await supabase.functions.invoke("master-admin-manage", {
-      body: { action: "set_user_active", user_id: u.user_id, active: !u.is_active },
-    });
-    if (error || (data as any)?.error) {
-      toast.error((data as any)?.error || error?.message || "Could not update user");
-      return;
-    }
+    const ok = await call({ action: "set_user_active", user_id: u.user_id, active: !u.is_active });
+    if (!ok) return;
     toast.success(u.is_active ? "User deactivated" : "User reactivated");
     load();
   };
@@ -103,15 +114,17 @@ export default function MasterAdminUsersPage() {
     ? users.filter(u =>
         (u.email || "").toLowerCase().includes(q) ||
         (u.full_name || "").toLowerCase().includes(q) ||
-        (u.org_name || "").toLowerCase().includes(q))
+        u.memberships.some(m => (m.org_name || "").toLowerCase().includes(q)))
     : users;
+
+  const availableOrgs = orgs.filter(o => !editing?.memberships.some(m => m.org_id === o.id));
 
   return (
     <MasterAdminLayout>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="font-display text-2xl font-bold text-foreground">Users</h1>
-          <p className="text-muted-foreground">Every account on the platform</p>
+          <p className="text-muted-foreground">Every account on the platform — a user can belong to several organisations</p>
         </div>
         <Input
           placeholder="Search name, email or organisation…"
@@ -133,8 +146,7 @@ export default function MasterAdminUsersPage() {
                   <TableRow>
                     <TableHead>Name</TableHead>
                     <TableHead>Email</TableHead>
-                    <TableHead>Organisation</TableHead>
-                    <TableHead>Role</TableHead>
+                    <TableHead>Organisations &amp; roles</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Last sign-in</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
@@ -145,8 +157,19 @@ export default function MasterAdminUsersPage() {
                     <TableRow key={u.user_id}>
                       <TableCell className="font-medium">{u.full_name || "—"}</TableCell>
                       <TableCell className="text-muted-foreground">{u.email || "—"}</TableCell>
-                      <TableCell>{u.org_name || <span className="text-muted-foreground">Unassigned</span>}</TableCell>
-                      <TableCell>{u.role ? <Badge variant="secondary">{u.role}</Badge> : "—"}</TableCell>
+                      <TableCell>
+                        {u.memberships.length ? (
+                          <div className="flex flex-wrap gap-1.5">
+                            {u.memberships.map(m => (
+                              <Badge key={m.org_id} variant="secondary" className="font-normal">
+                                {m.org_name} · {m.role}
+                              </Badge>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground">Unassigned</span>
+                        )}
+                      </TableCell>
                       <TableCell>
                         <Badge variant={u.is_active ? "default" : "destructive"}>
                           {u.is_active ? "Active" : "Inactive"}
@@ -157,8 +180,8 @@ export default function MasterAdminUsersPage() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
-                          <Button size="sm" variant="outline" onClick={() => openEdit(u)}>
-                            <Settings2 className="mr-1 h-3.5 w-3.5" /> Organisation
+                          <Button size="sm" variant="outline" onClick={() => setEditing(u)}>
+                            <Settings2 className="mr-1 h-3.5 w-3.5" /> Organisations
                           </Button>
                           <Button
                             size="sm"
@@ -172,7 +195,7 @@ export default function MasterAdminUsersPage() {
                     </TableRow>
                   ))}
                   {!filtered.length && (
-                    <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground">No users found</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground">No users found</TableCell></TableRow>
                   )}
                 </TableBody>
               </Table>
@@ -183,36 +206,62 @@ export default function MasterAdminUsersPage() {
 
       <Dialog open={!!editing} onOpenChange={o => !o && setEditing(null)}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Assign organisation</DialogTitle></DialogHeader>
-          <div className="space-y-4">
+          <DialogHeader><DialogTitle>Organisations &amp; roles</DialogTitle></DialogHeader>
+          <div className="space-y-5">
             <p className="text-sm text-muted-foreground">{editing?.email}</p>
+
             <div className="space-y-2">
-              <Label>Organisation</Label>
-              <Select value={orgId} onValueChange={setOrgId}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={NONE}>Unassigned</SelectItem>
-                  {orgs.map(o => <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <Label>Current memberships</Label>
+              {editing?.memberships.length ? (
+                <div className="space-y-2">
+                  {editing.memberships.map(m => (
+                    <div key={m.org_id} className="flex items-center gap-2 rounded-md border p-2">
+                      <span className="flex-1 truncate text-sm font-medium">{m.org_name}</span>
+                      <Select value={m.role} onValueChange={v => changeRole(m, v)} disabled={busy}>
+                        <SelectTrigger className="w-[130px]"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="admin">Admin</SelectItem>
+                          <SelectItem value="operator">Operator</SelectItem>
+                          <SelectItem value="viewer">Viewer</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Button size="icon" variant="ghost" disabled={busy} onClick={() => removeMembership(m)}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">Not assigned to any organisation yet.</p>
+              )}
             </div>
-            <div className="space-y-2">
-              <Label>Role</Label>
-              <Select value={role} onValueChange={setRole} disabled={orgId === NONE}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="operator">Operator</SelectItem>
-                  <SelectItem value="viewer">Viewer</SelectItem>
-                </SelectContent>
-              </Select>
+
+            <div className="space-y-2 border-t pt-4">
+              <Label>Add to an organisation</Label>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Select value={newOrgId} onValueChange={setNewOrgId}>
+                  <SelectTrigger className="flex-1"><SelectValue placeholder="Choose organisation" /></SelectTrigger>
+                  <SelectContent>
+                    {availableOrgs.map(o => <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>)}
+                    {!availableOrgs.length && <SelectItem value="none" disabled>No other organisations</SelectItem>}
+                  </SelectContent>
+                </Select>
+                <Select value={newRole} onValueChange={setNewRole}>
+                  <SelectTrigger className="sm:w-[140px]"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem value="operator">Operator</SelectItem>
+                    <SelectItem value="viewer">Viewer</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button onClick={addMembership} disabled={busy || !newOrgId}>
+                  {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                </Button>
+              </div>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditing(null)}>Cancel</Button>
-            <Button onClick={saveOrg} disabled={saving}>
-              {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Save
-            </Button>
+            <Button variant="outline" onClick={() => setEditing(null)}>Close</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
