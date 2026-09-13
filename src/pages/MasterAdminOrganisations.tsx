@@ -17,6 +17,7 @@ type Org = {
   name: string;
   slug: string;
   logo_url: string | null;
+  is_active: boolean;
   created_at: string;
   sensor_count: number;
   active_sensor_count: number;
@@ -32,11 +33,30 @@ export default function MasterAdminOrganisationsPage() {
   const [orgs, setOrgs] = useState<Org[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const [togglingId, setTogglingId] = useState<string | null>(null);
+
   const load = async () => {
     setLoading(true);
     const { data } = await (supabase as any).rpc("master_admin_overview");
     setOrgs((data?.organizations as Org[]) || []);
     setLoading(false);
+  };
+
+  const toggleActive = async (org: Org) => {
+    setTogglingId(org.id);
+    try {
+      const { data, error } = await supabase.functions.invoke("master-admin-manage", {
+        body: { action: "set_org_active", org_id: org.id, active: !org.is_active },
+      });
+      if (error) throw new Error(error.message);
+      if (data?.error) throw new Error(data.error);
+      toast.success(org.is_active ? `${org.name} deactivated` : `${org.name} activated`);
+      await load();
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setTogglingId(null);
+    }
   };
 
   useEffect(() => {
