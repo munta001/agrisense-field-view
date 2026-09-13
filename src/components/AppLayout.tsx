@@ -1,18 +1,23 @@
+import { Navigate } from "react-router-dom";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { useOrg } from "@/contexts/OrgContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { Leaf, Loader2 } from "lucide-react";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { currentOrg, loading } = useOrg();
+  const { isMasterAdmin, masterAdminLoading } = useAuth();
 
-  if (loading) {
+  if (loading || masterAdminLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
+
+  if (isMasterAdmin) return <Navigate to="/master-admin" replace />;
 
   if (!currentOrg) {
     return (
