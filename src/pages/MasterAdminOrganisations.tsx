@@ -9,7 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Building2 } from "lucide-react";
+import { Plus, Building2, Pencil, Power, PowerOff, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { format } from "date-fns";
 
 type Org = {
@@ -92,11 +93,13 @@ export default function MasterAdminOrganisationsPage() {
                     <TableHead>Readings</TableHead>
                     <TableHead>Storage</TableHead>
                     <TableHead>Created</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {orgs.map(o => (
-                    <TableRow key={o.id}>
+                    <TableRow key={o.id} className={!o.is_active ? "opacity-60" : undefined}>
                       <TableCell>
                         <div className="flex items-center gap-2">
                           {o.logo_url ? (
@@ -104,7 +107,10 @@ export default function MasterAdminOrganisationsPage() {
                           ) : (
                             <div className="flex h-7 w-7 items-center justify-center rounded bg-muted"><Building2 className="h-4 w-4 text-muted-foreground" /></div>
                           )}
-                          <span className="font-medium">{o.name}</span>
+                          <div>
+                            <span className="font-medium">{o.name}</span>
+                            <p className="text-xs text-muted-foreground">{o.slug}</p>
+                          </div>
                         </div>
                       </TableCell>
                       <TableCell>{o.users.length}</TableCell>
@@ -115,10 +121,33 @@ export default function MasterAdminOrganisationsPage() {
                       <TableCell>{o.reading_count}</TableCell>
                       <TableCell>{formatBytes(Number(o.storage_bytes || 0))} · {o.storage_files} files</TableCell>
                       <TableCell className="text-muted-foreground">{format(new Date(o.created_at), "dd MMM yyyy")}</TableCell>
+                      <TableCell>
+                        {o.is_active
+                          ? <Badge className="border-emerald-500/30 bg-emerald-500/15 text-emerald-400">Active</Badge>
+                          : <Badge variant="outline" className="border-destructive/40 text-destructive">Inactive</Badge>}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button variant="outline" size="sm" asChild>
+                            <Link to={`/master-admin/organisations/${o.id}/edit`}><Pencil className="mr-1 h-3.5 w-3.5" /> Edit</Link>
+                          </Button>
+                          <Button
+                            variant={o.is_active ? "destructive" : "outline"}
+                            size="sm"
+                            disabled={togglingId === o.id}
+                            onClick={() => toggleActive(o)}
+                          >
+                            {togglingId === o.id
+                              ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
+                              : o.is_active ? <PowerOff className="mr-1 h-3.5 w-3.5" /> : <Power className="mr-1 h-3.5 w-3.5" />}
+                            {o.is_active ? "Deactivate" : "Activate"}
+                          </Button>
+                        </div>
+                      </TableCell>
                     </TableRow>
                   ))}
                   {!orgs.length && (
-                    <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground">No organisations yet</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground">No organisations yet</TableCell></TableRow>
                   )}
                 </TableBody>
               </Table>
