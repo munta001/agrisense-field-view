@@ -24,6 +24,7 @@ import MasterAdminPage from "@/pages/MasterAdmin";
 import MasterAdminOrganisationsPage from "@/pages/MasterAdminOrganisations";
 import MasterAdminCreateOrganisationPage from "@/pages/MasterAdminCreateOrganisation";
 import MasterAdminUsersPage from "@/pages/MasterAdminUsers";
+import MasterAdminAdminsPage from "@/pages/MasterAdminAdmins";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -52,6 +53,7 @@ const App = () => (
               <Route path="/master-admin/organisations/new" element={<ProtectedRoute><MasterAdminCreateOrganisationPage /></ProtectedRoute>} />
               <Route path="/master-admin/organisations/:id/edit" element={<ProtectedRoute><MasterAdminCreateOrganisationPage /></ProtectedRoute>} />
               <Route path="/master-admin/users" element={<ProtectedRoute><MasterAdminUsersPage /></ProtectedRoute>} />
+              <Route path="/master-admin/admins" element={<ProtectedRoute><MasterAdminAdminsPage /></ProtectedRoute>} />
               
               <Route path="/dashboard" element={<ProtectedAppRoute><DashboardPage /></ProtectedAppRoute>} />
               <Route path="/sensors" element={<ProtectedAppRoute><SensorsPage /></ProtectedAppRoute>} />

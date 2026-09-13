@@ -177,6 +177,112 @@ Deno.serve(async (req) => {
       return json({ success: true });
     }
 
+    if (action === "list_master_admins") {
+      const [{ data: admins }, { data: list }, { data: profiles }, { data: roles }, { data: orgs }] =
+        await Promise.all([
+          admin.from("platform_admins").select("user_id, created_at"),
+          admin.auth.admin.listUsers({ page: 1, perPage: 1000 }),
+          admin.from("profiles").select("user_id, full_name"),
+          admin.from("user_roles").select("user_id, org_id, role"),
+          admin.from("organizations").select("id, name"),
+        ]);
+
+      const result = (admins ?? []).map((a) => {
+        const u = (list?.users ?? []).find((x) => x.id === a.user_id);
+        const p = (profiles ?? []).find((x) => x.user_id === a.user_id);
+        const bannedUntil = (u as unknown as { banned_until?: string } | undefined)?.banned_until;
+        return {
+          user_id: a.user_id,
+          granted_at: a.created_at,
+          email: u?.email ?? null,
+          full_name: p?.full_name ?? null,
+          created_at: u?.created_at ?? null,
+          last_sign_in_at: u?.last_sign_in_at ?? null,
+          email_confirmed_at: (u as unknown as { email_confirmed_at?: string } | undefined)?.email_confirmed_at ?? null,
+          provider: (u?.app_metadata as { provider?: string } | undefined)?.provider ?? "email",
+          is_active: !bannedUntil || new Date(bannedUntil).getTime() <= Date.now(),
+          is_self: a.user_id === caller.id,
+          memberships: (roles ?? [])
+            .filter((r) => r.user_id === a.user_id)
+            .map((r) => ({
+              org_id: r.org_id,
+              org_name: orgs?.find((o) => o.id === r.org_id)?.name ?? null,
+              role: r.role,
+            })),
+        };
+      });
+
+      result.sort((a, b) => (a.email ?? "").localeCompare(b.email ?? ""));
+      return json({ admins: result });
+    }
+
+    if (action === "create_master_admin") {
+      const email = String(body.email ?? "").trim().toLowerCase();
+      const fullName = String(body.full_name ?? "").trim();
+      const password = String(body.password ?? "");
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return json({ error: "Enter a valid email address" }, 400);
+      if (password && password.length < 6) return json({ error: "Password must be at least 6 characters" }, 400);
+
+      const { data: list } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
+      let user = (list?.users ?? []).find((u) => (u.email ?? "").toLowerCase() === email);
+      let emailed = false;
+
+      if (!user) {
+        if (password) {
+          const { data: created, error } = await admin.auth.admin.createUser({
+            email,
+            password,
+            email_confirm: true,
+            user_metadata: fullName ? { full_name: fullName } : undefined,
+          });
+          if (error) return json({ error: error.message }, 400);
+          user = created.user!;
+        } else {
+          const { data: invited, error } = await admin.auth.admin.inviteUserByEmail(email, {
+            data: fullName ? { full_name: fullName } : undefined,
+          });
+          if (error) return json({ error: error.message }, 400);
+          user = invited.user!;
+          emailed = true;
+        }
+      }
+
+      const { data: already } = await admin
+        .from("platform_admins")
+        .select("user_id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (already) return json({ error: "This person is already a master admin" }, 400);
+
+      const { error: insErr } = await admin.from("platform_admins").insert({ user_id: user.id });
+      if (insErr) return json({ error: insErr.message }, 400);
+
+      if (fullName) {
+        await admin.from("profiles").upsert(
+          { user_id: user.id, full_name: fullName },
+          { onConflict: "user_id" },
+        );
+      }
+
+      // Notify the new master admin by email (invite already contains a link)
+      if (!emailed) {
+        const { error: mailErr } = await admin.auth.resetPasswordForEmail(email);
+        if (!mailErr) emailed = true;
+        else console.error("Notification email failed:", mailErr.message);
+      }
+
+      return json({ success: true, user_id: user.id, emailed });
+    }
+
+    if (action === "remove_master_admin") {
+      const userId = String(body.user_id ?? "");
+      if (!userId) return json({ error: "User is required" }, 400);
+      if (userId === caller.id) return json({ error: "You cannot remove your own master admin access" }, 400);
+      const { error } = await admin.from("platform_admins").delete().eq("user_id", userId);
+      if (error) return json({ error: error.message }, 400);
+      return json({ success: true });
+    }
+
     if (action === "set_user_active") {
       const userId = String(body.user_id);
       const active = Boolean(body.active);

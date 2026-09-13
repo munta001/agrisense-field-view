@@ -10,6 +10,7 @@ const links = [
   { to: "/master-admin", label: "Overview", end: true },
   { to: "/master-admin/organisations", label: "Organisations" },
   { to: "/master-admin/users", label: "Users" },
+  { to: "/master-admin/admins", label: "Master admins" },
 ];
 
 export function MasterAdminLayout({ children }: { children: ReactNode }) {
