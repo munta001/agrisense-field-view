@@ -290,6 +290,21 @@ export type Database = {
         }
         Relationships: []
       }
+      platform_admins: {
+        Row: {
+          created_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -639,10 +654,12 @@ export type Database = {
         }
         Returns: Json
       }
+      is_master_admin: { Args: { _user_id: string }; Returns: boolean }
       is_org_member: {
         Args: { _org_id: string; _user_id: string }
         Returns: boolean
       }
+      master_admin_overview: { Args: never; Returns: Json }
     }
     Enums: {
       app_role: "admin" | "operator" | "viewer"
