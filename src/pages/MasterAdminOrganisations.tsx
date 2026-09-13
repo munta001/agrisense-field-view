@@ -26,6 +26,8 @@ type Org = {
   reading_count: number;
   storage_bytes: number;
   storage_files: number;
+  readings_bytes?: number;
+  reading_count?: number;
   users: unknown[];
 };
 
