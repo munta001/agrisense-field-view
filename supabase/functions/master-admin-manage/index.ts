@@ -85,16 +85,24 @@ Deno.serve(async (req) => {
       return json({ organization: data });
     }
 
-    if (action === "set_user_org") {
+    if (action === "set_membership") {
       const userId = String(body.user_id);
-      const orgId = body.org_id ? String(body.org_id) : null;
+      const orgId = String(body.org_id ?? "");
       const role = String(body.role ?? "viewer");
+      if (!orgId) return json({ error: "Choose an organisation" }, 400);
 
-      await admin.from("user_roles").delete().eq("user_id", userId);
-      if (orgId) {
-        const { error } = await admin.from("user_roles").insert({ user_id: userId, org_id: orgId, role });
-        if (error) return json({ error: error.message }, 400);
-      }
+      await admin.from("user_roles").delete().eq("user_id", userId).eq("org_id", orgId);
+      const { error } = await admin.from("user_roles").insert({ user_id: userId, org_id: orgId, role });
+      if (error) return json({ error: error.message }, 400);
+      return json({ success: true });
+    }
+
+    if (action === "remove_membership") {
+      const userId = String(body.user_id);
+      const orgId = String(body.org_id ?? "");
+      if (!orgId) return json({ error: "Choose an organisation" }, 400);
+      const { error } = await admin.from("user_roles").delete().eq("user_id", userId).eq("org_id", orgId);
+      if (error) return json({ error: error.message }, 400);
       return json({ success: true });
     }
 
