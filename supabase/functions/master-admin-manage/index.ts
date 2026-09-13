@@ -109,6 +109,39 @@ Deno.serve(async (req) => {
       return json({ organization: data });
     }
 
+    if (action === "update_org") {
+      const orgId = String(body.org_id ?? "");
+      const name = String(body.name ?? "").trim();
+      const slug = String(body.slug ?? "").trim().toLowerCase();
+      if (!orgId) return json({ error: "Organisation is required" }, 400);
+      if (!name || !slug) return json({ error: "Name and slug are required" }, 400);
+
+      const { error } = await admin.from("organizations").update({ name, slug }).eq("id", orgId);
+      if (error) return json({ error: error.message }, 400);
+
+      // Optional logo upload
+      const logoBase64 = typeof body.logo_base64 === "string" ? body.logo_base64 : "";
+      if (logoBase64) {
+        const contentType = String(body.logo_content_type ?? "image/png");
+        const ext = contentType.includes("svg") ? "svg" : contentType.includes("jpeg") ? "jpg" : contentType.split("/")[1] ?? "png";
+        const path = `${orgId}/logo-${Date.now()}.${ext}`;
+        const bytes = Uint8Array.from(atob(logoBase64), (c) => c.charCodeAt(0));
+        const { error: upErr } = await admin.storage.from("zone-images").upload(path, bytes, { contentType, upsert: true });
+        if (upErr) return json({ error: upErr.message }, 400);
+        const { data: pub } = admin.storage.from("zone-images").getPublicUrl(path);
+        await admin.from("organizations").update({ logo_url: pub.publicUrl }).eq("id", orgId);
+      }
+      return json({ success: true });
+    }
+
+    if (action === "set_org_active") {
+      const orgId = String(body.org_id ?? "");
+      if (!orgId) return json({ error: "Organisation is required" }, 400);
+      const { error } = await admin.from("organizations").update({ is_active: Boolean(body.active) }).eq("id", orgId);
+      if (error) return json({ error: error.message }, 400);
+      return json({ success: true });
+    }
+
     if (action === "set_membership") {
       const userId = String(body.user_id);
       const orgId = String(body.org_id ?? "");
