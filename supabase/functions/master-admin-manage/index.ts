@@ -45,7 +45,14 @@ Deno.serve(async (req) => {
       ]);
 
       const users = (list?.users ?? []).map((u) => {
-        const r = (roles ?? []).find((x) => x.user_id === u.id);
+        const memberships = (roles ?? [])
+          .filter((x) => x.user_id === u.id)
+          .map((x) => ({
+            org_id: x.org_id,
+            org_name: orgs?.find((o) => o.id === x.org_id)?.name ?? null,
+            role: x.role,
+          }))
+          .sort((a, b) => (a.org_name ?? "").localeCompare(b.org_name ?? ""));
         const p = (profiles ?? []).find((x) => x.user_id === u.id);
         const bannedUntil = (u as unknown as { banned_until?: string }).banned_until;
         return {
@@ -54,9 +61,7 @@ Deno.serve(async (req) => {
           full_name: p?.full_name ?? null,
           created_at: u.created_at,
           last_sign_in_at: u.last_sign_in_at ?? null,
-          org_id: r?.org_id ?? null,
-          org_name: orgs?.find((o) => o.id === r?.org_id)?.name ?? null,
-          role: r?.role ?? null,
+          memberships,
           is_active: !bannedUntil || new Date(bannedUntil).getTime() <= Date.now(),
         };
       });
