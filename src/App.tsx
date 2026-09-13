@@ -50,6 +50,7 @@ const App = () => (
               <Route path="/master-admin" element={<ProtectedRoute><MasterAdminPage /></ProtectedRoute>} />
               <Route path="/master-admin/organisations" element={<ProtectedRoute><MasterAdminOrganisationsPage /></ProtectedRoute>} />
               <Route path="/master-admin/organisations/new" element={<ProtectedRoute><MasterAdminCreateOrganisationPage /></ProtectedRoute>} />
+              <Route path="/master-admin/organisations/:id/edit" element={<ProtectedRoute><MasterAdminCreateOrganisationPage /></ProtectedRoute>} />
               <Route path="/master-admin/users" element={<ProtectedRoute><MasterAdminUsersPage /></ProtectedRoute>} />
               
               <Route path="/dashboard" element={<ProtectedAppRoute><DashboardPage /></ProtectedAppRoute>} />

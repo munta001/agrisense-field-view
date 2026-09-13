@@ -12,6 +12,7 @@ interface OrgContextType {
   currentRole: UserRole | null;
   setCurrentOrg: (org: Organization) => void;
   loading: boolean;
+  deactivated: boolean;
   refetchOrgs: () => Promise<void>;
 }
 
@@ -21,6 +22,7 @@ const OrgContext = createContext<OrgContextType>({
   currentRole: null,
   setCurrentOrg: () => {},
   loading: true,
+  deactivated: false,
   refetchOrgs: async () => {},
 });
 
@@ -33,18 +35,22 @@ export function OrgProvider({ children }: { children: ReactNode }) {
   const [currentRole, setCurrentRole] = useState<UserRole | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const [deactivated, setDeactivated] = useState(false);
+
   const fetchOrgs = async () => {
     if (authLoading) { setLoading(true); return; }
-    if (!user) { setOrgs([]); setCurrentOrg(null); setCurrentRole(null); setLoading(false); return; }
+    if (!user) { setOrgs([]); setCurrentOrg(null); setCurrentRole(null); setDeactivated(false); setLoading(false); return; }
     setLoading(true);
     const { data: roles } = await supabase.from("user_roles").select("*").eq("user_id", user.id);
-    if (!roles?.length) { setOrgs([]); setCurrentOrg(null); setCurrentRole(null); setLoading(false); return; }
+    if (!roles?.length) { setOrgs([]); setCurrentOrg(null); setCurrentRole(null); setDeactivated(false); setLoading(false); return; }
     const orgIds = roles.map(r => r.org_id);
-    const { data: orgData } = await supabase.from("organizations").select("*").in("id", orgIds);
-    setOrgs(orgData || []);
+    const { data: allOrgs } = await supabase.from("organizations").select("*").in("id", orgIds);
+    const orgData = (allOrgs || []).filter((o: any) => o.is_active !== false);
+    setDeactivated(orgData.length === 0 && (allOrgs?.length ?? 0) > 0);
+    setOrgs(orgData);
     const savedOrgId = localStorage.getItem("agrisense_org_id");
-    const saved = orgData?.find(o => o.id === savedOrgId);
-    const selected = saved || orgData?.[0] || null;
+    const saved = orgData.find(o => o.id === savedOrgId);
+    const selected = saved || orgData[0] || null;
     setCurrentOrg(selected);
     if (selected) {
       const role = roles.find(r => r.org_id === selected.id) || null;
@@ -64,7 +70,7 @@ export function OrgProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <OrgContext.Provider value={{ orgs, currentOrg, currentRole, setCurrentOrg: handleSetOrg, loading, refetchOrgs: fetchOrgs }}>
+    <OrgContext.Provider value={{ orgs, currentOrg, currentRole, setCurrentOrg: handleSetOrg, loading, deactivated, refetchOrgs: fetchOrgs }}>
       {children}
     </OrgContext.Provider>
   );
