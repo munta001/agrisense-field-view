@@ -176,7 +176,11 @@ export default function MasterAdminUsersPage() {
                         {u.memberships.length ? (
                           <div className="flex flex-wrap gap-1.5">
                             {u.memberships.map(m => (
-                              <Badge key={m.org_id} variant="secondary" className="font-normal">
+                              <Badge
+                                key={m.org_id}
+                                variant={m.is_active ? "secondary" : "outline"}
+                                className={m.is_active ? "font-normal" : "font-normal text-muted-foreground line-through"}
+                              >
                                 {m.org_name} · {m.role}
                               </Badge>
                             ))}
@@ -203,7 +207,7 @@ export default function MasterAdminUsersPage() {
                             variant={u.is_active ? "destructive" : "secondary"}
                             onClick={() => toggleActive(u)}
                           >
-                            {u.is_active ? "Deactivate" : "Activate"}
+                            {u.is_active ? "Deactivate everywhere" : "Activate"}
                           </Button>
                         </div>
                       </TableCell>
@@ -240,6 +244,14 @@ export default function MasterAdminUsersPage() {
                           <SelectItem value="viewer">Viewer</SelectItem>
                         </SelectContent>
                       </Select>
+                      <Button
+                        size="sm"
+                        variant={m.is_active ? "destructive" : "secondary"}
+                        disabled={busy}
+                        onClick={() => toggleMembershipActive(m)}
+                      >
+                        {m.is_active ? "Deactivate" : "Activate"}
+                      </Button>
                       <Button size="icon" variant="ghost" disabled={busy} onClick={() => removeMembership(m)}>
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
