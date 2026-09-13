@@ -19,6 +19,20 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   if (isMasterAdmin) return <Navigate to="/master-admin" replace />;
 
+  if (deactivated) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background p-4">
+        <div className="text-center max-w-md space-y-4">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl gradient-primary shadow-lg">
+            <Leaf className="h-7 w-7 text-primary-foreground" />
+          </div>
+          <h1 className="font-display text-2xl font-bold text-foreground">Organisation Deactivated</h1>
+          <p className="text-muted-foreground">Your organisation has been deactivated. Please contact the platform administrator to restore access.</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!currentOrg) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background p-4">
