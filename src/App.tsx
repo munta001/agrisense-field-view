@@ -21,6 +21,8 @@ import AdminPage from "@/pages/Admin";
 import CropsPage from "@/pages/Crops";
 import ZonesPage from "@/pages/Zones";
 import MasterAdminPage from "@/pages/MasterAdmin";
+import MasterAdminOrganisationsPage from "@/pages/MasterAdminOrganisations";
+import MasterAdminUsersPage from "@/pages/MasterAdminUsers";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -45,6 +47,8 @@ const App = () => (
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/master-admin" element={<ProtectedRoute><MasterAdminPage /></ProtectedRoute>} />
+              <Route path="/master-admin/organisations" element={<ProtectedRoute><MasterAdminOrganisationsPage /></ProtectedRoute>} />
+              <Route path="/master-admin/users" element={<ProtectedRoute><MasterAdminUsersPage /></ProtectedRoute>} />
               
               <Route path="/dashboard" element={<ProtectedAppRoute><DashboardPage /></ProtectedAppRoute>} />
               <Route path="/sensors" element={<ProtectedAppRoute><SensorsPage /></ProtectedAppRoute>} />
