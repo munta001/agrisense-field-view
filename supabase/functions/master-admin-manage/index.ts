@@ -82,6 +82,30 @@ Deno.serve(async (req) => {
         .select()
         .single();
       if (error) return json({ error: error.message }, 400);
+
+      // Optional logo upload: base64-encoded image stored in the public zone-images bucket
+      const logoBase64 = body.logo_base64 ? String(body.logo_base64) : null;
+      if (logoBase64) {
+        try {
+          const contentType = String(body.logo_content_type ?? "image/png");
+          const ext = (contentType.split("/")[1] || "png").replace("jpeg", "jpg").replace(/[^a-z0-9]/g, "") || "png";
+          const bytes = Uint8Array.from(atob(logoBase64), (c) => c.charCodeAt(0));
+          const path = `${data.id}/logo-${Date.now()}.${ext}`;
+          const { error: upErr } = await admin.storage
+            .from("zone-images")
+            .upload(path, bytes, { contentType, upsert: true });
+          if (upErr) {
+            console.error("Logo upload failed:", upErr.message);
+          } else {
+            const { data: pub } = admin.storage.from("zone-images").getPublicUrl(path);
+            await admin.from("organizations").update({ logo_url: pub.publicUrl }).eq("id", data.id);
+            data.logo_url = pub.publicUrl;
+          }
+        } catch (e) {
+          console.error("Logo upload error:", e);
+        }
+      }
+
       return json({ organization: data });
     }
 

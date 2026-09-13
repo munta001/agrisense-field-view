@@ -1,26 +1,22 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { MasterAdminLayout } from "@/components/MasterAdminLayout";
 import { formatBytes } from "@/pages/MasterAdmin";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
-} from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Loader2 } from "lucide-react";
-import { toast } from "sonner";
+import { Plus, Building2 } from "lucide-react";
 import { format } from "date-fns";
 
 type Org = {
   id: string;
   name: string;
   slug: string;
+  logo_url: string | null;
   created_at: string;
   sensor_count: number;
   active_sensor_count: number;
@@ -35,10 +31,6 @@ export default function MasterAdminOrganisationsPage() {
   const { isMasterAdmin } = useAuth();
   const [orgs, setOrgs] = useState<Org[]>([]);
   const [loading, setLoading] = useState(true);
-  const [open, setOpen] = useState(false);
-  const [name, setName] = useState("");
-  const [slug, setSlug] = useState("");
-  const [saving, setSaving] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -51,24 +43,6 @@ export default function MasterAdminOrganisationsPage() {
     if (isMasterAdmin) load();
   }, [isMasterAdmin]);
 
-  const createOrg = async () => {
-    if (!name.trim()) return toast.error("Enter an organisation name");
-    setSaving(true);
-    const { data, error } = await supabase.functions.invoke("master-admin-manage", {
-      body: { action: "create_org", name, slug },
-    });
-    setSaving(false);
-    if (error || (data as any)?.error) {
-      toast.error((data as any)?.error || error?.message || "Could not create organisation");
-      return;
-    }
-    toast.success("Organisation created");
-    setName("");
-    setSlug("");
-    setOpen(false);
-    load();
-  };
-
   return (
     <MasterAdminLayout>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -76,30 +50,9 @@ export default function MasterAdminOrganisationsPage() {
           <h1 className="font-display text-2xl font-bold text-foreground">Organisations</h1>
           <p className="text-muted-foreground">Create organisations and review their usage</p>
         </div>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button className="w-full sm:w-auto"><Plus className="mr-2 h-4 w-4" /> New organisation</Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader><DialogTitle>Create organisation</DialogTitle></DialogHeader>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="org-name">Name</Label>
-                <Input id="org-name" value={name} onChange={e => setName(e.target.value)} placeholder="Green Valley Farm" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="org-slug">Short code (optional)</Label>
-                <Input id="org-slug" value={slug} onChange={e => setSlug(e.target.value)} placeholder="green-valley-farm" />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-              <Button onClick={createOrg} disabled={saving}>
-                {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Create
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <Button className="w-full sm:w-auto" asChild>
+          <Link to="/master-admin/organisations/new"><Plus className="mr-2 h-4 w-4" /> New organisation</Link>
+        </Button>
       </div>
 
       <Card className="glass-card">
@@ -124,7 +77,16 @@ export default function MasterAdminOrganisationsPage() {
                 <TableBody>
                   {orgs.map(o => (
                     <TableRow key={o.id}>
-                      <TableCell className="font-medium">{o.name}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          {o.logo_url ? (
+                            <img src={o.logo_url} alt={`${o.name} logo`} className="h-7 w-7 rounded object-cover" />
+                          ) : (
+                            <div className="flex h-7 w-7 items-center justify-center rounded bg-muted"><Building2 className="h-4 w-4 text-muted-foreground" /></div>
+                          )}
+                          <span className="font-medium">{o.name}</span>
+                        </div>
+                      </TableCell>
                       <TableCell>{o.users.length}</TableCell>
                       <TableCell>
                         {o.sensor_count} <Badge variant="outline" className="ml-1">{o.active_sensor_count} active</Badge>
