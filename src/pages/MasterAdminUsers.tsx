@@ -19,7 +19,7 @@ import { Loader2, Plus, Settings2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
-type Membership = { org_id: string; org_name: string | null; role: string };
+type Membership = { org_id: string; org_name: string | null; role: string; is_active: boolean };
 
 type PlatformUser = {
   user_id: string;
@@ -89,6 +89,21 @@ export default function MasterAdminUsersPage() {
     setBusy(false);
     if (!ok) return;
     toast.success("Role updated");
+    load(editing.user_id);
+  };
+
+  const toggleMembershipActive = async (m: Membership) => {
+    if (!editing) return;
+    setBusy(true);
+    const ok = await call({
+      action: "set_membership_active",
+      user_id: editing.user_id,
+      org_id: m.org_id,
+      active: !m.is_active,
+    });
+    setBusy(false);
+    if (!ok) return;
+    toast.success(m.is_active ? `Deactivated in ${m.org_name}` : `Reactivated in ${m.org_name}`);
     load(editing.user_id);
   };
 
