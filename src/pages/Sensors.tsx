@@ -86,6 +86,14 @@ export default function SensorsPage() {
 
   const handleAdd = async () => {
     if (!currentOrg || !form.name || !form.device_id) return;
+    if (sensors.length >= sensorLimit) {
+      toast({
+        title: "Device allowance reached",
+        description: `Your plan allows ${sensorLimit} device${sensorLimit === 1 ? "" : "s"}. Contact the platform administrator to increase it.`,
+        variant: "destructive",
+      });
+      return;
+    }
     const { error } = await supabase.from("sensors").insert({
       org_id: currentOrg.id,
       sensor_type_id: loraTypeId,
@@ -131,6 +139,10 @@ export default function SensorsPage() {
     setManageSensor(null);
     fetchAll();
   };
+
+  const sensorLimit = (currentOrg as any)?.sensor_limit ?? 0;
+  const remaining = Math.max(sensorLimit - sensors.length, 0);
+  const limitReached = sensors.length >= sensorLimit;
 
   const zoneName = (zoneId: string | null) => (zoneId ? zones.find(z => z.id === zoneId)?.name || "Unknown zone" : "No zone");
   const visible = showInactive ? sensors : sensors.filter(s => s.is_active);
