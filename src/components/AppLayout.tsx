@@ -1,11 +1,14 @@
 import { Navigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
+import { UserAccountMenu } from "@/components/UserAccountMenu";
 import { useOrg } from "@/contexts/OrgContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { Leaf, Loader2 } from "lucide-react";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
+  const { pathname } = useLocation();
   const { currentOrg, loading, deactivated } = useOrg();
   const { isMasterAdmin, masterAdminLoading } = useAuth();
 
@@ -47,15 +50,35 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     );
   }
 
+  const routeTitles: Record<string, string> = {
+    "/dashboard": "Dashboard",
+    "/sensors": "Sensors",
+    "/field-map": "Field Map",
+    "/data-entry": "Data Entry",
+    "/analytics": "Analytics",
+    "/alerts": "Alerts",
+    "/reports": "Reports",
+    "/crops": "Crops",
+    "/zones": "Zones",
+    "/admin": "Administration",
+    "/profile": "Profile",
+  };
+  const pageTitle = pathname.startsWith("/sensors/") ? "Sensor details" : routeTitles[pathname] || "AgriSense";
+
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full">
+      <div className="flex min-h-screen w-full bg-background">
         <AppSidebar />
-        <div className="flex-1 flex flex-col min-w-0">
-          <header className="h-14 flex items-center border-b bg-card/50 backdrop-blur-sm px-4 sticky top-0 z-10">
-            <SidebarTrigger className="mr-4" />
+        <div className="flex min-w-0 flex-1 flex-col">
+          <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-card px-4 shadow-sm sm:px-6">
+            <div className="flex min-w-0 items-center gap-3">
+              <SidebarTrigger />
+              <div className="hidden h-6 w-px bg-border sm:block" />
+              <p className="truncate font-display text-base font-semibold text-foreground sm:text-lg">{pageTitle}</p>
+            </div>
+            <UserAccountMenu />
           </header>
-          <main className="flex-1 p-6 overflow-auto">
+          <main className="flex-1 overflow-auto bg-muted/30 p-4 sm:p-6 lg:p-8">
             {children}
           </main>
         </div>

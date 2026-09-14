@@ -38,12 +38,12 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarContent>
         {/* Brand */}
-        <div className="flex items-center gap-2 px-4 py-5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg gradient-primary">
-            <Leaf className="h-5 w-5 text-primary-foreground" />
+        <div className="flex h-16 items-center gap-2.5 border-b border-sidebar-border px-4">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-sidebar-primary shadow-sm">
+            <Leaf className="h-5 w-5 text-sidebar-primary-foreground" />
           </div>
           {!collapsed && (
-            <span className="font-display text-lg font-bold text-sidebar-foreground">
+            <span className="font-display text-xl font-bold text-sidebar-foreground">
               AgriSense
             </span>
           )}
@@ -51,10 +51,13 @@ export function AppSidebar() {
 
         {/* Org Switcher */}
         {!collapsed && currentOrg && (
-          <div className="px-3 pb-2">
+          <div className="px-3 pb-1 pt-4">
             <DropdownMenu>
-              <DropdownMenuTrigger className="flex w-full items-center justify-between rounded-md bg-sidebar-accent px-3 py-2 text-sm text-sidebar-accent-foreground hover:bg-sidebar-accent/80 transition-colors">
-                <span className="truncate font-medium">{currentOrg.name}</span>
+              <DropdownMenuTrigger className="flex w-full items-center justify-between rounded-lg border border-sidebar-border bg-sidebar-accent/60 px-3 py-2.5 text-sm text-sidebar-accent-foreground transition-colors hover:bg-sidebar-accent">
+                <span className="min-w-0 text-left">
+                  <span className="block text-[10px] font-semibold uppercase text-sidebar-foreground/50">Organisation</span>
+                  <span className="mt-0.5 block truncate font-medium">{currentOrg.name}</span>
+                </span>
                 <ChevronDown className="h-4 w-4 opacity-60" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-56">
@@ -68,15 +71,15 @@ export function AppSidebar() {
           </div>
         )}
 
-        <SidebarGroup>
-          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+        <SidebarGroup className="px-3 pt-4">
+          <SidebarGroupLabel className="px-2 text-[10px] font-semibold uppercase text-sidebar-foreground/40">Workspace</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {mainItems.map(item => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    <NavLink to={item.url} end className="hover:bg-sidebar-accent/50" activeClassName="bg-sidebar-accent text-sidebar-primary font-medium">
-                      <item.icon className="mr-2 h-4 w-4" />
+                    <NavLink to={item.url} end className="rounded-lg text-sidebar-foreground/65 transition-colors hover:bg-sidebar-accent/70 hover:text-sidebar-foreground" activeClassName="bg-sidebar-accent text-sidebar-foreground font-medium shadow-sm">
+                      <item.icon className="mr-2 h-4 w-4 text-sidebar-primary" />
                       {!collapsed && <span>{item.title}</span>}
                     </NavLink>
                   </SidebarMenuButton>
@@ -87,15 +90,15 @@ export function AppSidebar() {
         </SidebarGroup>
 
         {currentRole?.role === "admin" && (
-          <SidebarGroup>
-            <SidebarGroupLabel>Administration</SidebarGroupLabel>
+          <SidebarGroup className="px-3">
+            <SidebarGroupLabel className="px-2 text-[10px] font-semibold uppercase text-sidebar-foreground/40">Administration</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {adminItems.map(item => (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild>
-                      <NavLink to={item.url} end className="hover:bg-sidebar-accent/50" activeClassName="bg-sidebar-accent text-sidebar-primary font-medium">
-                        <item.icon className="mr-2 h-4 w-4" />
+                      <NavLink to={item.url} end className="rounded-lg text-sidebar-foreground/65 transition-colors hover:bg-sidebar-accent/70 hover:text-sidebar-foreground" activeClassName="bg-sidebar-accent text-sidebar-foreground font-medium shadow-sm">
+                        <item.icon className="mr-2 h-4 w-4 text-sidebar-primary" />
                         {!collapsed && <span>{item.title}</span>}
                       </NavLink>
                     </SidebarMenuButton>
@@ -107,18 +110,18 @@ export function AppSidebar() {
         )}
       </SidebarContent>
 
-      <SidebarFooter>
+      <SidebarFooter className="border-t border-sidebar-border p-3">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton asChild>
-              <NavLink to="/profile" end className="hover:bg-sidebar-accent/50" activeClassName="bg-sidebar-accent text-sidebar-primary font-medium">
-                <UserRound className="mr-2 h-4 w-4" />
+              <NavLink to="/profile" end className="rounded-lg text-sidebar-foreground/65 hover:bg-sidebar-accent hover:text-sidebar-foreground" activeClassName="bg-sidebar-accent text-sidebar-foreground font-medium">
+                <UserRound className="mr-2 h-4 w-4 text-sidebar-primary" />
                 {!collapsed && <span>Profile</span>}
               </NavLink>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton onClick={signOut} className="text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/50">
+            <SidebarMenuButton onClick={signOut} className="rounded-lg text-sidebar-foreground/55 hover:bg-sidebar-accent hover:text-sidebar-foreground">
               <LogOut className="mr-2 h-4 w-4" />
               {!collapsed && <span>Sign Out</span>}
             </SidebarMenuButton>
