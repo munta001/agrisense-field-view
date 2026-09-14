@@ -6,11 +6,13 @@ import { UserAccountMenu } from "@/components/UserAccountMenu";
 import { useOrg } from "@/contexts/OrgContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { Leaf, Loader2 } from "lucide-react";
+import { useBranding } from "@/contexts/BrandingContext";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { pathname } = useLocation();
   const { currentOrg, loading, deactivated } = useOrg();
   const { isMasterAdmin, masterAdminLoading } = useAuth();
+  const { platform_name } = useBranding();
 
   if (loading || masterAdminLoading) {
     return (
@@ -63,7 +65,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     "/admin": "Administration",
     "/profile": "Profile",
   };
-  const pageTitle = pathname.startsWith("/sensors/") ? "Sensor details" : routeTitles[pathname] || "AgriSense";
+  const pageTitle = pathname.startsWith("/sensors/") ? "Sensor details" : routeTitles[pathname] || platform_name;
 
   return (
     <SidebarProvider>

@@ -1,5 +1,5 @@
 import {
-  LayoutDashboard, Activity, Map, FileInput, BarChart3, Bell, FileText, Settings, LogOut, Leaf, ChevronDown, Sprout, MapPin, UserRound,
+  LayoutDashboard, Activity, Map, FileInput, BarChart3, Bell, FileText, Settings, LogOut, ChevronDown, Sprout, MapPin, UserRound,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
@@ -11,6 +11,8 @@ import {
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { PlatformLogo } from "@/components/PlatformLogo";
+import { useBranding } from "@/contexts/BrandingContext";
 
 const mainItems = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
@@ -33,18 +35,17 @@ export function AppSidebar() {
   const collapsed = state === "collapsed";
   const { signOut } = useAuth();
   const { orgs, currentOrg, setCurrentOrg, currentRole } = useOrg();
+  const { platform_name } = useBranding();
 
   return (
     <Sidebar collapsible="icon">
       <SidebarContent>
         {/* Brand */}
         <div className="flex h-16 items-center gap-2.5 border-b border-sidebar-border px-4">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-sidebar-primary shadow-sm">
-            <Leaf className="h-5 w-5 text-sidebar-primary-foreground" />
-          </div>
+          <PlatformLogo className="h-9 w-9 rounded-lg bg-sidebar-primary p-2 shadow-sm" iconClassName="text-sidebar-primary-foreground" />
           {!collapsed && (
             <span className="font-display text-xl font-bold text-sidebar-foreground">
-              AgriSense
+              {platform_name}
             </span>
           )}
         </div>

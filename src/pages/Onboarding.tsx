@@ -6,8 +6,10 @@ import { useOrg } from "@/contexts/OrgContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Leaf, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { PlatformLogo } from "@/components/PlatformLogo";
+import { useBranding } from "@/contexts/BrandingContext";
 
 export default function OnboardingPage() {
   const [orgName, setOrgName] = useState("");
@@ -16,6 +18,7 @@ export default function OnboardingPage() {
   const { refetchOrgs } = useOrg();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { platform_name } = useBranding();
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,10 +44,8 @@ export default function OnboardingPage() {
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <div className="w-full max-w-md">
         <div className="mb-8 flex flex-col items-center">
-          <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl gradient-primary shadow-lg">
-            <Leaf className="h-7 w-7 text-primary-foreground" />
-          </div>
-          <h1 className="font-display text-3xl font-bold text-foreground">Welcome to AgriSense</h1>
+          <PlatformLogo className="mb-4 h-14 w-14 rounded-2xl gradient-primary p-3 shadow-lg" iconClassName="h-7 w-7 text-primary-foreground" />
+          <h1 className="font-display text-3xl font-bold text-foreground">Welcome to {platform_name}</h1>
           <p className="mt-1 text-muted-foreground">Create your organisation to get started</p>
         </div>
         <Card className="glass-card">
