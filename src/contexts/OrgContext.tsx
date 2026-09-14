@@ -41,7 +41,11 @@ export function OrgProvider({ children }: { children: ReactNode }) {
     if (authLoading) { setLoading(true); return; }
     if (!user) { setOrgs([]); setCurrentOrg(null); setCurrentRole(null); setDeactivated(false); setLoading(false); return; }
     setLoading(true);
-    const { data: allRoles } = await supabase.from("user_roles").select("*").eq("user_id", user.id);
+    const { data: allRoles } = await supabase
+      .from("user_roles")
+      .select("*")
+      .eq("user_id", user.id)
+      .not("org_id", "is", null);
     if (!allRoles?.length) { setOrgs([]); setCurrentOrg(null); setCurrentRole(null); setDeactivated(false); setLoading(false); return; }
     const roles = allRoles.filter((r: any) => r.is_active !== false);
     if (!roles.length) { setOrgs([]); setCurrentOrg(null); setCurrentRole(null); setDeactivated(true); setLoading(false); return; }
