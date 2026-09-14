@@ -2,12 +2,11 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { MasterAdminLayout } from "@/components/MasterAdminLayout";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Building2, Loader2, Upload, X } from "lucide-react";
+import { ArrowLeft, Building2, Check, Gauge, ImagePlus, Link2, Loader2, Save, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 
 function slugify(v: string) {
@@ -120,103 +119,173 @@ export default function MasterAdminCreateOrganisationPage() {
 
   return (
     <MasterAdminLayout>
-      <div className="max-w-xl">
-        <Button variant="ghost" size="sm" className="mb-4 -ml-2" asChild>
-          <Link to="/master-admin/organisations"><ArrowLeft className="mr-2 h-4 w-4" /> Back to organisations</Link>
+      <div className="mx-auto max-w-5xl">
+        <Button variant="ghost" size="sm" className="mb-5 -ml-2 text-muted-foreground" asChild>
+          <Link to="/master-admin/organisations"><ArrowLeft className="h-4 w-4" /> Organisations</Link>
         </Button>
-        <div className="mb-4">
-          <h1 className="font-display text-2xl font-bold text-foreground">{isEdit ? "Edit organisation" : "New organisation"}</h1>
-          <p className="text-muted-foreground">{isEdit ? "Update the organisation's name, short code and logo" : "Create a new organisation for the platform"}</p>
+
+        <div className="mb-7 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="mb-1 text-sm font-medium text-primary">Organisation settings</p>
+            <h1 className="font-display text-3xl font-bold text-foreground">{isEdit ? "Edit organisation" : "Create organisation"}</h1>
+            <p className="mt-1 text-sm text-muted-foreground">{isEdit ? "Manage identity, branding and device access." : "Set up the identity, branding and device access."}</p>
+          </div>
+          {!pageLoading && (
+            <div className="hidden items-center gap-2 text-sm text-muted-foreground sm:flex">
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-secondary text-primary"><Check className="h-3.5 w-3.5" /></span>
+              Changes apply immediately
+            </div>
+          )}
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Organisation details</CardTitle>
-            <CardDescription>The short code is used in links and must be unique.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-5">
-            {pageLoading ? (
-              <div className="space-y-4">
-                <Skeleton className="h-10 w-full" />
-                <Skeleton className="h-10 w-full" />
-                <Skeleton className="h-24 w-full" />
+        <div className="overflow-hidden rounded-lg border bg-card shadow-sm">
+          {pageLoading ? (
+            <div className="grid min-h-[480px] lg:grid-cols-[1fr_340px]">
+              <div className="space-y-7 p-6 sm:p-8">
+                <Skeleton className="h-8 w-48" />
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
               </div>
-            ) : (
-              <>
-                <div className="space-y-2">
-                  <Label htmlFor="org-name">Name</Label>
-                  <Input id="org-name" value={name} onChange={e => onNameChange(e.target.value)} placeholder="Green Valley Farm" />
-                </div>
+              <div className="space-y-6 border-t bg-muted/40 p-6 sm:p-8 lg:border-l lg:border-t-0">
+                <Skeleton className="h-8 w-32" />
+                <Skeleton className="h-40 w-full" />
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="grid lg:grid-cols-[1fr_340px]">
+                <section className="p-6 sm:p-8 lg:p-10" aria-labelledby="organisation-details-heading">
+                  <div className="mb-8">
+                    <h2 id="organisation-details-heading" className="font-display text-xl font-semibold text-foreground">Organisation details</h2>
+                    <p className="mt-1 text-sm text-muted-foreground">The name and short code identify this organisation across the platform.</p>
+                  </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="org-slug">Short code (slug)</Label>
-                  <Input
-                    id="org-slug"
-                    value={slug}
-                    onChange={e => { setSlugTouched(true); setSlug(slugify(e.target.value)); }}
-                    placeholder="green-valley-farm"
-                  />
-                  <p className="text-xs text-muted-foreground">Lowercase letters, numbers and dashes only.</p>
-                </div>
+                  <div className="space-y-7">
+                    <div className="space-y-2">
+                      <Label htmlFor="org-name" className="text-sm font-semibold">Organisation name</Label>
+                      <Input id="org-name" className="h-12 bg-background px-4" value={name} onChange={e => onNameChange(e.target.value)} placeholder="Green Valley Farm" />
+                    </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="org-sensor-limit">Sensor allowance (subscription)</Label>
-                  <Input
-                    id="org-sensor-limit"
-                    type="number"
-                    min={0}
-                    step={1}
-                    value={sensorLimit}
-                    onChange={e => setSensorLimit(e.target.value)}
-                    placeholder="10"
-                  />
-                  <p className="text-xs text-muted-foreground">Maximum number of devices this organisation can register. Only you can change this.</p>
-                </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="org-slug" className="text-sm font-semibold">Short code</Label>
+                      <div className="relative">
+                        <Link2 className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                          id="org-slug"
+                          className="h-12 bg-background pl-11"
+                          value={slug}
+                          onChange={e => { setSlugTouched(true); setSlug(slugify(e.target.value)); }}
+                          placeholder="green-valley-farm"
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground">Lowercase letters, numbers and dashes only. This value must be unique.</p>
+                    </div>
 
-                <div className="space-y-2">
-                  <Label>Logo</Label>
-                  {shownLogo ? (
-                    <div className="flex items-center gap-3">
-                      <img src={shownLogo} alt="Organisation logo preview" className="h-16 w-16 rounded-lg border object-cover" />
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between gap-3">
+                        <Label htmlFor="org-sensor-limit" className="text-sm font-semibold">Device allowance</Label>
+                        <span className="rounded-md bg-secondary px-2 py-1 text-xs font-semibold text-secondary-foreground">Subscription</span>
+                      </div>
+                      <div className="relative">
+                        <Gauge className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                          id="org-sensor-limit"
+                          className="h-12 bg-background pl-11"
+                          type="number"
+                          min={0}
+                          step={1}
+                          value={sensorLimit}
+                          onChange={e => setSensorLimit(e.target.value)}
+                          placeholder="10"
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground">Maximum number of active devices this organisation can register.</p>
+                    </div>
+                  </div>
+                </section>
+
+                <aside className="border-t bg-muted/40 p-6 sm:p-8 lg:border-l lg:border-t-0" aria-labelledby="organisation-logo-heading">
+                  <div className="mb-6">
+                    <h2 id="organisation-logo-heading" className="font-display text-xl font-semibold text-foreground">Brand logo</h2>
+                    <p className="mt-1 text-sm text-muted-foreground">Shown throughout the organisation workspace.</p>
+                  </div>
+
+                  <div className="rounded-lg border bg-card p-5">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="group relative h-40 w-full overflow-hidden rounded-lg border border-dashed bg-muted/50 p-0 hover:border-primary/50 hover:bg-secondary/50"
+                      onClick={() => fileRef.current?.click()}
+                      aria-label={shownLogo ? "Replace organisation logo" : "Upload organisation logo"}
+                    >
+                      {shownLogo ? (
+                        <img src={shownLogo} alt="Organisation logo preview" className="h-full w-full object-contain p-4" />
+                      ) : (
+                        <span className="flex flex-col items-center gap-2 text-muted-foreground">
+                          <span className="flex h-11 w-11 items-center justify-center rounded-full bg-secondary text-primary"><Building2 className="h-5 w-5" /></span>
+                          <span className="text-sm font-medium">Upload logo</span>
+                        </span>
+                      )}
+                      <span className="absolute bottom-3 right-3 flex h-9 w-9 items-center justify-center rounded-full border bg-card text-primary shadow-sm transition-transform group-hover:scale-105">
+                        <ImagePlus className="h-4 w-4" />
+                      </span>
+                    </Button>
+                    <input
+                      ref={fileRef}
+                      type="file"
+                      accept="image/png,image/jpeg"
+                      className="hidden"
+                      onChange={e => onLogoChange(e.target.files?.[0] ?? null)}
+                    />
+
+                    <div className="mt-4 flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">{logoPreview ? "New logo selected" : shownLogo ? "Current logo" : "No logo added"}</p>
+                        <p className="mt-0.5 text-xs text-muted-foreground">PNG or JPG, up to 5 MB</p>
+                      </div>
                       {logoPreview && (
-                        <Button type="button" variant="outline" size="sm" onClick={clearNewLogo}>
-                          <X className="mr-2 h-4 w-4" /> Remove new image
+                        <Button type="button" variant="ghost" size="icon" onClick={clearNewLogo} aria-label="Discard new logo">
+                          <X className="h-4 w-4" />
                         </Button>
                       )}
                     </div>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => fileRef.current?.click()}
-                      className="flex h-28 w-full flex-col items-center justify-center gap-2 rounded-lg border border-dashed text-sm text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground"
-                    >
-                      <Building2 className="h-6 w-6" />
-                      Click to upload a logo
-                    </button>
-                  )}
-                  <input
-                    ref={fileRef}
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={e => onLogoChange(e.target.files?.[0] ?? null)}
-                  />
-                  <p className="text-xs text-muted-foreground">PNG or JPG up to 5 MB.{isEdit && " Leave empty to keep the current logo."}</p>
-                </div>
 
-                <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
+                    <Button type="button" variant="outline" className="mt-5 w-full" onClick={() => fileRef.current?.click()}>
+                      <Upload className="h-4 w-4" /> {shownLogo ? "Replace logo" : "Choose logo"}
+                    </Button>
+                  </div>
+
+                  <div className="mt-6 border-t pt-5">
+                    <p className="text-xs font-semibold uppercase text-muted-foreground">Preview</p>
+                    <div className="mt-3 flex items-center gap-3">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-card">
+                        {shownLogo ? <img src={shownLogo} alt="" className="h-full w-full object-cover" /> : <Building2 className="h-4 w-4 text-muted-foreground" />}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-foreground">{name || "Organisation name"}</p>
+                        <p className="truncate text-xs text-muted-foreground">{slug || "short-code"}</p>
+                      </div>
+                    </div>
+                  </div>
+                </aside>
+              </div>
+
+              <div className="flex flex-col-reverse gap-3 border-t bg-muted/25 px-6 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-8">
+                <p className="hidden text-xs text-muted-foreground sm:block">Review the details before saving.</p>
+                <div className="flex flex-col-reverse gap-2 sm:flex-row">
                   <Button variant="outline" asChild>
                     <Link to="/master-admin/organisations">Cancel</Link>
                   </Button>
-                  <Button onClick={save} disabled={saving}>
-                    {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+                  <Button onClick={save} disabled={saving} className="min-w-36">
+                    {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                     {isEdit ? "Save changes" : "Create organisation"}
                   </Button>
                 </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
+              </div>
+            </>
+          )}
+        </div>
       </div>
     </MasterAdminLayout>
   );
