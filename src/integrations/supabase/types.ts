@@ -293,21 +293,6 @@ export type Database = {
         }
         Relationships: []
       }
-      platform_admins: {
-        Row: {
-          created_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -535,7 +520,7 @@ export type Database = {
           created_at: string
           id: string
           is_active: boolean
-          org_id: string
+          org_id: string | null
           role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
@@ -543,7 +528,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_active?: boolean
-          org_id: string
+          org_id?: string | null
           role?: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
@@ -551,7 +536,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_active?: boolean
-          org_id?: string
+          org_id?: string | null
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
         }
