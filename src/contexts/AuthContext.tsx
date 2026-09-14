@@ -50,9 +50,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!user) { setIsMasterAdmin(false); setMasterAdminLoading(false); return; }
     setMasterAdminLoading(true);
     (supabase as any)
-      .from("platform_admins")
-      .select("user_id")
+      .from("user_roles")
+      .select("id")
       .eq("user_id", user.id)
+      .eq("role", "master_admin")
+      .eq("is_active", true)
       .maybeSingle()
       .then(({ data }: any) => {
         setIsMasterAdmin(!!data);

@@ -27,9 +27,11 @@ Deno.serve(async (req) => {
     if (!caller) return json({ error: "Not authenticated" }, 401);
 
     const { data: isAdmin } = await admin
-      .from("platform_admins")
-      .select("user_id")
+      .from("user_roles")
+      .select("id")
       .eq("user_id", caller.id)
+      .eq("role", "master_admin")
+      .eq("is_active", true)
       .maybeSingle();
     if (!isAdmin) return json({ error: "Not authorised" }, 403);
 
@@ -39,7 +41,7 @@ Deno.serve(async (req) => {
     if (action === "list_users") {
       const [{ data: list }, { data: roles }, { data: profiles }, { data: orgs }] = await Promise.all([
         admin.auth.admin.listUsers({ page: 1, perPage: 1000 }),
-        admin.from("user_roles").select("user_id, org_id, role, is_active"),
+        admin.from("user_roles").select("user_id, org_id, role, is_active").not("org_id", "is", null),
         admin.from("profiles").select("user_id, full_name"),
         admin.from("organizations").select("id, name").order("name"),
       ]);
@@ -180,10 +182,10 @@ Deno.serve(async (req) => {
     if (action === "list_master_admins") {
       const [{ data: admins }, { data: list }, { data: profiles }, { data: roles }, { data: orgs }] =
         await Promise.all([
-          admin.from("platform_admins").select("user_id, created_at"),
+          admin.from("user_roles").select("user_id, created_at").eq("role", "master_admin"),
           admin.auth.admin.listUsers({ page: 1, perPage: 1000 }),
           admin.from("profiles").select("user_id, full_name"),
-          admin.from("user_roles").select("user_id, org_id, role"),
+          admin.from("user_roles").select("user_id, org_id, role").not("org_id", "is", null),
           admin.from("organizations").select("id, name"),
         ]);
 
@@ -248,13 +250,16 @@ Deno.serve(async (req) => {
       }
 
       const { data: already } = await admin
-        .from("platform_admins")
-        .select("user_id")
+        .from("user_roles")
+        .select("id")
         .eq("user_id", user.id)
+        .eq("role", "master_admin")
         .maybeSingle();
       if (already) return json({ error: "This person is already a master admin" }, 400);
 
-      const { error: insErr } = await admin.from("platform_admins").insert({ user_id: user.id });
+      const { error: insErr } = await admin
+        .from("user_roles")
+        .insert({ user_id: user.id, org_id: null, role: "master_admin" });
       if (insErr) return json({ error: insErr.message }, 400);
 
       if (fullName) {
@@ -278,7 +283,11 @@ Deno.serve(async (req) => {
       const userId = String(body.user_id ?? "");
       if (!userId) return json({ error: "User is required" }, 400);
       if (userId === caller.id) return json({ error: "You cannot remove your own master admin access" }, 400);
-      const { error } = await admin.from("platform_admins").delete().eq("user_id", userId);
+      const { error } = await admin
+        .from("user_roles")
+        .delete()
+        .eq("user_id", userId)
+        .eq("role", "master_admin");
       if (error) return json({ error: error.message }, 400);
       return json({ success: true });
     }

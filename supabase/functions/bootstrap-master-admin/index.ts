@@ -37,10 +37,18 @@ Deno.serve(async (req) => {
       await admin.auth.admin.updateUserById(userId, { password, email_confirm: true });
     }
 
-    const { error: insertErr } = await admin
-      .from("platform_admins")
-      .upsert({ user_id: userId }, { onConflict: "user_id" });
-    if (insertErr) throw insertErr;
+    const { data: existingRole } = await admin
+      .from("user_roles")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("role", "master_admin")
+      .maybeSingle();
+    if (!existingRole) {
+      const { error: insertErr } = await admin
+        .from("user_roles")
+        .insert({ user_id: userId, org_id: null, role: "master_admin" });
+      if (insertErr) throw insertErr;
+    }
 
     return new Response(JSON.stringify({ success: true, user_id: userId }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
