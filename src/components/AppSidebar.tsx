@@ -41,8 +41,8 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarContent>
         {/* Brand */}
-        <div className="flex h-16 items-center gap-2.5 border-b border-sidebar-border px-4">
-          <PlatformLogo className="h-9 w-9 rounded-lg bg-sidebar-primary p-2 shadow-sm" iconClassName="text-sidebar-primary-foreground" />
+        <div className="flex h-16 items-center gap-3 border-b border-sidebar-border px-4">
+          <PlatformLogo className="h-11 w-11 rounded-lg bg-sidebar-primary p-2 shadow-sm" iconClassName="h-6 w-6 text-sidebar-primary-foreground" />
           {!collapsed && (
             <span className="font-display text-xl font-bold text-sidebar-foreground">
               {platform_name}
@@ -54,17 +54,31 @@ export function AppSidebar() {
         {!collapsed && currentOrg && (
           <div className="px-3 pb-1 pt-4">
             <DropdownMenu>
-              <DropdownMenuTrigger className="flex w-full items-center justify-between rounded-lg border border-sidebar-border bg-sidebar-accent/60 px-3 py-2.5 text-sm text-sidebar-accent-foreground transition-colors hover:bg-sidebar-accent">
-                <span className="min-w-0 text-left">
+              <DropdownMenuTrigger className="flex w-full items-center gap-3 rounded-lg border border-sidebar-border bg-sidebar-accent/60 px-3 py-2.5 text-sm text-sidebar-accent-foreground transition-colors hover:bg-sidebar-accent">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-md border border-sidebar-border bg-sidebar-background">
+                  {currentOrg.logo_url ? (
+                    <img src={currentOrg.logo_url} alt={`${currentOrg.name} logo`} className="h-full w-full object-contain" />
+                  ) : (
+                    <Sprout className="h-5 w-5 text-sidebar-primary" />
+                  )}
+                </span>
+                <span className="min-w-0 flex-1 text-left">
                   <span className="block text-[10px] font-semibold uppercase text-sidebar-foreground/50">Organisation</span>
                   <span className="mt-0.5 block truncate font-medium">{currentOrg.name}</span>
                 </span>
-                <ChevronDown className="h-4 w-4 opacity-60" />
+                <ChevronDown className="h-4 w-4 shrink-0 opacity-60" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-56">
                 {orgs.map(org => (
-                  <DropdownMenuItem key={org.id} onClick={() => setCurrentOrg(org)}>
-                    {org.name}
+                  <DropdownMenuItem key={org.id} onClick={() => setCurrentOrg(org)} className="gap-2">
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded border bg-muted">
+                      {org.logo_url ? (
+                        <img src={org.logo_url} alt="" className="h-full w-full object-contain" />
+                      ) : (
+                        <Sprout className="h-3.5 w-3.5 text-muted-foreground" />
+                      )}
+                    </span>
+                    <span className="truncate">{org.name}</span>
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>
