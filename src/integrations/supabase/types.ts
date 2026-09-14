@@ -270,6 +270,7 @@ export type Database = {
           is_active: boolean
           logo_url: string | null
           name: string
+          sensor_limit: number
           slug: string
           updated_at: string
         }
@@ -279,6 +280,7 @@ export type Database = {
           is_active?: boolean
           logo_url?: string | null
           name: string
+          sensor_limit?: number
           slug: string
           updated_at?: string
         }
@@ -288,6 +290,7 @@ export type Database = {
           is_active?: boolean
           logo_url?: string | null
           name?: string
+          sensor_limit?: number
           slug?: string
           updated_at?: string
         }
