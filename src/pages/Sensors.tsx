@@ -270,18 +270,18 @@ export default function SensorsPage() {
         <div className={`rounded-lg border p-4 ${limitReached ? "border-destructive/40 bg-destructive/10" : "bg-card"}`}>
           <div>
             <p className="text-sm font-medium">
-              Device allowance — {sensors.length} of {sensorLimit} used
+              Device allowance — {activeCount} of {sensorLimit} used{inactiveCount ? ` (${inactiveCount} inactive)` : ""}
             </p>
             <p className="text-xs text-muted-foreground">
               {limitReached
-                ? "You have reached your subscription limit. Contact the platform administrator to add more devices."
-                : `You can still register ${remaining} more device${remaining === 1 ? "" : "s"} on your current subscription.`}
+                ? "You have reached your subscription limit. Deactivate a device or contact the platform administrator to add more."
+                : `You can still activate ${remaining} more device${remaining === 1 ? "" : "s"} on your current subscription.`}
             </p>
           </div>
           <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-muted">
             <div
               className={`h-full rounded-full ${limitReached ? "bg-destructive" : "bg-primary"}`}
-              style={{ width: `${sensorLimit ? Math.min(100, (sensors.length / sensorLimit) * 100) : 100}%` }}
+              style={{ width: `${sensorLimit ? Math.min(100, (activeCount / sensorLimit) * 100) : 100}%` }}
             />
           </div>
         </div>
