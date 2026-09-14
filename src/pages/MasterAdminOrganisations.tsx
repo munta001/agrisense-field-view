@@ -27,6 +27,7 @@ type Org = {
   storage_bytes: number;
   storage_files: number;
   readings_bytes?: number;
+  sensor_limit?: number;
   users: unknown[];
 };
 
@@ -116,7 +117,8 @@ export default function MasterAdminOrganisationsPage() {
                       </TableCell>
                       <TableCell>{o.users.length}</TableCell>
                       <TableCell>
-                        {o.sensor_count} <Badge variant="outline" className="ml-1">{o.active_sensor_count} active</Badge>
+                        {o.sensor_count} / {o.sensor_limit ?? 0}{" "}
+                        <Badge variant="outline" className="ml-1">{o.active_sensor_count} active</Badge>
                       </TableCell>
                       <TableCell>{o.zone_count}</TableCell>
                       <TableCell>{o.reading_count}</TableCell>

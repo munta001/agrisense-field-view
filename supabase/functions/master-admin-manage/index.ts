@@ -79,9 +79,12 @@ Deno.serve(async (req) => {
         String(body.slug ?? "").trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") ||
         name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
+      const rawLimit = Number(body.sensor_limit);
+      const sensorLimit = Number.isFinite(rawLimit) && rawLimit >= 0 ? Math.floor(rawLimit) : 10;
+
       const { data, error } = await admin
         .from("organizations")
-        .insert({ name, slug })
+        .insert({ name, slug, sensor_limit: sensorLimit })
         .select()
         .single();
       if (error) return json({ error: error.message }, 400);
@@ -119,7 +122,11 @@ Deno.serve(async (req) => {
       if (!orgId) return json({ error: "Organisation is required" }, 400);
       if (!name || !slug) return json({ error: "Name and slug are required" }, 400);
 
-      const { error } = await admin.from("organizations").update({ name, slug }).eq("id", orgId);
+      const updates: Record<string, unknown> = { name, slug };
+      const rawLimit = Number(body.sensor_limit);
+      if (Number.isFinite(rawLimit) && rawLimit >= 0) updates.sensor_limit = Math.floor(rawLimit);
+
+      const { error } = await admin.from("organizations").update(updates).eq("id", orgId);
       if (error) return json({ error: error.message }, 400);
 
       // Optional logo upload
