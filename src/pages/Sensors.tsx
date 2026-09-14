@@ -259,18 +259,15 @@ export default function SensorsPage() {
 
       {currentOrg && (
         <div className={`rounded-lg border p-4 ${limitReached ? "border-destructive/40 bg-destructive/10" : "bg-card"}`}>
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div>
-              <p className="text-sm font-medium">
-                Device allowance — {sensors.length} of {sensorLimit} used
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {limitReached
-                  ? "You have reached your subscription limit. Contact the platform administrator to add more devices."
-                  : `You can still register ${remaining} more device${remaining === 1 ? "" : "s"} on your current subscription.`}
-              </p>
-            </div>
-            <span className="text-xs text-muted-foreground">Set by the platform administrator</span>
+          <div>
+            <p className="text-sm font-medium">
+              Device allowance — {sensors.length} of {sensorLimit} used
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {limitReached
+                ? "You have reached your subscription limit. Contact the platform administrator to add more devices."
+                : `You can still register ${remaining} more device${remaining === 1 ? "" : "s"} on your current subscription.`}
+            </p>
           </div>
           <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-muted">
             <div
@@ -334,20 +331,22 @@ export default function SensorsPage() {
                     })}
                   </div>
 
-                  <div className="mt-3 -ml-2 flex flex-wrap items-center gap-1">
-                    {canEdit && (
-                      <Button variant="ghost" size="sm" className="h-7 text-xs"
-                        onClick={e => { e.stopPropagation(); setEditSensor(sensor); setEditZoneId(sensor.zone_id || "none"); }}>
-                        Change zone
-                      </Button>
-                    )}
-                    {isAdmin && (
-                      <Button variant="ghost" size="sm" className="h-7 text-xs"
-                        onClick={e => { e.stopPropagation(); setManageSensor(sensor); setManageName(sensor.name); setManageStatus(sensor.status === "inactive" ? "offline" : sensor.status); setManageActive(sensor.is_active); setConfirmDelete(false); }}>
-                        <Pencil className="mr-1 h-3 w-3" />Manage
-                      </Button>
-                    )}
-                  </div>
+                  {(canEdit || isAdmin) && (
+                    <div className="mt-4 flex items-center gap-2 border-t pt-3">
+                      {canEdit && (
+                        <Button variant="outline" size="sm" className="h-8 flex-1 gap-1.5 text-xs"
+                          onClick={e => { e.stopPropagation(); setEditSensor(sensor); setEditZoneId(sensor.zone_id || "none"); }}>
+                          <MapPin className="h-3.5 w-3.5" />Change zone
+                        </Button>
+                      )}
+                      {isAdmin && (
+                        <Button variant="outline" size="sm" className="h-8 flex-1 gap-1.5 text-xs"
+                          onClick={e => { e.stopPropagation(); setManageSensor(sensor); setManageName(sensor.name); setManageStatus(sensor.status === "inactive" ? "offline" : sensor.status); setManageActive(sensor.is_active); setConfirmDelete(false); }}>
+                          <Pencil className="h-3.5 w-3.5" />Manage
+                        </Button>
+                      )}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             );
