@@ -152,6 +152,46 @@ Deno.serve(async (req) => {
       return json({ success: true });
     }
 
+    if (action === "update_platform_branding") {
+      const platformName = String(body.platform_name ?? "").trim();
+      const toneColor = String(body.tone_color ?? "").trim().toUpperCase();
+      if (!platformName || platformName.length > 80) return json({ error: "Platform name must be between 1 and 80 characters" }, 400);
+      if (!/^#[0-9A-F]{6}$/.test(toneColor)) return json({ error: "Tone color must be a valid hex color" }, 400);
+
+      const updates: Record<string, unknown> = {
+        platform_name: platformName,
+        tone_color: toneColor,
+        updated_by: caller.id,
+      };
+      const logoBase64 = typeof body.logo_base64 === "string" ? body.logo_base64 : "";
+      if (logoBase64) {
+        const contentType = String(body.logo_content_type ?? "");
+        const allowedTypes: Record<string, string> = {
+          "image/png": "png",
+          "image/jpeg": "jpg",
+          "image/webp": "webp",
+        };
+        const extension = allowedTypes[contentType];
+        if (!extension) return json({ error: "Logo must be a PNG, JPG, or WebP image" }, 400);
+        const bytes = Uint8Array.from(atob(logoBase64), (character) => character.charCodeAt(0));
+        if (bytes.byteLength > 5 * 1024 * 1024) return json({ error: "Logo must be under 5 MB" }, 400);
+        const path = `platform/logo-${Date.now()}.${extension}`;
+        const { error: uploadError } = await admin.storage.from("zone-images").upload(path, bytes, { contentType, upsert: false });
+        if (uploadError) return json({ error: uploadError.message }, 400);
+        const { data: publicLogo } = admin.storage.from("zone-images").getPublicUrl(path);
+        updates.logo_url = publicLogo.publicUrl;
+      }
+
+      const { data: settings, error } = await admin
+        .from("platform_settings")
+        .update(updates)
+        .eq("id", "platform")
+        .select("platform_name, logo_url, tone_color")
+        .single();
+      if (error) return json({ error: error.message }, 400);
+      return json({ settings });
+    }
+
     if (action === "set_membership") {
       const userId = String(body.user_id);
       const orgId = String(body.org_id ?? "");

@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { OrgProvider } from "@/contexts/OrgContext";
+import { BrandingProvider } from "@/contexts/BrandingContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AppLayout } from "@/components/AppLayout";
 import LoginPage from "@/pages/Login";
@@ -26,6 +27,7 @@ import MasterAdminCreateOrganisationPage from "@/pages/MasterAdminCreateOrganisa
 import MasterAdminUsersPage from "@/pages/MasterAdminUsers";
 import MasterAdminAdminsPage from "@/pages/MasterAdminAdmins";
 import ProfilePage from "@/pages/Profile";
+import MasterAdminBrandingPage from "@/pages/MasterAdminBranding";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -41,6 +43,7 @@ function ProtectedAppRoute({ children }: { children: React.ReactNode }) {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
+      <BrandingProvider>
       <OrgProvider>
         <TooltipProvider>
           <Toaster />
@@ -56,6 +59,7 @@ const App = () => (
               <Route path="/master-admin/users" element={<ProtectedRoute><MasterAdminUsersPage /></ProtectedRoute>} />
               <Route path="/master-admin/admins" element={<ProtectedRoute><MasterAdminAdminsPage /></ProtectedRoute>} />
               <Route path="/master-admin/profile" element={<ProtectedRoute><ProfilePage masterAdmin /></ProtectedRoute>} />
+              <Route path="/master-admin/branding" element={<ProtectedRoute><MasterAdminBrandingPage /></ProtectedRoute>} />
               
               <Route path="/dashboard" element={<ProtectedAppRoute><DashboardPage /></ProtectedAppRoute>} />
               <Route path="/sensors" element={<ProtectedAppRoute><SensorsPage /></ProtectedAppRoute>} />
@@ -74,6 +78,7 @@ const App = () => (
           </BrowserRouter>
         </TooltipProvider>
       </OrgProvider>
+      </BrandingProvider>
     </AuthProvider>
   </QueryClientProvider>
 );
