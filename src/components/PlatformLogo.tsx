@@ -10,7 +10,7 @@ export function PlatformLogo({ className, iconClassName }: { className?: string;
       className={cn(
         "flex shrink-0 items-center justify-center overflow-hidden",
         className,
-        logo_url && "bg-transparent bg-none p-0 shadow-none",
+        logo_url && "platform-logo-image",
       )}
     >
       {logo_url ? (
