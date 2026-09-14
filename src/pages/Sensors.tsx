@@ -149,12 +149,13 @@ export default function SensorsPage() {
   };
 
   const sensorLimit = (currentOrg as any)?.sensor_limit ?? 0;
-  const remaining = Math.max(sensorLimit - sensors.length, 0);
-  const limitReached = sensors.length >= sensorLimit;
+  const activeCount = sensors.filter(s => s.is_active).length;
+  const inactiveCount = sensors.length - activeCount;
+  const remaining = Math.max(sensorLimit - activeCount, 0);
+  const limitReached = activeCount >= sensorLimit;
 
   const zoneName = (zoneId: string | null) => (zoneId ? zones.find(z => z.id === zoneId)?.name || "Unknown zone" : "No zone");
   const visible = showInactive ? sensors : sensors.filter(s => s.is_active);
-  const inactiveCount = sensors.filter(s => !s.is_active).length;
   const filtered = selectedZone === "all" ? visible : visible.filter(s => s.zone_id === selectedZone);
 
   return (
