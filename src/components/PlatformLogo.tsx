@@ -6,7 +6,13 @@ export function PlatformLogo({ className, iconClassName }: { className?: string;
   const { logo_url, platform_name } = useBranding();
 
   return (
-    <div className={cn("flex shrink-0 items-center justify-center overflow-hidden", className)}>
+    <div
+      className={cn(
+        "flex shrink-0 items-center justify-center overflow-hidden",
+        className,
+        logo_url && "bg-transparent bg-none p-0 shadow-none",
+      )}
+    >
       {logo_url ? (
         <img src={logo_url} alt={`${platform_name} logo`} className="h-full w-full object-contain" />
       ) : (
