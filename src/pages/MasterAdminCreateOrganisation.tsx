@@ -27,6 +27,7 @@ export default function MasterAdminCreateOrganisationPage() {
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [existingLogo, setExistingLogo] = useState<string | null>(null);
+  const [sensorLimit, setSensorLimit] = useState("10");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -48,6 +49,7 @@ export default function MasterAdminCreateOrganisationPage() {
       setSlug(org.slug);
       setSlugTouched(true);
       setExistingLogo(org.logo_url ?? null);
+      setSensorLimit(String(org.sensor_limit ?? 10));
       setPageLoading(false);
     })();
   }, [id]);
@@ -83,11 +85,14 @@ export default function MasterAdminCreateOrganisationPage() {
 
   const save = async () => {
     if (!name.trim() || !slug.trim()) { toast.error("Name and slug are required"); return; }
+    const limit = parseInt(sensorLimit, 10);
+    if (!Number.isFinite(limit) || limit < 0) { toast.error("Sensor allowance must be a whole number"); return; }
     setSaving(true);
     try {
       const payload: Record<string, unknown> = {
         name: name.trim(),
         slug: slugify(slug),
+        sensor_limit: limit,
       };
       if (logoFile) {
         payload.logo_base64 = await fileToBase64(logoFile);
@@ -152,6 +157,20 @@ export default function MasterAdminCreateOrganisationPage() {
                     placeholder="green-valley-farm"
                   />
                   <p className="text-xs text-muted-foreground">Lowercase letters, numbers and dashes only.</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="org-sensor-limit">Sensor allowance (subscription)</Label>
+                  <Input
+                    id="org-sensor-limit"
+                    type="number"
+                    min={0}
+                    step={1}
+                    value={sensorLimit}
+                    onChange={e => setSensorLimit(e.target.value)}
+                    placeholder="10"
+                  />
+                  <p className="text-xs text-muted-foreground">Maximum number of devices this organisation can register. Only you can change this.</p>
                 </div>
 
                 <div className="space-y-2">
