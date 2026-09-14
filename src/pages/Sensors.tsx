@@ -86,7 +86,7 @@ export default function SensorsPage() {
 
   const handleAdd = async () => {
     if (!currentOrg || !form.name || !form.device_id) return;
-    if (sensors.length >= sensorLimit) {
+    if (activeCount >= sensorLimit) {
       toast({
         title: "Device allowance reached",
         description: `Your plan allows ${sensorLimit} device${sensorLimit === 1 ? "" : "s"}. Contact the platform administrator to increase it.`,
@@ -121,6 +121,14 @@ export default function SensorsPage() {
 
   const handleSaveManage = async () => {
     if (!manageSensor || !manageName.trim()) return;
+    if (manageActive && !manageSensor.is_active && activeCount >= sensorLimit) {
+      toast({
+        title: "Device allowance reached",
+        description: `Your plan allows ${sensorLimit} active device${sensorLimit === 1 ? "" : "s"} and you already have ${activeCount}. Deactivate another device or contact the platform administrator to increase it.`,
+        variant: "destructive",
+      });
+      return;
+    }
     const { error } = await supabase.from("sensors")
       .update({ name: manageName.trim(), status: manageStatus, is_active: manageActive })
       .eq("id", manageSensor.id);
