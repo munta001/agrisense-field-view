@@ -1,5 +1,5 @@
 import {
-  LayoutDashboard, Activity, Map, FileInput, BarChart3, Bell, FileText, Settings, LogOut, Leaf, ChevronDown, Sprout, MapPin,
+  LayoutDashboard, Activity, Map, FileInput, BarChart3, Bell, FileText, Settings, LogOut, Leaf, ChevronDown, Sprout, MapPin, UserRound,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
@@ -109,6 +109,14 @@ export function AppSidebar() {
 
       <SidebarFooter>
         <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild>
+              <NavLink to="/profile" end className="hover:bg-sidebar-accent/50" activeClassName="bg-sidebar-accent text-sidebar-primary font-medium">
+                <UserRound className="mr-2 h-4 w-4" />
+                {!collapsed && <span>Profile</span>}
+              </NavLink>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton onClick={signOut} className="text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/50">
               <LogOut className="mr-2 h-4 w-4" />
