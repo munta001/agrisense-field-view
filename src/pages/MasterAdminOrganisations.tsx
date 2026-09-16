@@ -9,7 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Building2, Pencil, Power, PowerOff, Loader2 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Plus, Building2, Pencil, Power, PowerOff, Loader2, Eye, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
