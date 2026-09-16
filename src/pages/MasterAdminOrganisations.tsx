@@ -231,7 +231,7 @@ export default function MasterAdminOrganisationsPage() {
                 </div>
                 <div className="rounded-lg border p-3">
                   <p className="text-xs font-semibold uppercase text-muted-foreground">Zones</p>
-                  <p className="mt-1 text-lg font-semibold">{viewingOrg.zone_count}</p>
+                  <p className="mt-1 text-lg font-semibold">{viewingOrg.zone_count} / {viewingOrg.zone_limit ?? 0}</p>
                 </div>
                 <div className="rounded-lg border p-3">
                   <p className="text-xs font-semibold uppercase text-muted-foreground">Readings</p>
