@@ -667,6 +667,7 @@ export type Database = {
           p_device_id: number
           p_moisture_pct: number
           p_nitrogen: number
+          p_org_id: string
           p_packet_type: number
           p_ph: number
           p_phosphorus: number
