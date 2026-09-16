@@ -90,12 +90,16 @@ export default function MasterAdminCreateOrganisationPage() {
     if (!name.trim() || !slug.trim()) { toast.error("Name and slug are required"); return; }
     const limit = parseInt(sensorLimit, 10);
     if (!Number.isFinite(limit) || limit < 0) { toast.error("Sensor allowance must be a whole number"); return; }
+    const zLimit = parseInt(zoneLimit, 10);
+    if (!Number.isFinite(zLimit) || zLimit < 0) { toast.error("Zone allowance must be a whole number"); return; }
     setSaving(true);
     try {
       const payload: Record<string, unknown> = {
         name: name.trim(),
         slug: slugify(slug),
         sensor_limit: limit,
+        zone_limit: zLimit,
+
       };
       if (logoFile) {
         payload.logo_base64 = await fileToBase64(logoFile);
