@@ -202,6 +202,28 @@ export default function MasterAdminCreateOrganisationPage() {
                       </div>
                       <p className="text-xs text-muted-foreground">Maximum number of active devices this organisation can register.</p>
                     </div>
+
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between gap-3">
+                        <Label htmlFor="org-zone-limit" className="text-sm font-semibold">Zone allowance</Label>
+                        <span className="rounded-md bg-secondary px-2 py-1 text-xs font-semibold text-secondary-foreground">Subscription</span>
+                      </div>
+                      <div className="relative">
+                        <Map className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                          id="org-zone-limit"
+                          className="h-12 bg-background pl-11"
+                          type="number"
+                          min={0}
+                          step={1}
+                          value={zoneLimit}
+                          onChange={e => setZoneLimit(e.target.value)}
+                          placeholder="10"
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground">Maximum number of zones this organisation can create.</p>
+                    </div>
+
                   </div>
                 </section>
 
