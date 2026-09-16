@@ -128,6 +128,9 @@ Deno.serve(async (req) => {
       const updates: Record<string, unknown> = { name, slug };
       const rawLimit = Number(body.sensor_limit);
       if (Number.isFinite(rawLimit) && rawLimit >= 0) updates.sensor_limit = Math.floor(rawLimit);
+      const rawZoneLimit = Number(body.zone_limit);
+      if (Number.isFinite(rawZoneLimit) && rawZoneLimit >= 0) updates.zone_limit = Math.floor(rawZoneLimit);
+
 
       const { error } = await admin.from("organizations").update(updates).eq("id", orgId);
       if (error) return json({ error: error.message }, 400);
