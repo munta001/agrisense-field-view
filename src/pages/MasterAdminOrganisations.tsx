@@ -150,6 +150,9 @@ export default function MasterAdminOrganisationsPage() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
+                          <Button variant="outline" size="sm" onClick={() => setViewingOrg(o)}>
+                            <Eye className="mr-1 h-3.5 w-3.5" /> View
+                          </Button>
                           <Button variant="outline" size="sm" asChild>
                             <Link to={`/master-admin/organisations/${o.id}/edit`}><Pencil className="mr-1 h-3.5 w-3.5" /> Edit</Link>
                           </Button>
