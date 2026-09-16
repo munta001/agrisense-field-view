@@ -38,6 +38,19 @@ export default function MasterAdminOrganisationsPage() {
   const [loading, setLoading] = useState(true);
 
   const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [viewingOrg, setViewingOrg] = useState<Org | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  const copyId = async (id: string) => {
+    try {
+      await navigator.clipboard.writeText(id);
+      setCopied(true);
+      toast.success("Internal ID copied");
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      toast.error("Could not copy ID");
+    }
+  };
 
   const load = async () => {
     setLoading(true);
