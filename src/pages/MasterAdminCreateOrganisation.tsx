@@ -51,6 +51,8 @@ export default function MasterAdminCreateOrganisationPage() {
       setSlugTouched(true);
       setExistingLogo(org.logo_url ?? null);
       setSensorLimit(String(org.sensor_limit ?? 10));
+      setZoneLimit(String(org.zone_limit ?? 10));
+
       setPageLoading(false);
     })();
   }, [id]);
