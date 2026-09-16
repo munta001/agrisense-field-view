@@ -27,6 +27,8 @@ export default function MasterAdminCreateOrganisationPage() {
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [existingLogo, setExistingLogo] = useState<string | null>(null);
   const [sensorLimit, setSensorLimit] = useState("10");
+  const [zoneLimit, setZoneLimit] = useState("10");
+
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
