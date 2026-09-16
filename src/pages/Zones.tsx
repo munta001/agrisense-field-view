@@ -61,7 +61,17 @@ export default function ZonesPage() {
       if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
       toast({ title: "Zone updated" });
     } else {
+      const limit = (currentOrg as any)?.zone_limit ?? 0;
+      if (zones.length >= limit) {
+        toast({
+          title: "Zone allowance reached",
+          description: `Your plan allows ${limit} zone${limit === 1 ? "" : "s"}. Contact the platform administrator to increase it.`,
+          variant: "destructive",
+        });
+        return;
+      }
       const { error } = await supabase.from("zones").insert({
+
         org_id: currentOrg.id,
         name: form.name,
         color: form.color,
