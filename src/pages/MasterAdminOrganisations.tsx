@@ -180,6 +180,78 @@ export default function MasterAdminOrganisationsPage() {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={!!viewingOrg} onOpenChange={open => { if (!open) setViewingOrg(null); }}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="font-display text-xl">Organisation details</DialogTitle>
+            <DialogDescription>{viewingOrg?.name}</DialogDescription>
+          </DialogHeader>
+          {viewingOrg && (
+            <div className="space-y-5 py-2">
+              <div className="flex items-center gap-3">
+                {viewingOrg.logo_url ? (
+                  <img src={viewingOrg.logo_url} alt="" className="h-14 w-14 rounded-lg border object-cover" />
+                ) : (
+                  <div className="flex h-14 w-14 items-center justify-center rounded-lg border bg-muted">
+                    <Building2 className="h-7 w-7 text-muted-foreground" />
+                  </div>
+                )}
+                <div>
+                  <p className="font-display text-lg font-semibold">{viewingOrg.name}</p>
+                  <p className="text-sm text-muted-foreground">{viewingOrg.slug}</p>
+                </div>
+                {viewingOrg.is_active
+                  ? <Badge className="ml-auto border-emerald-500/30 bg-emerald-500/15 text-emerald-400">Active</Badge>
+                  : <Badge variant="outline" className="ml-auto border-destructive/40 text-destructive">Inactive</Badge>}
+              </div>
+
+              <div className="rounded-lg border bg-muted/40 p-3">
+                <p className="text-xs font-semibold uppercase text-muted-foreground">Internal ID</p>
+                <div className="mt-1 flex items-center gap-2">
+                  <code className="flex-1 break-all rounded bg-muted px-2 py-1 text-sm font-medium">{viewingOrg.id}</code>
+                  <Button variant="secondary" size="sm" onClick={() => copyId(viewingOrg.id)}>
+                    {copied ? <Check className="mr-1 h-3.5 w-3.5" /> : <Copy className="mr-1 h-3.5 w-3.5" />}
+                    {copied ? "Copied" : "Copy"}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div className="rounded-lg border p-3">
+                  <p className="text-xs font-semibold uppercase text-muted-foreground">Users</p>
+                  <p className="mt-1 text-lg font-semibold">{viewingOrg.users.length}</p>
+                </div>
+                <div className="rounded-lg border p-3">
+                  <p className="text-xs font-semibold uppercase text-muted-foreground">Devices</p>
+                  <p className="mt-1 text-lg font-semibold">{viewingOrg.sensor_count} / {viewingOrg.sensor_limit ?? 0}</p>
+                  <p className="text-xs text-muted-foreground">{viewingOrg.active_sensor_count} active</p>
+                </div>
+                <div className="rounded-lg border p-3">
+                  <p className="text-xs font-semibold uppercase text-muted-foreground">Zones</p>
+                  <p className="mt-1 text-lg font-semibold">{viewingOrg.zone_count}</p>
+                </div>
+                <div className="rounded-lg border p-3">
+                  <p className="text-xs font-semibold uppercase text-muted-foreground">Readings</p>
+                  <p className="mt-1 text-lg font-semibold">{viewingOrg.reading_count.toLocaleString()}</p>
+                </div>
+              </div>
+
+              <div className="space-y-1 text-sm text-muted-foreground">
+                <p>Storage: <span className="font-medium text-foreground">{formatBytes(Number(viewingOrg.storage_bytes || 0))}</span></p>
+                <p>Created: <span className="font-medium text-foreground">{format(new Date(viewingOrg.created_at), "dd MMM yyyy")}</span></p>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-1">
+                <Button variant="outline" onClick={() => setViewingOrg(null)}>Close</Button>
+                <Button asChild>
+                  <Link to={`/master-admin/organisations/${viewingOrg.id}/edit`} onClick={() => setViewingOrg(null)}>Edit organisation</Link>
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </MasterAdminLayout>
   );
 }
