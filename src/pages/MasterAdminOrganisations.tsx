@@ -136,7 +136,7 @@ export default function MasterAdminOrganisationsPage() {
                         {o.sensor_count} / {o.sensor_limit ?? 0}{" "}
                         <Badge variant="outline" className="ml-1">{o.active_sensor_count} active</Badge>
                       </TableCell>
-                      <TableCell>{o.zone_count}</TableCell>
+                      <TableCell>{o.zone_count} / {o.zone_limit ?? 0}</TableCell>
                       <TableCell>{o.reading_count}</TableCell>
                       <TableCell>
                         {formatBytes(Number(o.storage_bytes || 0))}
