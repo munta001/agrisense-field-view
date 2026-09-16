@@ -61,7 +61,17 @@ export default function ZonesPage() {
       if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
       toast({ title: "Zone updated" });
     } else {
+      const limit = (currentOrg as any)?.zone_limit ?? 0;
+      if (zones.length >= limit) {
+        toast({
+          title: "Zone allowance reached",
+          description: `Your plan allows ${limit} zone${limit === 1 ? "" : "s"}. Contact the platform administrator to increase it.`,
+          variant: "destructive",
+        });
+        return;
+      }
       const { error } = await supabase.from("zones").insert({
+
         org_id: currentOrg.id,
         name: form.name,
         color: form.color,
@@ -102,6 +112,10 @@ export default function ZonesPage() {
     fetchZones();
   };
 
+  const zoneLimit = (currentOrg as any)?.zone_limit ?? 0;
+  const limitReached = zones.length >= zoneLimit;
+  const remaining = Math.max(0, zoneLimit - zones.length);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -112,7 +126,21 @@ export default function ZonesPage() {
         {canEdit && (
           <Dialog open={open} onOpenChange={v => { if (!v) closeDialog(); else setOpen(true); }}>
             <DialogTrigger asChild>
-              <Button><Plus className="mr-2 h-4 w-4" />Add Zone</Button>
+              <Button
+                disabled={limitReached}
+                onClick={e => {
+                  if (limitReached) {
+                    e.preventDefault();
+                    toast({
+                      title: "Zone allowance reached",
+                      description: `Your plan allows ${zoneLimit} zone${zoneLimit === 1 ? "" : "s"}. Contact the platform administrator to increase it.`,
+                      variant: "destructive",
+                    });
+                  }
+                }}
+              >
+                <Plus className="mr-2 h-4 w-4" />Add Zone
+              </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader><DialogTitle className="font-display">{editZone ? "Edit Zone" : "Add New Zone"}</DialogTitle></DialogHeader>
@@ -146,6 +174,28 @@ export default function ZonesPage() {
           </Dialog>
         )}
       </div>
+
+      {currentOrg && (
+        <div className={`rounded-lg border p-4 ${limitReached ? "border-destructive/40 bg-destructive/10" : "bg-card"}`}>
+          <div>
+            <p className="text-sm font-medium">
+              Zone allowance — {zones.length} of {zoneLimit} used
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {limitReached
+                ? "You have reached your subscription limit. Contact the platform administrator to add more zones."
+                : `You can still create ${remaining} more zone${remaining === 1 ? "" : "s"} on your current subscription.`}
+            </p>
+          </div>
+          <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-muted">
+            <div
+              className={`h-full rounded-full ${limitReached ? "bg-destructive" : "bg-primary"}`}
+              style={{ width: `${zoneLimit ? Math.min(100, (zones.length / zoneLimit) * 100) : 100}%` }}
+            />
+          </div>
+        </div>
+      )}
+
 
       {zones.length === 0 && (
         <Card className="glass-card">

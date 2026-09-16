@@ -29,6 +29,8 @@ type Org = {
   storage_files: number;
   readings_bytes?: number;
   sensor_limit?: number;
+  zone_limit?: number;
+
   users: unknown[];
 };
 
@@ -134,7 +136,7 @@ export default function MasterAdminOrganisationsPage() {
                         {o.sensor_count} / {o.sensor_limit ?? 0}{" "}
                         <Badge variant="outline" className="ml-1">{o.active_sensor_count} active</Badge>
                       </TableCell>
-                      <TableCell>{o.zone_count}</TableCell>
+                      <TableCell>{o.zone_count} / {o.zone_limit ?? 0}</TableCell>
                       <TableCell>{o.reading_count}</TableCell>
                       <TableCell>
                         {formatBytes(Number(o.storage_bytes || 0))}
@@ -229,7 +231,7 @@ export default function MasterAdminOrganisationsPage() {
                 </div>
                 <div className="rounded-lg border p-3">
                   <p className="text-xs font-semibold uppercase text-muted-foreground">Zones</p>
-                  <p className="mt-1 text-lg font-semibold">{viewingOrg.zone_count}</p>
+                  <p className="mt-1 text-lg font-semibold">{viewingOrg.zone_count} / {viewingOrg.zone_limit ?? 0}</p>
                 </div>
                 <div className="rounded-lg border p-3">
                   <p className="text-xs font-semibold uppercase text-muted-foreground">Readings</p>

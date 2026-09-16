@@ -273,6 +273,7 @@ export type Database = {
           sensor_limit: number
           slug: string
           updated_at: string
+          zone_limit: number
         }
         Insert: {
           created_at?: string
@@ -283,6 +284,7 @@ export type Database = {
           sensor_limit?: number
           slug: string
           updated_at?: string
+          zone_limit?: number
         }
         Update: {
           created_at?: string
@@ -293,6 +295,7 @@ export type Database = {
           sensor_limit?: number
           slug?: string
           updated_at?: string
+          zone_limit?: number
         }
         Relationships: []
       }

@@ -81,10 +81,13 @@ Deno.serve(async (req) => {
 
       const rawLimit = Number(body.sensor_limit);
       const sensorLimit = Number.isFinite(rawLimit) && rawLimit >= 0 ? Math.floor(rawLimit) : 10;
+      const rawZoneLimit = Number(body.zone_limit);
+      const zoneLimit = Number.isFinite(rawZoneLimit) && rawZoneLimit >= 0 ? Math.floor(rawZoneLimit) : 10;
 
       const { data, error } = await admin
         .from("organizations")
-        .insert({ name, slug, sensor_limit: sensorLimit })
+        .insert({ name, slug, sensor_limit: sensorLimit, zone_limit: zoneLimit })
+
         .select()
         .single();
       if (error) return json({ error: error.message }, 400);
@@ -125,6 +128,9 @@ Deno.serve(async (req) => {
       const updates: Record<string, unknown> = { name, slug };
       const rawLimit = Number(body.sensor_limit);
       if (Number.isFinite(rawLimit) && rawLimit >= 0) updates.sensor_limit = Math.floor(rawLimit);
+      const rawZoneLimit = Number(body.zone_limit);
+      if (Number.isFinite(rawZoneLimit) && rawZoneLimit >= 0) updates.zone_limit = Math.floor(rawZoneLimit);
+
 
       const { error } = await admin.from("organizations").update(updates).eq("id", orgId);
       if (error) return json({ error: error.message }, 400);

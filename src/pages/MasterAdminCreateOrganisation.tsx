@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Building2, Check, Gauge, ImagePlus, Link2, Loader2, Save, Upload, X } from "lucide-react";
+import { ArrowLeft, Building2, Check, Gauge, ImagePlus, Link2, Loader2, Map, Save, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 
 function slugify(v: string) {
@@ -27,6 +27,8 @@ export default function MasterAdminCreateOrganisationPage() {
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [existingLogo, setExistingLogo] = useState<string | null>(null);
   const [sensorLimit, setSensorLimit] = useState("10");
+  const [zoneLimit, setZoneLimit] = useState("10");
+
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -49,6 +51,8 @@ export default function MasterAdminCreateOrganisationPage() {
       setSlugTouched(true);
       setExistingLogo(org.logo_url ?? null);
       setSensorLimit(String(org.sensor_limit ?? 10));
+      setZoneLimit(String(org.zone_limit ?? 10));
+
       setPageLoading(false);
     })();
   }, [id]);
@@ -86,12 +90,16 @@ export default function MasterAdminCreateOrganisationPage() {
     if (!name.trim() || !slug.trim()) { toast.error("Name and slug are required"); return; }
     const limit = parseInt(sensorLimit, 10);
     if (!Number.isFinite(limit) || limit < 0) { toast.error("Sensor allowance must be a whole number"); return; }
+    const zLimit = parseInt(zoneLimit, 10);
+    if (!Number.isFinite(zLimit) || zLimit < 0) { toast.error("Zone allowance must be a whole number"); return; }
     setSaving(true);
     try {
       const payload: Record<string, unknown> = {
         name: name.trim(),
         slug: slugify(slug),
         sensor_limit: limit,
+        zone_limit: zLimit,
+
       };
       if (logoFile) {
         payload.logo_base64 = await fileToBase64(logoFile);
@@ -202,6 +210,28 @@ export default function MasterAdminCreateOrganisationPage() {
                       </div>
                       <p className="text-xs text-muted-foreground">Maximum number of active devices this organisation can register.</p>
                     </div>
+
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between gap-3">
+                        <Label htmlFor="org-zone-limit" className="text-sm font-semibold">Zone allowance</Label>
+                        <span className="rounded-md bg-secondary px-2 py-1 text-xs font-semibold text-secondary-foreground">Subscription</span>
+                      </div>
+                      <div className="relative">
+                        <Map className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                          id="org-zone-limit"
+                          className="h-12 bg-background pl-11"
+                          type="number"
+                          min={0}
+                          step={1}
+                          value={zoneLimit}
+                          onChange={e => setZoneLimit(e.target.value)}
+                          placeholder="10"
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground">Maximum number of zones this organisation can create.</p>
+                    </div>
+
                   </div>
                 </section>
 
