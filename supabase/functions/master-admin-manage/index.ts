@@ -81,10 +81,13 @@ Deno.serve(async (req) => {
 
       const rawLimit = Number(body.sensor_limit);
       const sensorLimit = Number.isFinite(rawLimit) && rawLimit >= 0 ? Math.floor(rawLimit) : 10;
+      const rawZoneLimit = Number(body.zone_limit);
+      const zoneLimit = Number.isFinite(rawZoneLimit) && rawZoneLimit >= 0 ? Math.floor(rawZoneLimit) : 10;
 
       const { data, error } = await admin
         .from("organizations")
-        .insert({ name, slug, sensor_limit: sensorLimit })
+        .insert({ name, slug, sensor_limit: sensorLimit, zone_limit: zoneLimit })
+
         .select()
         .single();
       if (error) return json({ error: error.message }, 400);
