@@ -29,6 +29,8 @@ type Org = {
   storage_files: number;
   readings_bytes?: number;
   sensor_limit?: number;
+  zone_limit?: number;
+
   users: unknown[];
 };
 
