@@ -24,6 +24,7 @@ import ZonesPage from "@/pages/Zones";
 import MasterAdminPage from "@/pages/MasterAdmin";
 import MasterAdminOrganisationsPage from "@/pages/MasterAdminOrganisations";
 import MasterAdminCreateOrganisationPage from "@/pages/MasterAdminCreateOrganisation";
+import MasterAdminOrganisationDevicesPage from "@/pages/MasterAdminOrganisationDevices";
 import MasterAdminUsersPage from "@/pages/MasterAdminUsers";
 import MasterAdminAdminsPage from "@/pages/MasterAdminAdmins";
 import ProfilePage from "@/pages/Profile";
@@ -55,7 +56,8 @@ const App = () => (
               <Route path="/master-admin" element={<ProtectedRoute><MasterAdminPage /></ProtectedRoute>} />
               <Route path="/master-admin/organisations" element={<ProtectedRoute><MasterAdminOrganisationsPage /></ProtectedRoute>} />
               <Route path="/master-admin/organisations/new" element={<ProtectedRoute><MasterAdminCreateOrganisationPage /></ProtectedRoute>} />
-              <Route path="/master-admin/organisations/:id/edit" element={<ProtectedRoute><MasterAdminCreateOrganisationPage /></ProtectedRoute>} />
+<Route path="/master-admin/organisations/:id/edit" element={<ProtectedRoute><MasterAdminCreateOrganisationPage /></ProtectedRoute>} />
+              <Route path="/master-admin/organisations/:id/devices" element={<ProtectedRoute><MasterAdminOrganisationDevicesPage /></ProtectedRoute>} />
               <Route path="/master-admin/users" element={<ProtectedRoute><MasterAdminUsersPage /></ProtectedRoute>} />
               <Route path="/master-admin/admins" element={<ProtectedRoute><MasterAdminAdminsPage /></ProtectedRoute>} />
               <Route path="/master-admin/profile" element={<ProtectedRoute><ProfilePage masterAdmin /></ProtectedRoute>} />
