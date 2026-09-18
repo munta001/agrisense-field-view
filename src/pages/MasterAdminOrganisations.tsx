@@ -11,18 +11,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Plus, Building2, Power, PowerOff, Loader2, Eye, Copy, Check } from "lucide-react";
-import { Checkbox } from "@/components/ui/checkbox";
-
-type OrgSensor = {
-  id: string;
-  name: string;
-  dev_eui: string | null;
-  device_id: number | null;
-  status: string;
-  is_active: boolean;
-  zone_name: string | null;
-  type_name: string | null;
-};
 import { toast } from "sonner";
 import { format } from "date-fns";
 
@@ -54,36 +42,9 @@ export default function MasterAdminOrganisationsPage() {
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [viewingOrg, setViewingOrg] = useState<Org | null>(null);
   const [copied, setCopied] = useState(false);
-  const [sensorsOpen, setSensorsOpen] = useState(false);
-  const [sensorsLoading, setSensorsLoading] = useState(false);
-  const [sensors, setSensors] = useState<OrgSensor[]>([]);
-  const [showInactive, setShowInactive] = useState(false);
-
-  const visibleSensors = showInactive ? sensors : sensors.filter(s => s.is_active !== false);
 
   const closeView = () => {
     setViewingOrg(null);
-    setSensorsOpen(false);
-    setSensors([]);
-    setShowInactive(false);
-  };
-
-  const loadSensors = async (orgId: string) => {
-    setSensorsOpen(true);
-    setSensorsLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("master-admin-manage", {
-        body: { action: "list_org_sensors", org_id: orgId },
-      });
-      if (error) throw new Error(error.message);
-      if (data?.error) throw new Error(data.error);
-      setSensors((data?.sensors as OrgSensor[]) || []);
-    } catch (err) {
-      toast.error((err as Error).message);
-      setSensors([]);
-    } finally {
-      setSensorsLoading(false);
-    }
   };
 
   const copyId = async (id: string) => {
@@ -264,15 +225,15 @@ export default function MasterAdminOrganisationsPage() {
                   <p className="text-xs font-semibold uppercase text-muted-foreground">Users</p>
                   <p className="mt-1 text-lg font-semibold">{viewingOrg.users.length}</p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => loadSensors(viewingOrg.id)}
+                <Link
+                  to={`/master-admin/organisations/${viewingOrg.id}/devices`}
+                  onClick={closeView}
                   className="rounded-lg border p-3 text-left transition hover:border-primary/50 hover:bg-muted/50"
                 >
                   <p className="text-xs font-semibold uppercase text-muted-foreground">Devices</p>
                   <p className="mt-1 text-lg font-semibold">{viewingOrg.sensor_count} / {viewingOrg.sensor_limit ?? 0}</p>
                   <p className="text-xs text-muted-foreground">{viewingOrg.active_sensor_count} active · click to view</p>
-                </button>
+                </Link>
                 <div className="rounded-lg border p-3">
                   <p className="text-xs font-semibold uppercase text-muted-foreground">Zones</p>
                   <p className="mt-1 text-lg font-semibold">{viewingOrg.zone_count} / {viewingOrg.zone_limit ?? 0}</p>
@@ -282,49 +243,6 @@ export default function MasterAdminOrganisationsPage() {
                   <p className="mt-1 text-lg font-semibold">{viewingOrg.reading_count.toLocaleString()}</p>
                 </div>
               </div>
-
-              {sensorsOpen && (
-                <div className="rounded-lg border">
-                  <div className="flex flex-wrap items-center justify-between gap-2 border-b p-3">
-                    <p className="font-display text-sm font-semibold">Devices in {viewingOrg.name}</p>
-                    <label className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <Checkbox checked={showInactive} onCheckedChange={v => setShowInactive(v === true)} />
-                      Show inactive
-                    </label>
-                  </div>
-                  {sensorsLoading ? (
-                    <div className="p-4"><Skeleton className="h-24" /></div>
-                  ) : (
-                    <div className="max-h-72 overflow-y-auto">
-                      {visibleSensors.length === 0 ? (
-                        <p className="p-4 text-center text-sm text-muted-foreground">No devices to show</p>
-                      ) : (
-                        <ul className="divide-y">
-                          {visibleSensors.map(s => (
-                            <li key={s.id} className="flex flex-wrap items-center gap-2 p-3 text-sm">
-                              <div className="min-w-[140px] flex-1">
-                                <p className="font-medium">{s.name}</p>
-                                <p className="text-xs text-muted-foreground">
-                                  {s.type_name ?? "Device"}{s.dev_eui ? ` · ${s.dev_eui}` : s.device_id ? ` · ID ${s.device_id}` : ""}
-                                </p>
-                              </div>
-                              <Badge variant="outline">{s.zone_name ?? "No zone"}</Badge>
-                              <Badge variant="outline" className={s.status === "online" ? "border-emerald-500/30 text-emerald-500" : undefined}>
-                                {s.status}
-                              </Badge>
-                              {s.is_active === false && (
-                                <Badge variant="outline" className="border-destructive/40 text-destructive">Inactive</Badge>
-                              )}
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
-
-
 
               <div className="space-y-1 text-sm text-muted-foreground">
                 <p>Storage: <span className="font-medium text-foreground">{formatBytes(Number(viewingOrg.storage_bytes || 0))}</span></p>
