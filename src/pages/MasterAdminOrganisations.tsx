@@ -42,6 +42,37 @@ export default function MasterAdminOrganisationsPage() {
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [viewingOrg, setViewingOrg] = useState<Org | null>(null);
   const [copied, setCopied] = useState(false);
+  const [sensorsOpen, setSensorsOpen] = useState(false);
+  const [sensorsLoading, setSensorsLoading] = useState(false);
+  const [sensors, setSensors] = useState<OrgSensor[]>([]);
+  const [showInactive, setShowInactive] = useState(false);
+
+  const visibleSensors = showInactive ? sensors : sensors.filter(s => s.is_active !== false);
+
+  const closeView = () => {
+    setViewingOrg(null);
+    setSensorsOpen(false);
+    setSensors([]);
+    setShowInactive(false);
+  };
+
+  const loadSensors = async (orgId: string) => {
+    setSensorsOpen(true);
+    setSensorsLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("master-admin-manage", {
+        body: { action: "list_org_sensors", org_id: orgId },
+      });
+      if (error) throw new Error(error.message);
+      if (data?.error) throw new Error(data.error);
+      setSensors((data?.sensors as OrgSensor[]) || []);
+    } catch (err) {
+      toast.error((err as Error).message);
+      setSensors([]);
+    } finally {
+      setSensorsLoading(false);
+    }
+  };
 
   const copyId = async (id: string) => {
     try {
