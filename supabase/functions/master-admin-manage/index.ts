@@ -158,6 +158,29 @@ Deno.serve(async (req) => {
       return json({ success: true });
     }
 
+    if (action === "list_org_sensors") {
+      const orgId = String(body.org_id ?? "");
+      if (!orgId) return json({ error: "Organisation is required" }, 400);
+      const [{ data: sensors, error }, { data: zones }, { data: types }] = await Promise.all([
+        admin
+          .from("sensors")
+          .select("id, name, dev_eui, device_id, status, is_active, zone_id, sensor_type_id, location, created_at")
+          .eq("org_id", orgId)
+          .order("name"),
+        admin.from("zones").select("id, name").eq("org_id", orgId),
+        admin.from("sensor_types").select("id, name, unit"),
+      ]);
+      if (error) return json({ error: error.message }, 400);
+      const rows = (sensors ?? []).map((s) => ({
+        ...s,
+        zone_name: zones?.find((z) => z.id === s.zone_id)?.name ?? null,
+        type_name: types?.find((t) => t.id === s.sensor_type_id)?.name ?? null,
+      }));
+      return json({ sensors: rows });
+    }
+
+
+
     if (action === "update_platform_branding") {
       const platformName = String(body.platform_name ?? "").trim();
       const toneColor = String(body.tone_color ?? "").trim().toUpperCase();
