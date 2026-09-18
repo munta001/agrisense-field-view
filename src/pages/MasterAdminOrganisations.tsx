@@ -240,6 +240,49 @@ export default function MasterAdminOrganisationsPage() {
                 </div>
               </div>
 
+              {sensorsOpen && (
+                <div className="rounded-lg border">
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b p-3">
+                    <p className="font-display text-sm font-semibold">Devices in {viewingOrg.name}</p>
+                    <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <Checkbox checked={showInactive} onCheckedChange={v => setShowInactive(v === true)} />
+                      Show inactive
+                    </label>
+                  </div>
+                  {sensorsLoading ? (
+                    <div className="p-4"><Skeleton className="h-24" /></div>
+                  ) : (
+                    <div className="max-h-72 overflow-y-auto">
+                      {visibleSensors.length === 0 ? (
+                        <p className="p-4 text-center text-sm text-muted-foreground">No devices to show</p>
+                      ) : (
+                        <ul className="divide-y">
+                          {visibleSensors.map(s => (
+                            <li key={s.id} className="flex flex-wrap items-center gap-2 p-3 text-sm">
+                              <div className="min-w-[140px] flex-1">
+                                <p className="font-medium">{s.name}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {s.type_name ?? "Device"}{s.dev_eui ? ` · ${s.dev_eui}` : s.device_id ? ` · ID ${s.device_id}` : ""}
+                                </p>
+                              </div>
+                              <Badge variant="outline">{s.zone_name ?? "No zone"}</Badge>
+                              <Badge variant="outline" className={s.status === "online" ? "border-emerald-500/30 text-emerald-500" : undefined}>
+                                {s.status}
+                              </Badge>
+                              {s.is_active === false && (
+                                <Badge variant="outline" className="border-destructive/40 text-destructive">Inactive</Badge>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+
+
               <div className="space-y-1 text-sm text-muted-foreground">
                 <p>Storage: <span className="font-medium text-foreground">{formatBytes(Number(viewingOrg.storage_bytes || 0))}</span></p>
                 <p>Created: <span className="font-medium text-foreground">{format(new Date(viewingOrg.created_at), "dd MMM yyyy")}</span></p>
