@@ -223,8 +223,8 @@ export default function MasterAdminOrganisationsPage() {
         </CardContent>
       </Card>
 
-      <Dialog open={!!viewingOrg} onOpenChange={open => { if (!open) setViewingOrg(null); }}>
-        <DialogContent className="sm:max-w-lg">
+      <Dialog open={!!viewingOrg} onOpenChange={open => { if (!open) closeView(); }}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle className="font-display text-xl">Organisation details</DialogTitle>
             <DialogDescription>{viewingOrg?.name}</DialogDescription>
@@ -332,9 +332,9 @@ export default function MasterAdminOrganisationsPage() {
               </div>
 
               <div className="flex justify-end gap-2 pt-1">
-                <Button variant="outline" onClick={() => setViewingOrg(null)}>Close</Button>
+                <Button variant="outline" onClick={closeView}>Close</Button>
                 <Button asChild>
-                  <Link to={`/master-admin/organisations/${viewingOrg.id}/edit`} onClick={() => setViewingOrg(null)}>Edit organisation</Link>
+                  <Link to={`/master-admin/organisations/${viewingOrg.id}/edit`} onClick={closeView}>Edit organisation</Link>
                 </Button>
               </div>
             </div>
