@@ -221,11 +221,15 @@ export default function MasterAdminOrganisationsPage() {
                   <p className="text-xs font-semibold uppercase text-muted-foreground">Users</p>
                   <p className="mt-1 text-lg font-semibold">{viewingOrg.users.length}</p>
                 </div>
-                <div className="rounded-lg border p-3">
+                <button
+                  type="button"
+                  onClick={() => loadSensors(viewingOrg.id)}
+                  className="rounded-lg border p-3 text-left transition hover:border-primary/50 hover:bg-muted/50"
+                >
                   <p className="text-xs font-semibold uppercase text-muted-foreground">Devices</p>
                   <p className="mt-1 text-lg font-semibold">{viewingOrg.sensor_count} / {viewingOrg.sensor_limit ?? 0}</p>
-                  <p className="text-xs text-muted-foreground">{viewingOrg.active_sensor_count} active</p>
-                </div>
+                  <p className="text-xs text-muted-foreground">{viewingOrg.active_sensor_count} active · click to view</p>
+                </button>
                 <div className="rounded-lg border p-3">
                   <p className="text-xs font-semibold uppercase text-muted-foreground">Zones</p>
                   <p className="mt-1 text-lg font-semibold">{viewingOrg.zone_count} / {viewingOrg.zone_limit ?? 0}</p>
