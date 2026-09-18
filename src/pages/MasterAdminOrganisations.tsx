@@ -10,7 +10,19 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Plus, Building2, Pencil, Power, PowerOff, Loader2, Eye, Copy, Check } from "lucide-react";
+import { Plus, Building2, Power, PowerOff, Loader2, Eye, Copy, Check } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+
+type OrgSensor = {
+  id: string;
+  name: string;
+  dev_eui: string | null;
+  device_id: number | null;
+  status: string;
+  is_active: boolean;
+  zone_name: string | null;
+  type_name: string | null;
+};
 import { toast } from "sonner";
 import { format } from "date-fns";
 
