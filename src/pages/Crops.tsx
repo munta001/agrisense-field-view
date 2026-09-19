@@ -383,6 +383,61 @@ export default function CropsPage() {
           </AccordionItem>
         ))}
       </Accordion>
+
+      {/* Edit Crop */}
+      <Dialog open={!!editCrop} onOpenChange={open => !open && setEditCrop(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle className="font-display">Edit Crop</DialogTitle></DialogHeader>
+          <div className="space-y-4 pt-2">
+            <Input placeholder="Crop Name" value={editCropForm.name} onChange={e => setEditCropForm({ ...editCropForm, name: e.target.value })} />
+            <Input placeholder="Category (e.g. Vegetables, Fruits)" value={editCropForm.category} onChange={e => setEditCropForm({ ...editCropForm, category: e.target.value })} />
+            <Textarea placeholder="Description (optional)" value={editCropForm.description} onChange={e => setEditCropForm({ ...editCropForm, description: e.target.value })} />
+            <Button onClick={saveCrop} className="w-full">Save Changes</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Stage */}
+      <Dialog open={!!editStage} onOpenChange={open => !open && setEditStage(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle className="font-display">Edit Growth Stage</DialogTitle></DialogHeader>
+          <div className="space-y-4 pt-2">
+            <Input placeholder="Stage Name" value={editStageForm.name} onChange={e => setEditStageForm({ ...editStageForm, name: e.target.value })} />
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">Order</label>
+                <Input type="number" value={editStageForm.stage_order} onChange={e => setEditStageForm({ ...editStageForm, stage_order: Number(e.target.value) })} />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">Duration (days)</label>
+                <Input type="number" min={0} value={editStageForm.duration_days} onChange={e => setEditStageForm({ ...editStageForm, duration_days: Number(e.target.value) })} />
+              </div>
+            </div>
+            <Textarea placeholder="Description (optional)" value={editStageForm.description} onChange={e => setEditStageForm({ ...editStageForm, description: e.target.value })} />
+            <Button onClick={saveStage} className="w-full">Save Changes</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Threshold */}
+      <Dialog open={!!editThreshold} onOpenChange={open => !open && setEditThreshold(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle className="font-display">Edit Threshold — {editThreshold?.metric ? metricLabel(editThreshold.metric) : ""}</DialogTitle></DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">Min Value{editThreshold?.metric ? ` (${metricUnit(editThreshold.metric)})` : ""}</label>
+                <Input type="number" value={editThresholdForm.min_value} onChange={e => setEditThresholdForm({ ...editThresholdForm, min_value: e.target.value })} />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">Max Value{editThreshold?.metric ? ` (${metricUnit(editThreshold.metric)})` : ""}</label>
+                <Input type="number" value={editThresholdForm.max_value} onChange={e => setEditThresholdForm({ ...editThresholdForm, max_value: e.target.value })} />
+              </div>
+            </div>
+            <Button onClick={saveThreshold} className="w-full">Save Changes</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
