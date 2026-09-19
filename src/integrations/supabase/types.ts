@@ -55,6 +55,7 @@ export type Database = {
           id: string
           is_read: boolean
           message: string | null
+          metric: string | null
           org_id: string
           sensor_id: string | null
           severity: string
@@ -65,6 +66,7 @@ export type Database = {
           id?: string
           is_read?: boolean
           message?: string | null
+          metric?: string | null
           org_id: string
           sensor_id?: string | null
           severity?: string
@@ -75,6 +77,7 @@ export type Database = {
           id?: string
           is_read?: boolean
           message?: string | null
+          metric?: string | null
           org_id?: string
           sensor_id?: string | null
           severity?: string
@@ -103,24 +106,27 @@ export type Database = {
           crop_stage_id: string
           id: string
           max_value: number | null
+          metric: string | null
           min_value: number | null
-          sensor_type_id: string
+          sensor_type_id: string | null
         }
         Insert: {
           created_at?: string
           crop_stage_id: string
           id?: string
           max_value?: number | null
+          metric?: string | null
           min_value?: number | null
-          sensor_type_id: string
+          sensor_type_id?: string | null
         }
         Update: {
           created_at?: string
           crop_stage_id?: string
           id?: string
           max_value?: number | null
+          metric?: string | null
           min_value?: number | null
-          sensor_type_id?: string
+          sensor_type_id?: string | null
         }
         Relationships: [
           {
@@ -144,6 +150,7 @@ export type Database = {
           created_at: string
           crop_id: string
           description: string | null
+          duration_days: number
           id: string
           name: string
           stage_order: number
@@ -153,6 +160,7 @@ export type Database = {
           created_at?: string
           crop_id: string
           description?: string | null
+          duration_days?: number
           id?: string
           name: string
           stage_order?: number
@@ -162,6 +170,7 @@ export type Database = {
           created_at?: string
           crop_id?: string
           description?: string | null
+          duration_days?: number
           id?: string
           name?: string
           stage_order?: number
@@ -594,6 +603,7 @@ export type Database = {
           created_at: string
           crop_id: string | null
           crop_stage_id: string | null
+          crop_start_date: string | null
           id: string
           name: string
           org_id: string
@@ -606,6 +616,7 @@ export type Database = {
           created_at?: string
           crop_id?: string | null
           crop_stage_id?: string | null
+          crop_start_date?: string | null
           id?: string
           name: string
           org_id: string
@@ -618,6 +629,7 @@ export type Database = {
           created_at?: string
           crop_id?: string | null
           crop_stage_id?: string | null
+          crop_start_date?: string | null
           id?: string
           name?: string
           org_id?: string
@@ -688,6 +700,7 @@ export type Database = {
         Returns: boolean
       }
       master_admin_overview: { Args: never; Returns: Json }
+      sync_zone_stages: { Args: { p_org_id: string }; Returns: number }
     }
     Enums: {
       app_role: "admin" | "operator" | "viewer" | "master_admin"
