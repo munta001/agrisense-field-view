@@ -132,6 +132,64 @@ export default function CropsPage() {
     fetchCrops();
   };
 
+  const openEditCrop = (crop: Crop) => {
+    setEditCrop(crop);
+    setEditCropForm({ name: crop.name, category: crop.category || "", description: crop.description || "" });
+  };
+
+  const saveCrop = async () => {
+    if (!editCrop || !editCropForm.name) return;
+    const { error } = await supabase.from("crops").update({
+      name: editCropForm.name,
+      category: editCropForm.category,
+      description: editCropForm.description || null,
+    }).eq("id", editCrop.id);
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Crop updated" });
+    setEditCrop(null);
+    fetchCrops();
+  };
+
+  const openEditStage = (stage: CropStage) => {
+    setEditStage(stage);
+    setEditStageForm({ name: stage.name, description: stage.description || "", stage_order: stage.stage_order, duration_days: stage.duration_days || 0 });
+  };
+
+  const saveStage = async () => {
+    if (!editStage || !editStageForm.name) return;
+    const { error } = await supabase.from("crop_stages").update({
+      name: editStageForm.name,
+      description: editStageForm.description || null,
+      stage_order: editStageForm.stage_order,
+      duration_days: Math.max(0, Number(editStageForm.duration_days) || 0),
+    } as any).eq("id", editStage.id);
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Stage updated" });
+    setEditStage(null);
+    fetchCrops();
+  };
+
+  const openEditThreshold = (t: Threshold) => {
+    setEditThreshold(t);
+    setEditThresholdForm({ min_value: t.min_value != null ? String(t.min_value) : "", max_value: t.max_value != null ? String(t.max_value) : "" });
+  };
+
+  const saveThreshold = async () => {
+    if (!editThreshold) return;
+    if (!editThresholdForm.min_value && !editThresholdForm.max_value) {
+      toast({ title: "Enter a minimum or maximum value", variant: "destructive" });
+      return;
+    }
+    const { error } = await supabase.from("crop_stage_thresholds").update({
+      min_value: editThresholdForm.min_value ? Number(editThresholdForm.min_value) : null,
+      max_value: editThresholdForm.max_value ? Number(editThresholdForm.max_value) : null,
+    } as any).eq("id", editThreshold.id);
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Threshold updated" });
+    setEditThreshold(null);
+    fetchCrops();
+  };
+
   const getSensorTypeName = (id: string | null) => sensorTypes.find(st => st.id === id)?.name || "Unknown";
   const getSensorTypeUnit = (id: string | null) => sensorTypes.find(st => st.id === id)?.unit || "";
 
