@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Plus, Trash2, Sprout, Layers } from "lucide-react";
+import { Plus, Trash2, Sprout, Layers, Pencil } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { SOIL_METRICS, metricLabel, metricUnit } from "@/lib/metrics";
 
@@ -28,6 +28,12 @@ export default function CropsPage() {
   const [stageForm, setStageForm] = useState({ name: "", description: "", stage_order: 0, duration_days: 0 });
   const [thresholdOpen, setThresholdOpen] = useState<string | null>(null);
   const [thresholdForm, setThresholdForm] = useState({ metric: "", min_value: "", max_value: "" });
+  const [editCrop, setEditCrop] = useState<Crop | null>(null);
+  const [editCropForm, setEditCropForm] = useState({ name: "", category: "", description: "" });
+  const [editStage, setEditStage] = useState<CropStage | null>(null);
+  const [editStageForm, setEditStageForm] = useState({ name: "", description: "", stage_order: 0, duration_days: 0 });
+  const [editThreshold, setEditThreshold] = useState<Threshold | null>(null);
+  const [editThresholdForm, setEditThresholdForm] = useState({ min_value: "", max_value: "" });
   const { toast } = useToast();
   const canEdit = currentRole?.role === "admin" || currentRole?.role === "operator";
 
