@@ -126,8 +126,8 @@ export default function CropsPage() {
     fetchCrops();
   };
 
-  const getSensorTypeName = (id: string) => sensorTypes.find(st => st.id === id)?.name || "Unknown";
-  const getSensorTypeUnit = (id: string) => sensorTypes.find(st => st.id === id)?.unit || "";
+  const getSensorTypeName = (id: string | null) => sensorTypes.find(st => st.id === id)?.name || "Unknown";
+  const getSensorTypeUnit = (id: string | null) => sensorTypes.find(st => st.id === id)?.unit || "";
 
   return (
     <div className="space-y-6">
