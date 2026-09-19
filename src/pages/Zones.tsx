@@ -174,6 +174,15 @@ export default function ZonesPage() {
                     </SelectContent>
                   </Select>
                 )}
+                {form.crop_id && form.crop_id !== "none" && (
+                  <div className="space-y-1">
+                    <label className="text-xs text-muted-foreground">Crop start date</label>
+                    <Input type="date" value={form.crop_start_date} onChange={e => setForm({ ...form, crop_start_date: e.target.value })} />
+                    <p className="text-xs text-muted-foreground">
+                      The stage moves on automatically using each stage's duration, counted from this date. You can still pick a stage manually.
+                    </p>
+                  </div>
+                )}
                 <Button onClick={handleSave} className="w-full">{editZone ? "Update Zone" : "Create Zone"}</Button>
               </div>
             </DialogContent>
@@ -240,6 +249,12 @@ export default function ZonesPage() {
                 )}
                 {zone.crop_stages && (
                   <div className="text-xs">Stage: {zone.crop_stages.name}</div>
+                )}
+                {zone.crop_start_date && (
+                  <div className="text-xs">
+                    Started {zone.crop_start_date} · day{" "}
+                    {Math.max(0, Math.floor((Date.now() - new Date(zone.crop_start_date).getTime()) / 86400000)) + 1}
+                  </div>
                 )}
               </div>
               {canEdit && (
