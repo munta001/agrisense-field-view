@@ -9,7 +9,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-  BatteryMedium,
   ImagePlus,
   LocateFixed,
   MapPinned,
@@ -399,7 +398,9 @@ export default function FieldMapPage() {
                     <p className="truncate text-sm font-semibold">{selectedSensorData.name}</p>
                     <p className="capitalize text-xs text-muted-foreground">{selectedSensorData.status}</p>
                   </div>
-                  <Badge variant="outline" className="gap-1"><BatteryMedium className="h-3 w-3" />{selectedSensorData.battery_level ?? "—"}%</Badge>
+                  <Badge variant="outline" className="max-w-[130px] truncate font-normal">
+                    {selectedSensorData.device_id || "LoRaWAN"}
+                  </Badge>
                 </div>
               </div>
             )}
