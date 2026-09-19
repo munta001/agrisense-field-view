@@ -13,8 +13,8 @@ import { Plus, Trash2, Sprout, Layers } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 type SensorType = { id: string; name: string; unit: string; min_value: number | null; max_value: number | null };
-type Threshold = { id: string; crop_stage_id: string; sensor_type_id: string; min_value: number | null; max_value: number | null };
-type CropStage = { id: string; crop_id: string; name: string; stage_order: number; description: string | null; thresholds: Threshold[] };
+type Threshold = { id: string; crop_stage_id: string; sensor_type_id: string | null; metric: string | null; min_value: number | null; max_value: number | null };
+type CropStage = { id: string; crop_id: string; name: string; stage_order: number; duration_days: number; description: string | null; thresholds: Threshold[] };
 type Crop = { id: string; org_id: string; name: string; category: string; description: string | null; crop_stages: CropStage[] };
 
 export default function CropsPage() {
