@@ -24,9 +24,9 @@ export default function CropsPage() {
   const [cropOpen, setCropOpen] = useState(false);
   const [cropForm, setCropForm] = useState({ name: "", category: "", description: "" });
   const [stageOpen, setStageOpen] = useState<string | null>(null);
-  const [stageForm, setStageForm] = useState({ name: "", description: "", stage_order: 0 });
+  const [stageForm, setStageForm] = useState({ name: "", description: "", stage_order: 0, duration_days: 0 });
   const [thresholdOpen, setThresholdOpen] = useState<string | null>(null);
-  const [thresholdForm, setThresholdForm] = useState({ sensor_type_id: "", min_value: "", max_value: "" });
+  const [thresholdForm, setThresholdForm] = useState({ metric: "", min_value: "", max_value: "" });
   const { toast } = useToast();
   const canEdit = currentRole?.role === "admin" || currentRole?.role === "operator";
 
@@ -82,26 +82,31 @@ export default function CropsPage() {
       name: stageForm.name,
       description: stageForm.description || null,
       stage_order: stageForm.stage_order,
-    });
+      duration_days: Math.max(0, Number(stageForm.duration_days) || 0),
+    } as any);
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
     toast({ title: "Stage added" });
     setStageOpen(null);
-    setStageForm({ name: "", description: "", stage_order: 0 });
+    setStageForm({ name: "", description: "", stage_order: 0, duration_days: 0 });
     fetchCrops();
   };
 
   const addThreshold = async (stageId: string) => {
-    if (!thresholdForm.sensor_type_id) return;
+    if (!thresholdForm.metric) return;
+    if (!thresholdForm.min_value && !thresholdForm.max_value) {
+      toast({ title: "Enter a minimum or maximum value", variant: "destructive" });
+      return;
+    }
     const { error } = await supabase.from("crop_stage_thresholds").insert({
       crop_stage_id: stageId,
-      sensor_type_id: thresholdForm.sensor_type_id,
+      metric: thresholdForm.metric,
       min_value: thresholdForm.min_value ? Number(thresholdForm.min_value) : null,
       max_value: thresholdForm.max_value ? Number(thresholdForm.max_value) : null,
-    });
+    } as any);
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
     toast({ title: "Threshold added" });
     setThresholdOpen(null);
-    setThresholdForm({ sensor_type_id: "", min_value: "", max_value: "" });
+    setThresholdForm({ metric: "", min_value: "", max_value: "" });
     fetchCrops();
   };
 
