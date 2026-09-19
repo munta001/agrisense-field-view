@@ -14,7 +14,7 @@ export default function AlertsPage() {
 
   const fetchAlerts = async () => {
     if (!currentOrg) return;
-    const { data } = await supabase.from("alerts").select("*").eq("org_id", currentOrg.id).order("created_at", { ascending: false });
+    const { data } = await supabase.from("alerts").select("*").eq("org_id", currentOrg.id).order("created_at", { ascending: false }).limit(20);
     setAlerts(data || []);
   };
 
@@ -38,7 +38,7 @@ export default function AlertsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="font-display text-2xl font-bold">Alerts & Notifications</h1>
-          <p className="text-muted-foreground">{unreadCount} unread alert{unreadCount !== 1 ? "s" : ""}</p>
+          <p className="text-muted-foreground">20 most recent · {unreadCount} unread</p>
         </div>
       </div>
 

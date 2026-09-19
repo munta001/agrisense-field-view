@@ -11,10 +11,11 @@ import { Plus, MapPin, Upload, Sprout } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 type Crop = { id: string; name: string; category: string };
-type CropStage = { id: string; crop_id: string; name: string; stage_order: number };
+type CropStage = { id: string; crop_id: string; name: string; stage_order: number; duration_days?: number };
 type Zone = {
   id: string; org_id: string; name: string; color: string;
   background_image_url: string | null; crop_id: string | null; crop_stage_id: string | null;
+  crop_start_date: string | null;
   crops?: Crop | null; crop_stages?: CropStage | null;
 };
 
@@ -26,12 +27,13 @@ export default function ZonesPage() {
   const [sensorCounts, setSensorCounts] = useState<Record<string, number>>({});
   const [open, setOpen] = useState(false);
   const [editZone, setEditZone] = useState<Zone | null>(null);
-  const [form, setForm] = useState({ name: "", color: "#22c55e", crop_id: "", crop_stage_id: "" });
+  const [form, setForm] = useState({ name: "", color: "#22c55e", crop_id: "", crop_stage_id: "", crop_start_date: "" });
   const { toast } = useToast();
   const canEdit = currentRole?.role === "admin" || currentRole?.role === "operator";
 
   const fetchZones = async () => {
     if (!currentOrg) return;
+    await supabase.rpc("sync_zone_stages" as any, { p_org_id: currentOrg.id });
     const { data } = await supabase.from("zones").select("*, crops(*), crop_stages(*)").eq("org_id", currentOrg.id);
     setZones((data as Zone[]) || []);
     const { data: sensors } = await supabase.from("sensors").select("zone_id").eq("org_id", currentOrg.id);
@@ -49,15 +51,18 @@ export default function ZonesPage() {
 
   const filteredStages = (cropId: string) => cropStages.filter(s => s.crop_id === cropId);
 
+  const cleanId = (v: string) => (v && v !== "none" ? v : null);
+
   const handleSave = async () => {
     if (!currentOrg || !form.name) return;
     if (editZone) {
       const { error } = await supabase.from("zones").update({
         name: form.name,
         color: form.color,
-        crop_id: form.crop_id || null,
-        crop_stage_id: form.crop_stage_id || null,
-      }).eq("id", editZone.id);
+        crop_id: cleanId(form.crop_id),
+        crop_stage_id: cleanId(form.crop_stage_id),
+        crop_start_date: form.crop_start_date || null,
+      } as any).eq("id", editZone.id);
       if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
       toast({ title: "Zone updated" });
     } else {
@@ -71,13 +76,13 @@ export default function ZonesPage() {
         return;
       }
       const { error } = await supabase.from("zones").insert({
-
         org_id: currentOrg.id,
         name: form.name,
         color: form.color,
-        crop_id: form.crop_id || null,
-        crop_stage_id: form.crop_stage_id || null,
-      });
+        crop_id: cleanId(form.crop_id),
+        crop_stage_id: cleanId(form.crop_stage_id),
+        crop_start_date: form.crop_start_date || null,
+      } as any);
       if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
       toast({ title: "Zone created" });
     }
@@ -88,7 +93,7 @@ export default function ZonesPage() {
   const closeDialog = () => {
     setOpen(false);
     setEditZone(null);
-    setForm({ name: "", color: "#22c55e", crop_id: "", crop_stage_id: "" });
+    setForm({ name: "", color: "#22c55e", crop_id: "", crop_stage_id: "", crop_start_date: "" });
   };
 
   const openEdit = (zone: Zone) => {
@@ -98,6 +103,7 @@ export default function ZonesPage() {
       color: zone.color,
       crop_id: zone.crop_id || "",
       crop_stage_id: zone.crop_stage_id || "",
+      crop_start_date: zone.crop_start_date || "",
     });
     setOpen(true);
   };
@@ -168,6 +174,15 @@ export default function ZonesPage() {
                     </SelectContent>
                   </Select>
                 )}
+                {form.crop_id && form.crop_id !== "none" && (
+                  <div className="space-y-1">
+                    <label className="text-xs text-muted-foreground">Crop start date</label>
+                    <Input type="date" value={form.crop_start_date} onChange={e => setForm({ ...form, crop_start_date: e.target.value })} />
+                    <p className="text-xs text-muted-foreground">
+                      The stage moves on automatically using each stage's duration, counted from this date. You can still pick a stage manually.
+                    </p>
+                  </div>
+                )}
                 <Button onClick={handleSave} className="w-full">{editZone ? "Update Zone" : "Create Zone"}</Button>
               </div>
             </DialogContent>
@@ -234,6 +249,12 @@ export default function ZonesPage() {
                 )}
                 {zone.crop_stages && (
                   <div className="text-xs">Stage: {zone.crop_stages.name}</div>
+                )}
+                {zone.crop_start_date && (
+                  <div className="text-xs">
+                    Started {zone.crop_start_date} · day{" "}
+                    {Math.max(0, Math.floor((Date.now() - new Date(zone.crop_start_date).getTime()) / 86400000)) + 1}
+                  </div>
                 )}
               </div>
               {canEdit && (

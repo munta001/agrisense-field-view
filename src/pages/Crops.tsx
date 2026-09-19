@@ -11,10 +11,11 @@ import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Plus, Trash2, Sprout, Layers } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { SOIL_METRICS, metricLabel, metricUnit } from "@/lib/metrics";
 
 type SensorType = { id: string; name: string; unit: string; min_value: number | null; max_value: number | null };
-type Threshold = { id: string; crop_stage_id: string; sensor_type_id: string; min_value: number | null; max_value: number | null };
-type CropStage = { id: string; crop_id: string; name: string; stage_order: number; description: string | null; thresholds: Threshold[] };
+type Threshold = { id: string; crop_stage_id: string; sensor_type_id: string | null; metric: string | null; min_value: number | null; max_value: number | null };
+type CropStage = { id: string; crop_id: string; name: string; stage_order: number; duration_days: number; description: string | null; thresholds: Threshold[] };
 type Crop = { id: string; org_id: string; name: string; category: string; description: string | null; crop_stages: CropStage[] };
 
 export default function CropsPage() {
@@ -24,9 +25,9 @@ export default function CropsPage() {
   const [cropOpen, setCropOpen] = useState(false);
   const [cropForm, setCropForm] = useState({ name: "", category: "", description: "" });
   const [stageOpen, setStageOpen] = useState<string | null>(null);
-  const [stageForm, setStageForm] = useState({ name: "", description: "", stage_order: 0 });
+  const [stageForm, setStageForm] = useState({ name: "", description: "", stage_order: 0, duration_days: 0 });
   const [thresholdOpen, setThresholdOpen] = useState<string | null>(null);
-  const [thresholdForm, setThresholdForm] = useState({ sensor_type_id: "", min_value: "", max_value: "" });
+  const [thresholdForm, setThresholdForm] = useState({ metric: "", min_value: "", max_value: "" });
   const { toast } = useToast();
   const canEdit = currentRole?.role === "admin" || currentRole?.role === "operator";
 
@@ -82,26 +83,31 @@ export default function CropsPage() {
       name: stageForm.name,
       description: stageForm.description || null,
       stage_order: stageForm.stage_order,
-    });
+      duration_days: Math.max(0, Number(stageForm.duration_days) || 0),
+    } as any);
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
     toast({ title: "Stage added" });
     setStageOpen(null);
-    setStageForm({ name: "", description: "", stage_order: 0 });
+    setStageForm({ name: "", description: "", stage_order: 0, duration_days: 0 });
     fetchCrops();
   };
 
   const addThreshold = async (stageId: string) => {
-    if (!thresholdForm.sensor_type_id) return;
+    if (!thresholdForm.metric) return;
+    if (!thresholdForm.min_value && !thresholdForm.max_value) {
+      toast({ title: "Enter a minimum or maximum value", variant: "destructive" });
+      return;
+    }
     const { error } = await supabase.from("crop_stage_thresholds").insert({
       crop_stage_id: stageId,
-      sensor_type_id: thresholdForm.sensor_type_id,
+      metric: thresholdForm.metric,
       min_value: thresholdForm.min_value ? Number(thresholdForm.min_value) : null,
       max_value: thresholdForm.max_value ? Number(thresholdForm.max_value) : null,
-    });
+    } as any);
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
     toast({ title: "Threshold added" });
     setThresholdOpen(null);
-    setThresholdForm({ sensor_type_id: "", min_value: "", max_value: "" });
+    setThresholdForm({ metric: "", min_value: "", max_value: "" });
     fetchCrops();
   };
 
@@ -120,8 +126,8 @@ export default function CropsPage() {
     fetchCrops();
   };
 
-  const getSensorTypeName = (id: string) => sensorTypes.find(st => st.id === id)?.name || "Unknown";
-  const getSensorTypeUnit = (id: string) => sensorTypes.find(st => st.id === id)?.unit || "";
+  const getSensorTypeName = (id: string | null) => sensorTypes.find(st => st.id === id)?.name || "Unknown";
+  const getSensorTypeUnit = (id: string | null) => sensorTypes.find(st => st.id === id)?.unit || "";
 
   return (
     <div className="space-y-6">
@@ -189,7 +195,16 @@ export default function CropsPage() {
                       <DialogHeader><DialogTitle className="font-display">Add Growth Stage</DialogTitle></DialogHeader>
                       <div className="space-y-4 pt-2">
                         <Input placeholder="Stage Name (e.g. Germination)" value={stageForm.name} onChange={e => setStageForm({ ...stageForm, name: e.target.value })} />
-                        <Input type="number" placeholder="Order (0, 1, 2...)" value={stageForm.stage_order} onChange={e => setStageForm({ ...stageForm, stage_order: Number(e.target.value) })} />
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-1">
+                            <label className="text-xs text-muted-foreground">Order</label>
+                            <Input type="number" placeholder="0, 1, 2..." value={stageForm.stage_order} onChange={e => setStageForm({ ...stageForm, stage_order: Number(e.target.value) })} />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-xs text-muted-foreground">Duration (days)</label>
+                            <Input type="number" min={0} placeholder="e.g. 14" value={stageForm.duration_days} onChange={e => setStageForm({ ...stageForm, duration_days: Number(e.target.value) })} />
+                          </div>
+                        </div>
                         <Textarea placeholder="Description (optional)" value={stageForm.description} onChange={e => setStageForm({ ...stageForm, description: e.target.value })} />
                         <Button onClick={() => addStage(crop.id)} className="w-full">Add Stage</Button>
                       </div>
@@ -210,6 +225,7 @@ export default function CropsPage() {
                         <CardTitle className="text-sm font-medium flex items-center gap-2">
                           <Badge variant="outline" className="text-xs">{stage.stage_order}</Badge>
                           {stage.name}
+                          <Badge variant="secondary" className="text-xs font-normal">{stage.duration_days || 0} days</Badge>
                         </CardTitle>
                         <div className="flex items-center gap-1">
                           {canEdit && (
@@ -221,16 +237,16 @@ export default function CropsPage() {
                                 <DialogContent>
                                   <DialogHeader><DialogTitle className="font-display">Add Sensor Threshold</DialogTitle></DialogHeader>
                                   <div className="space-y-4 pt-2">
-                                    <select
-                                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                                      value={thresholdForm.sensor_type_id}
-                                      onChange={e => setThresholdForm({ ...thresholdForm, sensor_type_id: e.target.value })}
-                                    >
-                                      <option value="">Select Sensor Type</option>
-                                      {sensorTypes.filter(st => !stage.thresholds.some(t => t.sensor_type_id === st.id)).map(st => (
-                                        <option key={st.id} value={st.id}>{st.name} ({st.unit})</option>
-                                      ))}
-                                    </select>
+                                     <select
+                                       className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                       value={thresholdForm.metric}
+                                       onChange={e => setThresholdForm({ ...thresholdForm, metric: e.target.value })}
+                                     >
+                                       <option value="">Select measured value</option>
+                                       {SOIL_METRICS.filter(m => !stage.thresholds.some(t => t.metric === m.key)).map(m => (
+                                         <option key={m.key} value={m.key}>{m.label} ({m.unit})</option>
+                                       ))}
+                                     </select>
                                     <div className="grid grid-cols-2 gap-3">
                                       <Input type="number" placeholder="Min Value" value={thresholdForm.min_value} onChange={e => setThresholdForm({ ...thresholdForm, min_value: e.target.value })} />
                                       <Input type="number" placeholder="Max Value" value={thresholdForm.max_value} onChange={e => setThresholdForm({ ...thresholdForm, max_value: e.target.value })} />
@@ -252,7 +268,7 @@ export default function CropsPage() {
                         <Table>
                           <TableHeader>
                             <TableRow>
-                              <TableHead className="text-xs">Sensor Type</TableHead>
+                              <TableHead className="text-xs">Measured value</TableHead>
                               <TableHead className="text-xs">Min</TableHead>
                               <TableHead className="text-xs">Max</TableHead>
                               {canEdit && <TableHead className="text-xs w-10"></TableHead>}
@@ -261,9 +277,9 @@ export default function CropsPage() {
                           <TableBody>
                             {stage.thresholds.map(t => (
                               <TableRow key={t.id}>
-                                <TableCell className="text-sm">{getSensorTypeName(t.sensor_type_id)}</TableCell>
-                                <TableCell className="text-sm font-mono">{t.min_value ?? "—"} {getSensorTypeUnit(t.sensor_type_id)}</TableCell>
-                                <TableCell className="text-sm font-mono">{t.max_value ?? "—"} {getSensorTypeUnit(t.sensor_type_id)}</TableCell>
+                                <TableCell className="text-sm">{t.metric ? metricLabel(t.metric) : getSensorTypeName(t.sensor_type_id)}</TableCell>
+                                <TableCell className="text-sm font-mono">{t.min_value ?? "—"} {t.metric ? metricUnit(t.metric) : getSensorTypeUnit(t.sensor_type_id)}</TableCell>
+                                <TableCell className="text-sm font-mono">{t.max_value ?? "—"} {t.metric ? metricUnit(t.metric) : getSensorTypeUnit(t.sensor_type_id)}</TableCell>
                                 {canEdit && (
                                   <TableCell>
                                     <Button size="sm" variant="ghost" className="text-destructive h-6 w-6 p-0" onClick={() => deleteThreshold(t.id)}>
