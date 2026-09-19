@@ -27,12 +27,13 @@ export default function ZonesPage() {
   const [sensorCounts, setSensorCounts] = useState<Record<string, number>>({});
   const [open, setOpen] = useState(false);
   const [editZone, setEditZone] = useState<Zone | null>(null);
-  const [form, setForm] = useState({ name: "", color: "#22c55e", crop_id: "", crop_stage_id: "" });
+  const [form, setForm] = useState({ name: "", color: "#22c55e", crop_id: "", crop_stage_id: "", crop_start_date: "" });
   const { toast } = useToast();
   const canEdit = currentRole?.role === "admin" || currentRole?.role === "operator";
 
   const fetchZones = async () => {
     if (!currentOrg) return;
+    await supabase.rpc("sync_zone_stages" as any, { p_org_id: currentOrg.id });
     const { data } = await supabase.from("zones").select("*, crops(*), crop_stages(*)").eq("org_id", currentOrg.id);
     setZones((data as Zone[]) || []);
     const { data: sensors } = await supabase.from("sensors").select("zone_id").eq("org_id", currentOrg.id);
@@ -50,15 +51,18 @@ export default function ZonesPage() {
 
   const filteredStages = (cropId: string) => cropStages.filter(s => s.crop_id === cropId);
 
+  const cleanId = (v: string) => (v && v !== "none" ? v : null);
+
   const handleSave = async () => {
     if (!currentOrg || !form.name) return;
     if (editZone) {
       const { error } = await supabase.from("zones").update({
         name: form.name,
         color: form.color,
-        crop_id: form.crop_id || null,
-        crop_stage_id: form.crop_stage_id || null,
-      }).eq("id", editZone.id);
+        crop_id: cleanId(form.crop_id),
+        crop_stage_id: cleanId(form.crop_stage_id),
+        crop_start_date: form.crop_start_date || null,
+      } as any).eq("id", editZone.id);
       if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
       toast({ title: "Zone updated" });
     } else {
