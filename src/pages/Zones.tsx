@@ -76,13 +76,13 @@ export default function ZonesPage() {
         return;
       }
       const { error } = await supabase.from("zones").insert({
-
         org_id: currentOrg.id,
         name: form.name,
         color: form.color,
-        crop_id: form.crop_id || null,
-        crop_stage_id: form.crop_stage_id || null,
-      });
+        crop_id: cleanId(form.crop_id),
+        crop_stage_id: cleanId(form.crop_stage_id),
+        crop_start_date: form.crop_start_date || null,
+      } as any);
       if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
       toast({ title: "Zone created" });
     }
@@ -93,7 +93,7 @@ export default function ZonesPage() {
   const closeDialog = () => {
     setOpen(false);
     setEditZone(null);
-    setForm({ name: "", color: "#22c55e", crop_id: "", crop_stage_id: "" });
+    setForm({ name: "", color: "#22c55e", crop_id: "", crop_stage_id: "", crop_start_date: "" });
   };
 
   const openEdit = (zone: Zone) => {
@@ -103,6 +103,7 @@ export default function ZonesPage() {
       color: zone.color,
       crop_id: zone.crop_id || "",
       crop_stage_id: zone.crop_stage_id || "",
+      crop_start_date: zone.crop_start_date || "",
     });
     setOpen(true);
   };
