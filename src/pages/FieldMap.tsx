@@ -1,32 +1,61 @@
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrg } from "@/contexts/OrgContext";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Card, CardContent } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Upload, GripVertical, ImageIcon, Save } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  ImagePlus,
+  LocateFixed,
+  MapPinned,
+  Move,
+  Radio,
+  Save,
+  Sprout,
+  Upload,
+  Wifi,
+  WifiOff,
+} from "lucide-react";
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
 
-type Zone = Tables<"zones"> & { background_image_url?: string | null };
+type Zone = Tables<"zones"> & {
+  background_image_url?: string | null;
+  crops?: { name: string } | null;
+  crop_stages?: { name: string } | null;
+};
 type Sensor = Tables<"sensors"> & { sensor_types?: Tables<"sensor_types"> | null };
 
-const MAP_WIDTH = 800;
-const MAP_HEIGHT = 500;
+const MAP_WIDTH = 960;
+const MAP_HEIGHT = 600;
+
+const statusClass = (status: string) => {
+  if (status === "online") return "bg-success";
+  if (status === "offline") return "bg-destructive";
+  return "bg-warning";
+};
+
+const statusColor = (status: string) => {
+  if (status === "online") return "hsl(var(--success))";
+  if (status === "offline") return "hsl(var(--destructive))";
+  return "hsl(var(--warning))";
+};
 
 export default function FieldMapPage() {
   const { currentOrg, currentRole } = useOrg();
   const [zones, setZones] = useState<Zone[]>([]);
   const [sensors, setSensors] = useState<Sensor[]>([]);
-  const [activeZone, setActiveZone] = useState<string>("all");
+  const [activeZone, setActiveZone] = useState("");
+  const [selectedSensor, setSelectedSensor] = useState<string | null>(null);
   const [draggingSensor, setDraggingSensor] = useState<string | null>(null);
   const [pendingPositions, setPendingPositions] = useState<Record<string, { x: number; y: number }>>({});
   const [uploadingZone, setUploadingZone] = useState<Zone | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const svgRef = useRef<SVGSVGElement>(null);
 
   const isAdmin = currentRole?.role === "admin";
@@ -34,337 +63,371 @@ export default function FieldMapPage() {
 
   const fetchData = useCallback(async () => {
     if (!currentOrg) return;
+    setLoading(true);
     const [{ data: zoneData }, { data: sensorData }] = await Promise.all([
-      supabase.from("zones").select("*").eq("org_id", currentOrg.id),
-      supabase.from("sensors").select("*, sensor_types(*)").eq("org_id", currentOrg.id),
+      supabase
+        .from("zones")
+        .select("*, crops(name), crop_stages(name)")
+        .eq("org_id", currentOrg.id)
+        .order("name"),
+      supabase
+        .from("sensors")
+        .select("*, sensor_types(*)")
+        .eq("org_id", currentOrg.id)
+        .order("name"),
     ]);
-    setZones((zoneData as Zone[]) || []);
+    const nextZones = (zoneData as Zone[]) || [];
+    setZones(nextZones);
     setSensors((sensorData as Sensor[]) || []);
-    if (zoneData?.length && activeZone === "all") {
-      // keep "all" as default
-    }
+    setActiveZone((current) => nextZones.some((zone) => zone.id === current) ? current : nextZones[0]?.id ?? "");
+    setLoading(false);
   }, [currentOrg]);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
-  // Get sensors for current view
-  const visibleSensors = activeZone === "all"
-    ? sensors
-    : sensors.filter(s => s.zone_id === activeZone);
+  const activeZoneData = zones.find((zone) => zone.id === activeZone) ?? null;
+  const visibleSensors = useMemo(
+    () => sensors.filter((sensor) => sensor.zone_id === activeZone && sensor.is_active !== false),
+    [activeZone, sensors],
+  );
+  const selectedSensorData = visibleSensors.find((sensor) => sensor.id === selectedSensor) ?? null;
+  const onlineCount = visibleSensors.filter((sensor) => sensor.status === "online").length;
+  const offlineCount = visibleSensors.filter((sensor) => sensor.status === "offline").length;
+  const pendingCount = Object.keys(pendingPositions).length;
 
-  // Rect of a zone in the "All Zones" overview
-  const zoneRect = (zoneId: string | null) => {
-    const idx = zones.findIndex(z => z.id === zoneId);
-    if (idx < 0) return null;
-    const cols = 2;
-    const col = idx % cols;
-    const row = Math.floor(idx / cols);
-    const w = (MAP_WIDTH - 30) / cols;
-    const h = (MAP_HEIGHT - 30) / Math.ceil(zones.length / cols);
-    return { x: 10 + col * (w + 10), y: 10 + row * (h + 10), w, h };
-  };
+  useEffect(() => {
+    setSelectedSensor(null);
+    setDraggingSensor(null);
+    setPendingPositions({});
+  }, [activeZone]);
 
-  // Raw stored/pending position in the single-zone coordinate space
-  const rawPos = (s: Sensor) => {
-    if (pendingPositions[s.id]) return pendingPositions[s.id];
+  const rawPosition = (sensor: Sensor) => {
+    if (pendingPositions[sensor.id]) return pendingPositions[sensor.id];
     return {
-      x: s.map_x ?? (50 + Math.abs(s.id.charCodeAt(0) % 7) * 100),
-      y: s.map_y ?? (50 + Math.abs(s.id.charCodeAt(1) % 4) * 110),
+      x: sensor.map_x ?? 90 + Math.abs(sensor.id.charCodeAt(0) % 7) * 110,
+      y: sensor.map_y ?? 90 + Math.abs(sensor.id.charCodeAt(1) % 4) * 120,
     };
   };
 
-  // Sensor positions: in "all" view, map into the sensor's own zone rectangle
-  const getSensorPos = (s: Sensor) => {
-    const pos = rawPos(s);
-    if (activeZone !== "all") return pos;
-    const rect = zoneRect(s.zone_id);
-    if (!rect) return pos;
-    const padX = 16;
-    const padY = 34;
-    return {
-      x: rect.x + padX + (pos.x / MAP_WIDTH) * (rect.w - padX * 2),
-      y: rect.y + padY + (pos.y / MAP_HEIGHT) * (rect.h - padY - 20),
-    };
-  };
-
-
-  // SVG coordinate conversion
   const svgPoint = (clientX: number, clientY: number) => {
     const svg = svgRef.current;
     if (!svg) return { x: 0, y: 0 };
-    const pt = svg.createSVGPoint();
-    pt.x = clientX;
-    pt.y = clientY;
-    const ctm = svg.getScreenCTM();
-    if (!ctm) return { x: 0, y: 0 };
-    const svgPt = pt.matrixTransform(ctm.inverse());
+    const point = svg.createSVGPoint();
+    point.x = clientX;
+    point.y = clientY;
+    const matrix = svg.getScreenCTM();
+    if (!matrix) return { x: 0, y: 0 };
+    const transformed = point.matrixTransform(matrix.inverse());
     return {
-      x: Math.max(15, Math.min(MAP_WIDTH - 15, svgPt.x)),
-      y: Math.max(15, Math.min(MAP_HEIGHT - 15, svgPt.y)),
+      x: Math.max(34, Math.min(MAP_WIDTH - 34, transformed.x)),
+      y: Math.max(34, Math.min(MAP_HEIGHT - 54, transformed.y)),
     };
   };
 
-  const handleMouseDown = (sensorId: string) => {
-    if (!isAdmin || activeZone === "all") return;
+  const handlePointerDown = (event: React.PointerEvent<SVGGElement>, sensorId: string) => {
+    setSelectedSensor(sensorId);
+    if (!isAdmin) return;
+    event.preventDefault();
+    svgRef.current?.setPointerCapture(event.pointerId);
     setDraggingSensor(sensorId);
   };
 
-  const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
+  const handlePointerMove = (event: React.PointerEvent<SVGSVGElement>) => {
     if (!draggingSensor) return;
-    const pos = svgPoint(e.clientX, e.clientY);
-    setPendingPositions(prev => ({ ...prev, [draggingSensor]: pos }));
+    const position = svgPoint(event.clientX, event.clientY);
+    setPendingPositions((current) => ({ ...current, [draggingSensor]: position }));
   };
 
-  const handleMouseUp = () => {
+  const stopDragging = (event: React.PointerEvent<SVGSVGElement>) => {
+    if (svgRef.current?.hasPointerCapture(event.pointerId)) svgRef.current.releasePointerCapture(event.pointerId);
     setDraggingSensor(null);
   };
 
   const savePositions = async () => {
     const entries = Object.entries(pendingPositions);
     if (!entries.length) return;
-    const promises = entries.map(([id, pos]) =>
-      supabase.from("sensors").update({ map_x: pos.x, map_y: pos.y }).eq("id", id)
+    const results = await Promise.all(
+      entries.map(([id, position]) =>
+        supabase.from("sensors").update({ map_x: position.x, map_y: position.y }).eq("id", id),
+      ),
     );
-    await Promise.all(promises);
-    toast.success(`Saved ${entries.length} sensor position(s)`);
+    const failed = results.find((result) => result.error);
+    if (failed?.error) {
+      toast.error("Positions could not be saved");
+      return;
+    }
+    toast.success(`${entries.length} device position${entries.length === 1 ? "" : "s"} saved`);
     setPendingPositions({});
     fetchData();
   };
 
-  // Zone image upload
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!uploadingZone || !e.target.files?.[0]) return;
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!uploadingZone || !file || !currentOrg) return;
     setUploading(true);
-    const file = e.target.files[0];
-    const ext = file.name.split(".").pop();
-    const path = `${currentOrg!.id}/${uploadingZone.id}.${ext}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from("zone-images")
-      .upload(path, file, { upsert: true });
-
+    const extension = file.name.split(".").pop() || "jpg";
+    const path = `${currentOrg.id}/${uploadingZone.id}.${extension}`;
+    const { error: uploadError } = await supabase.storage.from("zone-images").upload(path, file, { upsert: true });
     if (uploadError) {
-      toast.error("Upload failed: " + uploadError.message);
+      toast.error(`Upload failed: ${uploadError.message}`);
       setUploading(false);
       return;
     }
-
-    const { data: urlData } = supabase.storage.from("zone-images").getPublicUrl(path);
-    await supabase.from("zones").update({ background_image_url: urlData.publicUrl }).eq("id", uploadingZone.id);
-
-    toast.success("Zone image uploaded!");
+    const { data } = supabase.storage.from("zone-images").getPublicUrl(path);
+    const { error } = await supabase
+      .from("zones")
+      .update({ background_image_url: data.publicUrl })
+      .eq("id", uploadingZone.id);
+    if (error) {
+      toast.error("The map image could not be updated");
+    } else {
+      toast.success("Zone map updated");
+      setUploadingZone(null);
+      fetchData();
+    }
     setUploading(false);
-    setUploadingZone(null);
-    fetchData();
   };
 
-  const getStatusColor = (status: string) => {
-    if (status === "online") return "hsl(var(--success))";
-    if (status === "offline") return "hsl(var(--destructive))";
-    return "hsl(var(--warning))";
-  };
+  if (loading) {
+    return (
+      <div className="space-y-5 animate-pulse">
+        <div className="h-16 rounded-md bg-muted" />
+        <div className="h-[620px] rounded-md bg-muted" />
+      </div>
+    );
+  }
 
-  const activeZoneData = zones.find(z => z.id === activeZone);
+  if (!zones.length) {
+    return (
+      <div className="flex min-h-[520px] items-center justify-center rounded-md border border-dashed bg-card">
+        <div className="max-w-sm space-y-3 px-6 text-center">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-secondary text-primary">
+            <MapPinned className="h-6 w-6" />
+          </div>
+          <h1 className="font-display text-xl font-semibold">No zones to map</h1>
+          <p className="text-sm text-muted-foreground">Create a zone before placing devices on the field map.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-5">
+      <header className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <h1 className="font-display text-2xl font-bold">Field Map</h1>
-          <p className="text-muted-foreground">
-            View sensor locations by zone
-            {isAdmin && " — open a zone tab to drag sensors and reposition them"}
-          </p>
+          <div className="mb-1 flex items-center gap-2 text-sm font-medium text-primary">
+            <MapPinned className="h-4 w-4" />
+            Field operations
+          </div>
+          <h1 className="font-display text-2xl font-bold">Zone map</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Monitor device coverage and manage exact field positions.</p>
         </div>
-        {isAdmin && Object.keys(pendingPositions).length > 0 && (
-          <Button onClick={savePositions} className="gap-2">
-            <Save className="h-4 w-4" />
-            Save Positions ({Object.keys(pendingPositions).length})
-          </Button>
-        )}
-      </div>
+        <div className="flex w-full flex-col gap-2 sm:flex-row lg:w-auto">
+          <Select value={activeZone} onValueChange={setActiveZone}>
+            <SelectTrigger className="h-10 w-full bg-card sm:w-[260px]" aria-label="Select zone">
+              <SelectValue placeholder="Select a zone" />
+            </SelectTrigger>
+            <SelectContent>
+              {zones.map((zone) => (
+                <SelectItem key={zone.id} value={zone.id}>
+                  {zone.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {pendingCount > 0 && (
+            <Button onClick={savePositions} className="gap-2">
+              <Save className="h-4 w-4" />
+              Save {pendingCount} change{pendingCount === 1 ? "" : "s"}
+            </Button>
+          )}
+        </div>
+      </header>
 
-      <Tabs value={activeZone} onValueChange={setActiveZone}>
-        <TabsList className="flex-wrap h-auto gap-1">
-          <TabsTrigger value="all">All Zones</TabsTrigger>
-          {zones.map(z => (
-            <TabsTrigger key={z.id} value={z.id} className="gap-2">
-              <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: z.color }} />
-              {z.name}
-            </TabsTrigger>
-          ))}
-        </TabsList>
+      <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <Card>
+          <CardContent className="flex items-center gap-3 p-4">
+            <div className="flex h-9 w-9 items-center justify-center rounded-md bg-secondary text-primary"><Radio /></div>
+            <div><p className="text-xs text-muted-foreground">Devices</p><p className="text-lg font-semibold">{visibleSensors.length}</p></div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="flex items-center gap-3 p-4">
+            <div className="flex h-9 w-9 items-center justify-center rounded-md bg-success/10 text-success"><Wifi /></div>
+            <div><p className="text-xs text-muted-foreground">Online</p><p className="text-lg font-semibold">{onlineCount}</p></div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="flex items-center gap-3 p-4">
+            <div className="flex h-9 w-9 items-center justify-center rounded-md bg-destructive/10 text-destructive"><WifiOff /></div>
+            <div><p className="text-xs text-muted-foreground">Offline</p><p className="text-lg font-semibold">{offlineCount}</p></div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="flex items-center gap-3 p-4">
+            <div className="flex h-9 w-9 items-center justify-center rounded-md bg-secondary text-primary"><Sprout /></div>
+            <div className="min-w-0"><p className="text-xs text-muted-foreground">Crop stage</p><p className="truncate text-sm font-semibold">{activeZoneData?.crop_stages?.name || activeZoneData?.crops?.name || "Not assigned"}</p></div>
+          </CardContent>
+        </Card>
+      </section>
 
-        {/* Zone info bar */}
-        {activeZoneData && (
-          <div className="flex items-center gap-3 mt-3">
-            <Badge variant="outline" style={{ borderColor: activeZoneData.color, color: activeZoneData.color }}>
-              {sensors.filter(s => s.zone_id === activeZone).length} sensors
-            </Badge>
-            {isAdminOrOperator && (
-              <Button variant="outline" size="sm" className="gap-2" onClick={() => setUploadingZone(activeZoneData)}>
-                <ImageIcon className="h-4 w-4" />
-                {activeZoneData.background_image_url ? "Change Background" : "Upload Background"}
+      <section className="overflow-hidden rounded-md border bg-card shadow-sm">
+        <div className="flex flex-col gap-3 border-b px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="h-8 w-1 rounded-full bg-primary" />
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <h2 className="truncate font-display font-semibold">{activeZoneData?.name}</h2>
+                <Badge variant="secondary" className="font-normal">Live map</Badge>
+              </div>
+              <p className="truncate text-xs text-muted-foreground">
+                {activeZoneData?.crops?.name ? `${activeZoneData.crops.name}${activeZoneData.crop_stages?.name ? ` · ${activeZoneData.crop_stages.name}` : ""}` : "No crop assigned"}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {isAdmin && <span className="hidden items-center gap-1.5 text-xs text-muted-foreground md:flex"><Move className="h-3.5 w-3.5" /> Drag devices to reposition</span>}
+            {isAdminOrOperator && activeZoneData && (
+              <Button variant="outline" size="sm" onClick={() => setUploadingZone(activeZoneData)}>
+                <ImagePlus className="h-4 w-4" />
+                {activeZoneData.background_image_url ? "Replace map" : "Add map image"}
               </Button>
             )}
           </div>
-        )}
+        </div>
 
-        <Card className="glass-card overflow-hidden mt-4">
-          <CardContent className="p-4">
+        <div className="grid min-h-[520px] lg:grid-cols-[minmax(0,1fr)_280px]">
+          <div className="relative min-w-0 overflow-hidden bg-muted/40 p-3 sm:p-5">
             <svg
               ref={svgRef}
               viewBox={`0 0 ${MAP_WIDTH} ${MAP_HEIGHT}`}
-              className="w-full h-auto rounded-lg select-none"
-              style={{ background: "hsl(var(--muted))", cursor: draggingSensor ? "grabbing" : "default" }}
-              onMouseMove={handleMouseMove}
-              onMouseUp={handleMouseUp}
-              onMouseLeave={handleMouseUp}
+              className="h-full min-h-[420px] w-full touch-none select-none rounded-md border bg-card shadow-inner"
+              preserveAspectRatio="xMidYMid meet"
+              onPointerMove={handlePointerMove}
+              onPointerUp={stopDragging}
+              onPointerCancel={stopDragging}
+              onPointerLeave={(event) => draggingSensor && stopDragging(event)}
+              style={{ cursor: draggingSensor ? "grabbing" : "default" }}
             >
-              {/* Background image for active zone */}
+              <defs>
+                <pattern id="field-grid" width="48" height="48" patternUnits="userSpaceOnUse">
+                  <path d="M 48 0 L 0 0 0 48" fill="none" stroke="hsl(var(--border))" strokeWidth="1" opacity="0.62" />
+                </pattern>
+                <filter id="marker-shadow" x="-60%" y="-60%" width="220%" height="220%">
+                  <feDropShadow dx="0" dy="3" stdDeviation="3" floodColor="hsl(var(--foreground))" floodOpacity="0.18" />
+                </filter>
+              </defs>
+
               {activeZoneData?.background_image_url && (
-                <image
-                  href={activeZoneData.background_image_url}
-                  x={0} y={0}
-                  width={MAP_WIDTH} height={MAP_HEIGHT}
-                  preserveAspectRatio="xMidYMid slice"
-                  opacity={0.3}
-                />
+                <image href={activeZoneData.background_image_url} width={MAP_WIDTH} height={MAP_HEIGHT} preserveAspectRatio="xMidYMid slice" opacity="0.82" />
               )}
+              <rect width={MAP_WIDTH} height={MAP_HEIGHT} fill="url(#field-grid)" />
+              <rect x="14" y="14" width={MAP_WIDTH - 28} height={MAP_HEIGHT - 28} rx="10" fill="none" stroke="hsl(var(--primary))" strokeWidth="2" strokeDasharray="7 6" opacity="0.56" />
 
-              {/* Grid */}
-              {Array.from({ length: 9 }, (_, i) => (
-                <line key={`v${i}`} x1={(i + 1) * 80} y1={0} x2={(i + 1) * 80} y2={MAP_HEIGHT}
-                  stroke="hsl(var(--border))" strokeWidth={0.5} />
-              ))}
-              {Array.from({ length: 5 }, (_, i) => (
-                <line key={`h${i}`} x1={0} y1={(i + 1) * 100} x2={MAP_WIDTH} y2={(i + 1) * 100}
-                  stroke="hsl(var(--border))" strokeWidth={0.5} />
-              ))}
-
-              {/* Zone overlays when viewing all */}
-              {activeZone === "all" && zones.map((zone) => {
-                const idx = zones.indexOf(zone);
-                const cols = 2;
-                const col = idx % cols;
-                const row = Math.floor(idx / cols);
-                const w = (MAP_WIDTH - 30) / cols;
-                const h = (MAP_HEIGHT - 30) / Math.ceil(zones.length / cols);
-                const x = 10 + col * (w + 10);
-                const y = 10 + row * (h + 10);
+              {visibleSensors.map((sensor) => {
+                const position = rawPosition(sensor);
+                const color = statusColor(sensor.status);
+                const isSelected = selectedSensor === sensor.id;
+                const isPending = Boolean(pendingPositions[sensor.id]);
                 return (
-                  <g key={zone.id}>
-                    <rect x={x} y={y} width={w} height={h}
-                      fill={zone.color} fillOpacity={0.08}
-                      stroke={zone.color} strokeWidth={2} rx={8} />
-                    <text x={x + 12} y={y + 22} fill={zone.color} fontSize={13} fontWeight={600}>
-                      {zone.name}
-                    </text>
-                  </g>
-                );
-              })}
-
-              {/* Single zone border when viewing one zone */}
-              {activeZoneData && (
-                <rect x={10} y={10} width={MAP_WIDTH - 20} height={MAP_HEIGHT - 20}
-                  fill={activeZoneData.color} fillOpacity={0.06}
-                  stroke={activeZoneData.color} strokeWidth={2} rx={8}
-                />
-              )}
-
-              {/* Sensors */}
-              {visibleSensors.map(sensor => {
-                const pos = getSensorPos(sensor);
-                const color = getStatusColor(sensor.status);
-                const isPending = !!pendingPositions[sensor.id];
-                return (
-                  <g key={sensor.id}
-                    onMouseDown={() => handleMouseDown(sensor.id)}
-                    style={{ cursor: isAdmin && activeZone !== "all" ? "grab" : "default" }}
+                  <g
+                    key={sensor.id}
+                    onPointerDown={(event) => handlePointerDown(event, sensor.id)}
+                    style={{ cursor: isAdmin ? "grab" : "pointer" }}
+                    filter="url(#marker-shadow)"
                   >
-                    {/* Outer ring */}
-                    <circle cx={pos.x} cy={pos.y} r={16}
-                      fill={color} fillOpacity={0.15}
-                      stroke={color} strokeWidth={isPending ? 3 : 2}
-                      strokeDasharray={isPending ? "4 2" : "none"}
-                    />
-                    {/* Inner dot */}
-                    <circle cx={pos.x} cy={pos.y} r={6} fill={color} />
-                    {/* Drag indicator for admin */}
-                    {isAdmin && (
-                      <circle cx={pos.x} cy={pos.y} r={20}
-                        fill="transparent" stroke="transparent"
-                      />
-                    )}
-                    {/* Label */}
-                    <text x={pos.x} y={pos.y + 28} textAnchor="middle"
-                      fill="hsl(var(--foreground))" fontSize={10} fontWeight={500}>
-                      {sensor.name}
+                    <title>{`${sensor.name} · ${sensor.status}`}</title>
+                    {isSelected && <circle cx={position.x} cy={position.y} r="28" fill="none" stroke={color} strokeWidth="2" strokeDasharray="4 4" />}
+                    <circle cx={position.x} cy={position.y} r="20" fill="hsl(var(--card))" stroke={color} strokeWidth={isPending ? 4 : 3} />
+                    <circle cx={position.x} cy={position.y} r="8" fill={color} />
+                    <rect x={position.x - 54} y={position.y + 27} width="108" height="24" rx="5" fill="hsl(var(--card))" opacity="0.94" />
+                    <text x={position.x} y={position.y + 43} textAnchor="middle" fill="hsl(var(--foreground))" fontSize="12" fontWeight="600">
+                      {sensor.name.length > 16 ? `${sensor.name.slice(0, 14)}…` : sensor.name}
                     </text>
-                    {/* Type label */}
-                    {sensor.sensor_types && (
-                      <text x={pos.x} y={pos.y + 40} textAnchor="middle"
-                        fill="hsl(var(--muted-foreground))" fontSize={8}>
-                        {sensor.sensor_types.name}
-                      </text>
-                    )}
                   </g>
                 );
               })}
 
-              {visibleSensors.length === 0 && (
-                <text x={MAP_WIDTH / 2} y={MAP_HEIGHT / 2} textAnchor="middle"
-                  fill="hsl(var(--muted-foreground))" fontSize={16}>
-                  No sensors in this zone
-                </text>
+              {!visibleSensors.length && (
+                <g>
+                  <circle cx={MAP_WIDTH / 2} cy={MAP_HEIGHT / 2 - 20} r="30" fill="hsl(var(--secondary))" />
+                  <text x={MAP_WIDTH / 2} y={MAP_HEIGHT / 2 - 14} textAnchor="middle" fill="hsl(var(--primary))" fontSize="22">◎</text>
+                  <text x={MAP_WIDTH / 2} y={MAP_HEIGHT / 2 + 30} textAnchor="middle" fill="hsl(var(--foreground))" fontSize="16" fontWeight="600">No active devices in this zone</text>
+                </g>
               )}
             </svg>
-          </CardContent>
-        </Card>
-      </Tabs>
-
-      {/* Legend */}
-      <div className="flex flex-wrap gap-4">
-        {zones.map(z => (
-          <div key={z.id} className="flex items-center gap-2">
-            <div className="h-3 w-3 rounded-sm" style={{ backgroundColor: z.color }} />
-            <span className="text-sm text-muted-foreground">{z.name}</span>
+            <div className="absolute bottom-7 left-7 hidden items-center gap-3 rounded-md border bg-card/95 px-3 py-2 text-xs shadow-sm backdrop-blur sm:flex">
+              <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-success" />Online</span>
+              <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-destructive" />Offline</span>
+              <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-warning" />Maintenance</span>
+            </div>
           </div>
-        ))}
-        <div className="flex items-center gap-2 ml-4">
-          <div className="h-3 w-3 rounded-full bg-success" />
-          <span className="text-sm text-muted-foreground">Online</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="h-3 w-3 rounded-full bg-destructive" />
-          <span className="text-sm text-muted-foreground">Offline</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="h-3 w-3 rounded-full bg-warning" />
-          <span className="text-sm text-muted-foreground">Maintenance</span>
-        </div>
-      </div>
 
-      {/* Upload Dialog */}
-      <Dialog open={!!uploadingZone} onOpenChange={() => setUploadingZone(null)}>
+          <aside className="border-t bg-card lg:border-l lg:border-t-0">
+            <div className="border-b px-4 py-3">
+              <p className="text-sm font-semibold">Devices in zone</p>
+              <p className="text-xs text-muted-foreground">Select a device to locate it</p>
+            </div>
+            <div className="max-h-[520px] space-y-1 overflow-y-auto p-2">
+              {visibleSensors.map((sensor) => (
+                <button
+                  key={sensor.id}
+                  type="button"
+                  onClick={() => setSelectedSensor(sensor.id)}
+                  className={`flex w-full items-center gap-3 rounded-md px-3 py-3 text-left transition-colors ${selectedSensor === sensor.id ? "bg-secondary" : "hover:bg-muted"}`}
+                >
+                  <span className={`relative flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-muted ${sensor.status === "online" ? "text-success" : sensor.status === "offline" ? "text-destructive" : "text-warning"}`}>
+                    <Radio className="h-4 w-4" />
+                    <span className={`absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full border-2 border-card ${statusClass(sensor.status)}`} />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-medium">{sensor.name}</span>
+                    <span className="block truncate text-xs text-muted-foreground">{sensor.sensor_types?.name || sensor.device_id || "LoRaWAN device"}</span>
+                  </span>
+                  <LocateFixed className="h-4 w-4 shrink-0 text-muted-foreground" />
+                </button>
+              ))}
+              {!visibleSensors.length && <p className="px-3 py-10 text-center text-sm text-muted-foreground">No active devices</p>}
+            </div>
+            {selectedSensorData && (
+              <div className="border-t p-4">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold">{selectedSensorData.name}</p>
+                    <p className="capitalize text-xs text-muted-foreground">{selectedSensorData.status}</p>
+                  </div>
+                  <Badge variant="outline" className="max-w-[130px] truncate font-normal">
+                    {selectedSensorData.device_id || "LoRaWAN"}
+                  </Badge>
+                </div>
+              </div>
+            )}
+          </aside>
+        </div>
+      </section>
+
+      <Dialog open={Boolean(uploadingZone)} onOpenChange={(open) => !open && setUploadingZone(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Upload Zone Background</DialogTitle>
-            <DialogDescription>
-              Upload an aerial photo or map image for {uploadingZone?.name}
-            </DialogDescription>
+            <DialogTitle>Update zone map</DialogTitle>
+            <DialogDescription>Upload an aerial photo or field plan for {uploadingZone?.name}.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             {uploadingZone?.background_image_url && (
-              <img src={uploadingZone.background_image_url} alt="Current background"
-                className="w-full h-32 object-cover rounded-md border" />
+              <img src={uploadingZone.background_image_url} alt={`Current map for ${uploadingZone.name}`} className="h-44 w-full rounded-md border object-cover" />
             )}
-            <div>
-              <Label htmlFor="zone-image">Select Image</Label>
-              <Input id="zone-image" type="file" accept="image/*"
-                onChange={handleImageUpload} disabled={uploading} className="mt-1" />
+            <div className="space-y-2">
+              <Label htmlFor="zone-image">Map image</Label>
+              <div className="relative rounded-md border border-dashed p-5 text-center">
+                <Upload className="mx-auto mb-2 h-5 w-5 text-muted-foreground" />
+                <p className="text-sm font-medium">Choose an aerial photo or field plan</p>
+                <p className="mt-1 text-xs text-muted-foreground">JPG, PNG or WebP</p>
+                <Input id="zone-image" type="file" accept="image/jpeg,image/png,image/webp" onChange={handleImageUpload} disabled={uploading} className="absolute inset-0 h-full cursor-pointer opacity-0" />
+              </div>
             </div>
-            {uploading && <p className="text-sm text-muted-foreground">Uploading...</p>}
+            {uploading && <p className="text-sm text-muted-foreground">Uploading map image…</p>}
           </div>
         </DialogContent>
       </Dialog>
