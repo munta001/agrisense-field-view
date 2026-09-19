@@ -349,9 +349,14 @@ export default function CropsPage() {
                                 <TableCell className="text-sm font-mono">{t.max_value ?? "—"} {t.metric ? metricUnit(t.metric) : getSensorTypeUnit(t.sensor_type_id)}</TableCell>
                                 {canEdit && (
                                   <TableCell>
-                                    <Button size="sm" variant="ghost" className="text-destructive h-6 w-6 p-0" onClick={() => deleteThreshold(t.id)}>
-                                      <Trash2 className="h-3 w-3" />
-                                    </Button>
+                                    <div className="flex items-center gap-1">
+                                      <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => openEditThreshold(t)}>
+                                        <Pencil className="h-3 w-3" />
+                                      </Button>
+                                      <Button size="sm" variant="ghost" className="text-destructive h-6 w-6 p-0" onClick={() => deleteThreshold(t.id)}>
+                                        <Trash2 className="h-3 w-3" />
+                                      </Button>
+                                    </div>
                                   </TableCell>
                                 )}
                               </TableRow>
