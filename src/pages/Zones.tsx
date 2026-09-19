@@ -11,10 +11,11 @@ import { Plus, MapPin, Upload, Sprout } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 type Crop = { id: string; name: string; category: string };
-type CropStage = { id: string; crop_id: string; name: string; stage_order: number };
+type CropStage = { id: string; crop_id: string; name: string; stage_order: number; duration_days?: number };
 type Zone = {
   id: string; org_id: string; name: string; color: string;
   background_image_url: string | null; crop_id: string | null; crop_stage_id: string | null;
+  crop_start_date: string | null;
   crops?: Crop | null; crop_stages?: CropStage | null;
 };
 
