@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Plus, Trash2, Sprout, Layers } from "lucide-react";
+import { Plus, Trash2, Sprout, Layers, Pencil } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { SOIL_METRICS, metricLabel, metricUnit } from "@/lib/metrics";
 
@@ -28,6 +28,12 @@ export default function CropsPage() {
   const [stageForm, setStageForm] = useState({ name: "", description: "", stage_order: 0, duration_days: 0 });
   const [thresholdOpen, setThresholdOpen] = useState<string | null>(null);
   const [thresholdForm, setThresholdForm] = useState({ metric: "", min_value: "", max_value: "" });
+  const [editCrop, setEditCrop] = useState<Crop | null>(null);
+  const [editCropForm, setEditCropForm] = useState({ name: "", category: "", description: "" });
+  const [editStage, setEditStage] = useState<CropStage | null>(null);
+  const [editStageForm, setEditStageForm] = useState({ name: "", description: "", stage_order: 0, duration_days: 0 });
+  const [editThreshold, setEditThreshold] = useState<Threshold | null>(null);
+  const [editThresholdForm, setEditThresholdForm] = useState({ min_value: "", max_value: "" });
   const { toast } = useToast();
   const canEdit = currentRole?.role === "admin" || currentRole?.role === "operator";
 
@@ -123,6 +129,64 @@ export default function CropsPage() {
 
   const deleteCrop = async (id: string) => {
     await supabase.from("crops").delete().eq("id", id);
+    fetchCrops();
+  };
+
+  const openEditCrop = (crop: Crop) => {
+    setEditCrop(crop);
+    setEditCropForm({ name: crop.name, category: crop.category || "", description: crop.description || "" });
+  };
+
+  const saveCrop = async () => {
+    if (!editCrop || !editCropForm.name) return;
+    const { error } = await supabase.from("crops").update({
+      name: editCropForm.name,
+      category: editCropForm.category,
+      description: editCropForm.description || null,
+    }).eq("id", editCrop.id);
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Crop updated" });
+    setEditCrop(null);
+    fetchCrops();
+  };
+
+  const openEditStage = (stage: CropStage) => {
+    setEditStage(stage);
+    setEditStageForm({ name: stage.name, description: stage.description || "", stage_order: stage.stage_order, duration_days: stage.duration_days || 0 });
+  };
+
+  const saveStage = async () => {
+    if (!editStage || !editStageForm.name) return;
+    const { error } = await supabase.from("crop_stages").update({
+      name: editStageForm.name,
+      description: editStageForm.description || null,
+      stage_order: editStageForm.stage_order,
+      duration_days: Math.max(0, Number(editStageForm.duration_days) || 0),
+    } as any).eq("id", editStage.id);
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Stage updated" });
+    setEditStage(null);
+    fetchCrops();
+  };
+
+  const openEditThreshold = (t: Threshold) => {
+    setEditThreshold(t);
+    setEditThresholdForm({ min_value: t.min_value != null ? String(t.min_value) : "", max_value: t.max_value != null ? String(t.max_value) : "" });
+  };
+
+  const saveThreshold = async () => {
+    if (!editThreshold) return;
+    if (!editThresholdForm.min_value && !editThresholdForm.max_value) {
+      toast({ title: "Enter a minimum or maximum value", variant: "destructive" });
+      return;
+    }
+    const { error } = await supabase.from("crop_stage_thresholds").update({
+      min_value: editThresholdForm.min_value ? Number(editThresholdForm.min_value) : null,
+      max_value: editThresholdForm.max_value ? Number(editThresholdForm.max_value) : null,
+    } as any).eq("id", editThreshold.id);
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Threshold updated" });
+    setEditThreshold(null);
     fetchCrops();
   };
 
@@ -255,6 +319,9 @@ export default function CropsPage() {
                                   </div>
                                 </DialogContent>
                               </Dialog>
+                              <Button size="sm" variant="ghost" onClick={() => openEditStage(stage)}>
+                                <Pencil className="h-3 w-3" />
+                              </Button>
                               <Button size="sm" variant="ghost" className="text-destructive" onClick={() => deleteStage(stage.id)}>
                                 <Trash2 className="h-3 w-3" />
                               </Button>
@@ -282,9 +349,14 @@ export default function CropsPage() {
                                 <TableCell className="text-sm font-mono">{t.max_value ?? "—"} {t.metric ? metricUnit(t.metric) : getSensorTypeUnit(t.sensor_type_id)}</TableCell>
                                 {canEdit && (
                                   <TableCell>
-                                    <Button size="sm" variant="ghost" className="text-destructive h-6 w-6 p-0" onClick={() => deleteThreshold(t.id)}>
-                                      <Trash2 className="h-3 w-3" />
-                                    </Button>
+                                    <div className="flex items-center gap-1">
+                                      <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => openEditThreshold(t)}>
+                                        <Pencil className="h-3 w-3" />
+                                      </Button>
+                                      <Button size="sm" variant="ghost" className="text-destructive h-6 w-6 p-0" onClick={() => deleteThreshold(t.id)}>
+                                        <Trash2 className="h-3 w-3" />
+                                      </Button>
+                                    </div>
                                   </TableCell>
                                 )}
                               </TableRow>
@@ -298,7 +370,10 @@ export default function CropsPage() {
               </div>
 
               {canEdit && (
-                <div className="mt-3 flex justify-end">
+                <div className="mt-3 flex justify-end gap-2">
+                  <Button size="sm" variant="outline" onClick={() => openEditCrop(crop)}>
+                    <Pencil className="h-3 w-3 mr-1" /> Edit Crop
+                  </Button>
                   <Button size="sm" variant="destructive" onClick={() => deleteCrop(crop.id)}>
                     <Trash2 className="h-3 w-3 mr-1" /> Delete Crop
                   </Button>
@@ -308,6 +383,61 @@ export default function CropsPage() {
           </AccordionItem>
         ))}
       </Accordion>
+
+      {/* Edit Crop */}
+      <Dialog open={!!editCrop} onOpenChange={open => !open && setEditCrop(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle className="font-display">Edit Crop</DialogTitle></DialogHeader>
+          <div className="space-y-4 pt-2">
+            <Input placeholder="Crop Name" value={editCropForm.name} onChange={e => setEditCropForm({ ...editCropForm, name: e.target.value })} />
+            <Input placeholder="Category (e.g. Vegetables, Fruits)" value={editCropForm.category} onChange={e => setEditCropForm({ ...editCropForm, category: e.target.value })} />
+            <Textarea placeholder="Description (optional)" value={editCropForm.description} onChange={e => setEditCropForm({ ...editCropForm, description: e.target.value })} />
+            <Button onClick={saveCrop} className="w-full">Save Changes</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Stage */}
+      <Dialog open={!!editStage} onOpenChange={open => !open && setEditStage(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle className="font-display">Edit Growth Stage</DialogTitle></DialogHeader>
+          <div className="space-y-4 pt-2">
+            <Input placeholder="Stage Name" value={editStageForm.name} onChange={e => setEditStageForm({ ...editStageForm, name: e.target.value })} />
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">Order</label>
+                <Input type="number" value={editStageForm.stage_order} onChange={e => setEditStageForm({ ...editStageForm, stage_order: Number(e.target.value) })} />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">Duration (days)</label>
+                <Input type="number" min={0} value={editStageForm.duration_days} onChange={e => setEditStageForm({ ...editStageForm, duration_days: Number(e.target.value) })} />
+              </div>
+            </div>
+            <Textarea placeholder="Description (optional)" value={editStageForm.description} onChange={e => setEditStageForm({ ...editStageForm, description: e.target.value })} />
+            <Button onClick={saveStage} className="w-full">Save Changes</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Threshold */}
+      <Dialog open={!!editThreshold} onOpenChange={open => !open && setEditThreshold(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle className="font-display">Edit Threshold — {editThreshold?.metric ? metricLabel(editThreshold.metric) : ""}</DialogTitle></DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">Min Value{editThreshold?.metric ? ` (${metricUnit(editThreshold.metric)})` : ""}</label>
+                <Input type="number" value={editThresholdForm.min_value} onChange={e => setEditThresholdForm({ ...editThresholdForm, min_value: e.target.value })} />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">Max Value{editThreshold?.metric ? ` (${metricUnit(editThreshold.metric)})` : ""}</label>
+                <Input type="number" value={editThresholdForm.max_value} onChange={e => setEditThresholdForm({ ...editThresholdForm, max_value: e.target.value })} />
+              </div>
+            </div>
+            <Button onClick={saveThreshold} className="w-full">Save Changes</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
