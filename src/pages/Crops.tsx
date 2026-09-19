@@ -319,6 +319,9 @@ export default function CropsPage() {
                                   </div>
                                 </DialogContent>
                               </Dialog>
+                              <Button size="sm" variant="ghost" onClick={() => openEditStage(stage)}>
+                                <Pencil className="h-3 w-3" />
+                              </Button>
                               <Button size="sm" variant="ghost" className="text-destructive" onClick={() => deleteStage(stage.id)}>
                                 <Trash2 className="h-3 w-3" />
                               </Button>
@@ -362,7 +365,10 @@ export default function CropsPage() {
               </div>
 
               {canEdit && (
-                <div className="mt-3 flex justify-end">
+                <div className="mt-3 flex justify-end gap-2">
+                  <Button size="sm" variant="outline" onClick={() => openEditCrop(crop)}>
+                    <Pencil className="h-3 w-3 mr-1" /> Edit Crop
+                  </Button>
                   <Button size="sm" variant="destructive" onClick={() => deleteCrop(crop.id)}>
                     <Trash2 className="h-3 w-3 mr-1" /> Delete Crop
                   </Button>
