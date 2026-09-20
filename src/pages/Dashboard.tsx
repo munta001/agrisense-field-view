@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Area, AreaChart, Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Sensor = Tables<"sensors">;
@@ -134,6 +135,32 @@ export default function DashboardPage() {
   const zonesNeedingAttention = zoneHealth.filter(zone => zone.status === "attention" || zone.status === "offline").length;
   const exceptionAlerts = alerts.filter(alert => !alert.is_read).slice(0, 4);
 
+  const exceptionTrend = useMemo(() => {
+    const now = new Date();
+    const buckets = Array.from({ length: 8 }, (_, index) => {
+      const end = new Date(now.getTime() - (7 - index) * 3 * 60 * 60 * 1000);
+      const start = new Date(end.getTime() - 3 * 60 * 60 * 1000);
+      return { start, end, label: format(end, "HH:mm"), critical: 0, warning: 0 };
+    });
+
+    for (const alert of alerts) {
+      const created = new Date(alert.created_at);
+      const bucket = buckets.find(item => created > item.start && created <= item.end);
+      if (!bucket) continue;
+      if (alert.severity === "critical" || alert.severity === "high") bucket.critical += 1;
+      else bucket.warning += 1;
+    }
+    return buckets.map(({ label, critical, warning }) => ({ label, critical, warning }));
+  }, [alerts]);
+
+  const zoneExceptionData = useMemo(
+    () => zoneHealth
+      .filter(zone => zone.exceptions > 0)
+      .slice(0, 6)
+      .map(zone => ({ name: zone.name, exceptions: zone.exceptions })),
+    [zoneHealth],
+  );
+
   const stats = [
     { label: "Active devices", value: sensors.length, detail: `${online} online`, icon: Radio, tone: "text-primary bg-primary/10" },
     { label: "Operational zones", value: zones.length, detail: `${Math.max(zones.length - zonesNeedingAttention, 0)} healthy`, icon: Map, tone: "text-success bg-success/10" },
@@ -182,6 +209,63 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
         ))}
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <section className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
+          <div className="border-b border-border px-5 py-4">
+            <h2 className="font-display text-base font-semibold text-foreground">Exception trend</h2>
+            <p className="text-xs text-muted-foreground">Critical and warning events across the organisation</p>
+          </div>
+          <div className="h-[260px] p-4">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={exceptionTrend} margin={{ top: 8, right: 8, left: -24, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="criticalFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(var(--destructive))" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="hsl(var(--destructive))" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="warningFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(var(--warning))" stopOpacity={0.25} />
+                    <stop offset="95%" stopColor="hsl(var(--warning))" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid vertical={false} stroke="hsl(var(--border))" strokeDasharray="3 3" />
+                <XAxis dataKey="label" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" tickLine={false} axisLine={false} />
+                <YAxis allowDecimals={false} tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" tickLine={false} axisLine={false} />
+                <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }} />
+                <Area type="monotone" dataKey="warning" name="Warnings" stroke="hsl(var(--warning))" fill="url(#warningFill)" strokeWidth={2} />
+                <Area type="monotone" dataKey="critical" name="Critical" stroke="hsl(var(--destructive))" fill="url(#criticalFill)" strokeWidth={2} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </section>
+
+        <section className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
+          <div className="border-b border-border px-5 py-4">
+            <h2 className="font-display text-base font-semibold text-foreground">Exceptions by zone</h2>
+            <p className="text-xs text-muted-foreground">Unread threshold exceptions requiring attention</p>
+          </div>
+          <div className="h-[260px] p-4">
+            {zoneExceptionData.length ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={zoneExceptionData} layout="vertical" margin={{ top: 4, right: 12, left: 8, bottom: 0 }}>
+                  <CartesianGrid horizontal={false} stroke="hsl(var(--border))" strokeDasharray="3 3" />
+                  <XAxis type="number" allowDecimals={false} tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" tickLine={false} axisLine={false} />
+                  <YAxis type="category" dataKey="name" width={100} tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" tickLine={false} axisLine={false} />
+                  <Tooltip cursor={{ fill: "hsl(var(--muted) / 0.45)" }} contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }} />
+                  <Bar dataKey="exceptions" name="Exceptions" fill="hsl(var(--destructive))" radius={[0, 4, 4, 0]} barSize={18} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex h-full flex-col items-center justify-center text-center">
+                <CheckCircle2 className="mb-3 h-8 w-8 text-success" />
+                <p className="text-sm font-semibold text-foreground">No zone exceptions</p>
+                <p className="mt-1 text-xs text-muted-foreground">All monitored values are within range</p>
+              </div>
+            )}
+          </div>
+        </section>
       </div>
 
       <section className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
