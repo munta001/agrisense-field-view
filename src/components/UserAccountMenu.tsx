@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useOrg } from "@/contexts/OrgContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { PROFILE_UPDATED_EVENT, resolveProfilePicture } from "@/lib/profile-picture";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,15 +21,22 @@ export function UserAccountMenu() {
   const { user, signOut } = useAuth();
   const { orgs, currentOrg, currentRole, setCurrentOrg } = useOrg();
   const [profile, setProfile] = useState<{ full_name: string | null; avatar_url: string | null } | null>(null);
+  const [avatarSrc, setAvatarSrc] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
-    supabase
-      .from("profiles")
-      .select("full_name, avatar_url")
-      .eq("user_id", user.id)
-      .maybeSingle()
-      .then(({ data }) => setProfile(data));
+    const loadProfile = async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("full_name, avatar_url")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      setProfile(data);
+      setAvatarSrc(await resolveProfilePicture(data?.avatar_url || user.user_metadata?.avatar_url));
+    };
+    void loadProfile();
+    window.addEventListener(PROFILE_UPDATED_EVENT, loadProfile);
+    return () => window.removeEventListener(PROFILE_UPDATED_EVENT, loadProfile);
   }, [user?.id]);
 
   const name = profile?.full_name || user?.user_metadata?.full_name || user?.user_metadata?.name || "User";
@@ -53,7 +61,7 @@ export function UserAccountMenu() {
             <p className="mt-1.5 truncate text-[11px] font-semibold uppercase text-primary">{currentOrg?.name}</p>
           </div>
           <Avatar className="h-9 w-9 border border-primary/20 bg-secondary">
-            <AvatarImage src={profile?.avatar_url || user?.user_metadata?.avatar_url} alt={name} />
+            <AvatarImage className="object-cover" src={avatarSrc || undefined} alt={name} />
             <AvatarFallback className="bg-secondary text-xs font-bold text-secondary-foreground">{initials}</AvatarFallback>
           </Avatar>
           <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
