@@ -1,228 +1,280 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
+import { format, formatDistanceToNow } from "date-fns";
+import { AlertTriangle, ArrowRight, CheckCircle2, Map, Radio, Sprout, WifiOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrg } from "@/contexts/OrgContext";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Activity, AlertTriangle, Battery, Radio } from "lucide-react";
-import { AreaChart, Area, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { format } from "date-fns";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Sensor = Tables<"sensors">;
-type Reading = Tables<"sensor_readings">;
 type Alert = Tables<"alerts">;
+type Zone = Tables<"zones">;
+type Crop = Tables<"crops">;
+type CropStage = Tables<"crop_stages">;
 
-const METRICS = [
-  { key: "temperature_c", label: "Temperature", unit: "°C", color: "hsl(0, 72%, 51%)" },
-  { key: "moisture_pct", label: "Soil Moisture", unit: "%", color: "hsl(200, 70%, 50%)" },
-  { key: "conductivity", label: "Conductivity", unit: "µS/cm", color: "hsl(38, 90%, 55%)" },
-  { key: "ph", label: "pH", unit: "", color: "hsl(270, 50%, 55%)" },
-  { key: "nitrogen", label: "Nitrogen", unit: "mg/kg", color: "hsl(152, 55%, 35%)" },
-  { key: "phosphorus", label: "Phosphorus", unit: "mg/kg", color: "hsl(96, 45%, 40%)" },
-  { key: "potassium", label: "Potassium", unit: "mg/kg", color: "hsl(20, 70%, 50%)" },
-  { key: "salinity", label: "Salinity", unit: "", color: "hsl(190, 60%, 40%)" },
-] as const;
+type ZoneHealth = Zone & {
+  cropName: string;
+  stageName: string;
+  activeDevices: number;
+  onlineDevices: number;
+  exceptions: number;
+  latestActivity: string | null;
+  status: "attention" | "offline" | "healthy" | "unmonitored";
+};
 
-const severityVariant = (s: string) =>
-  s === "critical" || s === "high" ? "destructive" : s === "medium" ? "default" : "secondary";
+const statusLabel = {
+  attention: "Attention",
+  offline: "Offline",
+  healthy: "Healthy",
+  unmonitored: "Unmonitored",
+} as const;
 
 export default function DashboardPage() {
   const { currentOrg } = useOrg();
-  const navigate = useNavigate();
   const [sensors, setSensors] = useState<Sensor[]>([]);
-  const [sensorId, setSensorId] = useState("");
-  const [readings, setReadings] = useState<Reading[]>([]);
+  const [zones, setZones] = useState<Zone[]>([]);
+  const [crops, setCrops] = useState<Crop[]>([]);
+  const [stages, setStages] = useState<CropStage[]>([]);
   const [alerts, setAlerts] = useState<Alert[]>([]);
-  const [loadingSensors, setLoadingSensors] = useState(true);
-  const [loadingReadings, setLoadingReadings] = useState(true);
+  const [latestBySensor, setLatestBySensor] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!currentOrg) return;
-    setLoadingSensors(true);
-    supabase.from("sensors").select("*").eq("org_id", currentOrg.id).order("device_id").then(({ data }) => {
-      const list = data || [];
-      setSensors(list);
-      setSensorId(prev => prev || list[0]?.id || "");
-      setLoadingSensors(false);
-      if (!list.length) setLoadingReadings(false);
+
+    let active = true;
+    const loadDashboard = async () => {
+      setLoading(true);
+      const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      const [sensorResult, zoneResult, cropResult, alertResult] = await Promise.all([
+        supabase.from("sensors").select("*").eq("org_id", currentOrg.id).eq("is_active", true).order("name"),
+        supabase.from("zones").select("*").eq("org_id", currentOrg.id).order("name"),
+        supabase.from("crops").select("*").eq("org_id", currentOrg.id).order("name"),
+        supabase.from("alerts").select("*").eq("org_id", currentOrg.id).gte("created_at", since).order("created_at", { ascending: false }).limit(20),
+      ]);
+
+      const sensorList = sensorResult.data || [];
+      const cropIds = [...new Set((zoneResult.data || []).map(zone => zone.crop_id).filter((id): id is string => Boolean(id)))];
+      const stageResult = cropIds.length
+        ? await supabase.from("crop_stages").select("*").in("crop_id", cropIds).order("stage_order")
+        : { data: [] as CropStage[] };
+      const sensorIds = sensorList.map(sensor => sensor.id);
+      const readingResult = sensorIds.length
+        ? await supabase
+            .from("sensor_readings")
+            .select("sensor_id, recorded_at")
+            .in("sensor_id", sensorIds)
+            .gte("recorded_at", since)
+            .order("recorded_at", { ascending: false })
+            .limit(2000)
+        : { data: [] as { sensor_id: string | null; recorded_at: string }[] };
+
+      if (!active) return;
+      const latest: Record<string, string> = {};
+      for (const reading of readingResult.data || []) {
+        if (reading.sensor_id && !latest[reading.sensor_id]) latest[reading.sensor_id] = reading.recorded_at;
+      }
+
+      setSensors(sensorList);
+      setZones(zoneResult.data || []);
+      setCrops(cropResult.data || []);
+      setStages(stageResult.data || []);
+      setAlerts(alertResult.data || []);
+      setLatestBySensor(latest);
+      setLoading(false);
+    };
+
+    loadDashboard();
+    return () => { active = false; };
+  }, [currentOrg?.id]);
+
+  const zoneHealth = useMemo<ZoneHealth[]>(() => {
+    return zones.map(zone => {
+      const zoneSensors = sensors.filter(sensor => sensor.zone_id === zone.id);
+      const sensorIds = new Set(zoneSensors.map(sensor => sensor.id));
+      const zoneAlerts = alerts.filter(alert => alert.sensor_id && sensorIds.has(alert.sensor_id) && !alert.is_read);
+      const activity = zoneSensors
+        .map(sensor => latestBySensor[sensor.id])
+        .filter((value): value is string => Boolean(value))
+        .sort()
+        .at(-1) || null;
+      const onlineDevices = zoneSensors.filter(sensor => sensor.status === "online").length;
+      const status: ZoneHealth["status"] = zoneAlerts.length
+        ? "attention"
+        : zoneSensors.length > 0 && onlineDevices === 0
+          ? "offline"
+          : zoneSensors.length > 0
+            ? "healthy"
+            : "unmonitored";
+
+      return {
+        ...zone,
+        cropName: crops.find(crop => crop.id === zone.crop_id)?.name || "Not assigned",
+        stageName: stages.find(stage => stage.id === zone.crop_stage_id)?.name || "Not set",
+        activeDevices: zoneSensors.length,
+        onlineDevices,
+        exceptions: zoneAlerts.length,
+        latestActivity: activity,
+        status,
+      };
+    }).sort((a, b) => {
+      const priority = { attention: 0, offline: 1, unmonitored: 2, healthy: 3 };
+      return priority[a.status] - priority[b.status] || a.name.localeCompare(b.name);
     });
-    supabase
-      .from("alerts")
-      .select("*")
-      .eq("org_id", currentOrg.id)
-      .order("created_at", { ascending: false })
-      .limit(8)
-      .then(({ data }) => setAlerts(data || []));
-  }, [currentOrg]);
+  }, [alerts, crops, latestBySensor, sensors, stages, zones]);
 
-  useEffect(() => {
-    if (!sensorId) return;
-    const since = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
-    setLoadingReadings(true);
-    supabase
-      .from("sensor_readings")
-      .select("*")
-      .eq("sensor_id", sensorId)
-      .gte("recorded_at", since)
-      .order("recorded_at", { ascending: true })
-      .limit(1000)
-      .then(({ data }) => { setReadings(data || []); setLoadingReadings(false); });
-  }, [sensorId]);
-
-  const chartData = useMemo(
-    () => readings.map(r => ({ ...r, t: format(new Date(r.recorded_at), "HH:mm") })),
-    [readings]
-  );
-
-  const latest = readings[readings.length - 1];
-  const selected = sensors.find(s => s.id === sensorId);
-  const unreadAlerts = alerts.filter(a => !a.is_read).length;
-  const online = sensors.filter(s => s.status === "online").length;
+  const online = sensors.filter(sensor => sensor.status === "online").length;
+  const offline = sensors.length - online;
+  const unreadExceptions = alerts.filter(alert => !alert.is_read).length;
+  const zonesNeedingAttention = zoneHealth.filter(zone => zone.status === "attention" || zone.status === "offline").length;
+  const exceptionAlerts = alerts.filter(alert => !alert.is_read).slice(0, 4);
 
   const stats = [
-    { title: "Devices", value: sensors.length, icon: Radio, color: "text-primary" },
-    { title: "Online", value: online, icon: Activity, color: "text-success" },
-    { title: "Offline", value: sensors.length - online, icon: Activity, color: "text-destructive" },
-    { title: "Unread Alerts", value: unreadAlerts, icon: AlertTriangle, color: "text-warning" },
+    { label: "Active devices", value: sensors.length, detail: `${online} online`, icon: Radio, tone: "text-primary bg-primary/10" },
+    { label: "Operational zones", value: zones.length, detail: `${Math.max(zones.length - zonesNeedingAttention, 0)} healthy`, icon: Map, tone: "text-success bg-success/10" },
+    { label: "Needs attention", value: zonesNeedingAttention, detail: `${unreadExceptions} exceptions`, icon: AlertTriangle, tone: "text-warning bg-warning/10" },
+    { label: "Offline devices", value: offline, detail: offline ? "Check connectivity" : "All connected", icon: WifiOff, tone: "text-destructive bg-destructive/10" },
   ];
 
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="space-y-2"><Skeleton className="h-9 w-72" /><Skeleton className="h-5 w-52" /></div>
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{Array.from({ length: 4 }).map((_, index) => <Skeleton key={index} className="h-32" />)}</div>
+        <Skeleton className="h-72" />
+        <Skeleton className="h-80" />
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="mx-auto max-w-[1500px] space-y-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="font-display text-2xl font-bold text-foreground">Dashboard</h1>
-          <p className="text-muted-foreground">
-            Last 24 hours {selected ? `· ${selected.name}` : `· ${currentOrg?.name ?? ""}`}
-          </p>
+          <p className="mb-1 text-xs font-bold uppercase text-primary">Organisation overview</p>
+          <h1 className="font-display text-3xl font-bold text-foreground">Farm Operations</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Live status and threshold exceptions from the last 24 hours</p>
         </div>
-        <Select value={sensorId} onValueChange={setSensorId}>
-          <SelectTrigger className="w-[240px]"><SelectValue placeholder="Select device" /></SelectTrigger>
-          <SelectContent>
-            {sensors.map(s => (
-              <SelectItem key={s.id} value={s.id}>
-                {s.name}{s.device_id != null ? ` (#${s.device_id})` : ""}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex gap-2">
+          <Button variant="outline" asChild><Link to="/field-map"><Map className="mr-2 h-4 w-4" />Field map</Link></Button>
+          <Button asChild><Link to="/alerts"><AlertTriangle className="mr-2 h-4 w-4" />View alerts</Link></Button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {stats.map(stat => (
-          <Card key={stat.title} className="glass-card">
-            <CardContent className="flex items-center gap-4 p-5">
-              <div className={`rounded-lg p-2.5 bg-muted ${stat.color}`}>
-                <stat.icon className="h-5 w-5" />
+          <Card key={stat.label} className="border-border shadow-sm">
+            <CardContent className="p-5">
+              <div className="mb-5 flex items-start justify-between">
+                <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${stat.tone}`}><stat.icon className="h-5 w-5" /></div>
+                <span className="text-xs font-medium text-muted-foreground">Last 24h</span>
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">{stat.title}</p>
-                <p className="text-2xl font-bold font-display">{stat.value}</p>
+              <p className="text-xs font-bold uppercase text-muted-foreground">{stat.label}</p>
+              <div className="mt-1 flex items-end justify-between gap-3">
+                <p className="font-display text-3xl font-bold text-foreground">{stat.value}</p>
+                <p className="pb-1 text-xs font-medium text-muted-foreground">{stat.detail}</p>
               </div>
             </CardContent>
           </Card>
         ))}
       </div>
 
-      {alerts.length > 0 && (
-        <Card className="glass-card">
-          <CardHeader className="flex-row items-center justify-between space-y-0">
-            <CardTitle className="font-display text-lg">Recent alerts</CardTitle>
-            <Button variant="ghost" size="sm" onClick={() => navigate("/alerts")}>View all</Button>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {alerts.map(a => (
-              <div key={a.id} className="flex items-start justify-between gap-3 rounded-lg border border-border p-3">
-                <div>
-                  <p className="text-sm font-medium">{a.title}</p>
-                  {a.message && <p className="text-xs text-muted-foreground">{a.message}</p>}
+      <section className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
+        <div className="flex flex-col gap-3 border-b border-border px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="font-display text-lg font-semibold text-foreground">Zone health</h2>
+            <p className="text-sm text-muted-foreground">Zones requiring action are shown first</p>
+          </div>
+          <Badge variant={zonesNeedingAttention ? "destructive" : "secondary"}>
+            {zonesNeedingAttention ? `${zonesNeedingAttention} need attention` : "All zones healthy"}
+          </Badge>
+        </div>
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Zone</TableHead>
+                <TableHead>Crop & stage</TableHead>
+                <TableHead>Devices</TableHead>
+                <TableHead>Exceptions</TableHead>
+                <TableHead>Latest activity</TableHead>
+                <TableHead>Status</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {zoneHealth.length ? zoneHealth.map(zone => (
+                <TableRow key={zone.id} className="group">
+                  <TableCell>
+                    <Link to="/field-map" className="flex items-center gap-3 font-semibold text-foreground hover:text-primary">
+                      <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted"><Map className="h-4 w-4" /></span>
+                      {zone.name}
+                    </Link>
+                  </TableCell>
+                  <TableCell>
+                    <p className="font-medium text-foreground">{zone.cropName}</p>
+                    <p className="text-xs text-muted-foreground">{zone.stageName}</p>
+                  </TableCell>
+                  <TableCell>
+                    <p className="font-medium text-foreground">{zone.onlineDevices} / {zone.activeDevices} online</p>
+                    <p className="text-xs text-muted-foreground">Active devices</p>
+                  </TableCell>
+                  <TableCell>
+                    <span className={zone.exceptions ? "font-semibold text-destructive" : "text-muted-foreground"}>{zone.exceptions}</span>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {zone.latestActivity ? formatDistanceToNow(new Date(zone.latestActivity), { addSuffix: true }) : "No readings in 24h"}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={zone.status === "attention" || zone.status === "offline" ? "destructive" : zone.status === "healthy" ? "secondary" : "outline"}>
+                      {zone.status === "healthy" && <CheckCircle2 className="mr-1 h-3 w-3" />}{statusLabel[zone.status]}
+                    </Badge>
+                  </TableCell>
+                </TableRow>
+              )) : (
+                <TableRow><TableCell colSpan={6} className="h-28 text-center text-muted-foreground">No zones have been created yet</TableCell></TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      </section>
+
+      <section className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
+        <div className="flex items-center justify-between border-b border-border px-5 py-4">
+          <div>
+            <h2 className="font-display text-lg font-semibold text-foreground">Threshold exceptions</h2>
+            <p className="text-sm text-muted-foreground">Only readings outside the active crop-stage range</p>
+          </div>
+          <Button variant="ghost" size="sm" asChild><Link to="/alerts">View all<ArrowRight className="ml-2 h-4 w-4" /></Link></Button>
+        </div>
+        {exceptionAlerts.length ? (
+          <div className="divide-y divide-border">
+            {exceptionAlerts.map(alert => (
+              <div key={alert.id} className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex min-w-0 items-start gap-3">
+                  <span className={`mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full ${alert.severity === "critical" || alert.severity === "high" ? "bg-destructive" : "bg-warning"}`} />
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-foreground">{alert.title}</p>
+                    {alert.message && <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">{alert.message}</p>}
+                  </div>
                 </div>
-                <div className="flex shrink-0 items-center gap-2">
-                  <Badge variant={severityVariant(a.severity) as any}>{a.severity}</Badge>
-                  <span className="text-[11px] text-muted-foreground">
-                    {format(new Date(a.created_at), "dd MMM HH:mm")}
-                  </span>
+                <div className="flex shrink-0 items-center gap-3 pl-5 sm:pl-0">
+                  <Badge variant={alert.severity === "critical" || alert.severity === "high" ? "destructive" : "secondary"}>{alert.severity}</Badge>
+                  <span className="w-28 text-right text-xs text-muted-foreground">{format(new Date(alert.created_at), "dd MMM HH:mm")}</span>
                 </div>
               </div>
             ))}
-          </CardContent>
-        </Card>
-      )}
-
-      {loadingSensors || loadingReadings ? (
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-[320px]" />)}
-        </div>
-      ) : !sensors.length ? (
-        <Card className="glass-card"><CardContent className="py-12 text-center text-muted-foreground">No devices registered yet</CardContent></Card>
-      ) : !readings.length ? (
-        <Card className="glass-card"><CardContent className="py-12 text-center text-muted-foreground">No readings from this device in the last 24 hours</CardContent></Card>
-      ) : (
-        <>
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-            {METRICS.map(m => {
-              const v = latest ? (latest[m.key as keyof Reading] as number | null) : null;
-              return (
-                <Card key={m.key} className="glass-card">
-                  <CardContent className="p-4">
-                    <p className="text-xs text-muted-foreground">{m.label}{m.unit ? ` (${m.unit})` : ""}</p>
-                    <p className="font-mono text-xl font-semibold" style={{ color: m.color }}>
-                      {v ?? "—"}
-                    </p>
-                  </CardContent>
-                </Card>
-              );
-            })}
           </div>
-
-          {latest && (
-            <p className="flex items-center gap-3 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1"><Battery className="h-3.5 w-3.5" />{latest.battery_v ?? "—"} V</span>
-              <span>Last uplink {format(new Date(latest.recorded_at), "dd MMM HH:mm")}</span>
-            </p>
-          )}
-
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            {METRICS.map((m, i) => (
-              <Card key={m.key} className="glass-card">
-                <CardHeader>
-                  <CardTitle className="font-display text-lg">{m.label}{m.unit ? ` (${m.unit})` : ""}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ResponsiveContainer width="100%" height={240}>
-                    {i % 2 === 0 ? (
-                      <AreaChart data={chartData}>
-                        <defs>
-                          <linearGradient id={`dg-${m.key}`} x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor={m.color} stopOpacity={0.35} />
-                            <stop offset="95%" stopColor={m.color} stopOpacity={0} />
-                          </linearGradient>
-                        </defs>
-                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                        <XAxis dataKey="t" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" minTickGap={24} />
-                        <YAxis tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" domain={["auto", "auto"]} />
-                        <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 }} />
-                        <Area type="monotone" dataKey={m.key} stroke={m.color} fill={`url(#dg-${m.key})`} name={m.label} />
-                      </AreaChart>
-                    ) : (
-                      <LineChart data={chartData}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                        <XAxis dataKey="t" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" minTickGap={24} />
-                        <YAxis tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" domain={["auto", "auto"]} />
-                        <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 }} />
-                        <Line type="monotone" dataKey={m.key} stroke={m.color} dot={false} strokeWidth={2} name={m.label} />
-                      </LineChart>
-                    )}
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-            ))}
+        ) : (
+          <div className="flex items-center justify-center gap-2 px-5 py-10 text-sm text-muted-foreground">
+            <Sprout className="h-5 w-5 text-success" /> No threshold exceptions in the last 24 hours
           </div>
-        </>
-      )}
+        )}
+      </section>
     </div>
   );
 }

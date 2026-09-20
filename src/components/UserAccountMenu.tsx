@@ -37,7 +37,7 @@ export function UserAccountMenu() {
     [name],
   );
   const roleLabel = currentRole?.role
-    ? currentRole.role.charAt(0).toUpperCase() + currentRole.role.slice(1).replaceAll("_", " ")
+    ? currentRole.role.charAt(0).toUpperCase() + currentRole.role.slice(1).replace(/_/g, " ")
     : null;
 
   return (
