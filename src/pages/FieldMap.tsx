@@ -298,12 +298,12 @@ export default function FieldMapPage() {
           </div>
         </div>
 
-        <div className="grid min-h-[520px] lg:grid-cols-[minmax(0,1fr)_280px]">
+        <div>
           <div className="relative min-w-0 overflow-hidden bg-muted/40 p-3 sm:p-5">
             <svg
               ref={svgRef}
               viewBox={`0 0 ${MAP_WIDTH} ${MAP_HEIGHT}`}
-              className="h-full min-h-[420px] w-full touch-none select-none rounded-md border bg-card shadow-inner"
+              className="aspect-[8/5] min-h-[420px] w-full touch-none select-none rounded-md border bg-card shadow-inner lg:min-h-[600px]"
               preserveAspectRatio="xMidYMid meet"
               onPointerMove={handlePointerMove}
               onPointerUp={stopDragging}
@@ -365,18 +365,24 @@ export default function FieldMapPage() {
             </div>
           </div>
 
-          <aside className="border-t bg-card lg:border-l lg:border-t-0">
-            <div className="border-b px-4 py-3">
-              <p className="text-sm font-semibold">Devices in zone</p>
-              <p className="text-xs text-muted-foreground">Select a device to locate it</p>
+          <section className="border-t bg-card" aria-labelledby="zone-devices-heading">
+            <div className="flex items-center justify-between gap-3 border-b px-4 py-4 sm:px-5">
+              <div>
+                <h3 id="zone-devices-heading" className="font-display text-base font-semibold">Devices in zone</h3>
+                <p className="text-xs text-muted-foreground">Select a device to locate it on the map</p>
+              </div>
+              <Badge variant="secondary" className="shrink-0 font-normal">
+                {visibleSensors.length} active
+              </Badge>
             </div>
-            <div className="max-h-[520px] space-y-1 overflow-y-auto p-2">
+            <div className="grid gap-2 p-3 sm:grid-cols-2 sm:p-4 lg:grid-cols-3 xl:grid-cols-4">
               {visibleSensors.map((sensor) => (
-                <button
+                <Button
                   key={sensor.id}
                   type="button"
+                  variant="ghost"
                   onClick={() => setSelectedSensor(sensor.id)}
-                  className={`flex w-full items-center gap-3 rounded-md px-3 py-3 text-left transition-colors ${selectedSensor === sensor.id ? "bg-secondary" : "hover:bg-muted"}`}
+                  className={`h-auto min-h-[72px] w-full justify-start gap-3 border px-3 py-3 text-left transition-colors ${selectedSensor === sensor.id ? "border-primary bg-secondary" : "border-border bg-card hover:bg-muted"}`}
                 >
                   <span className={`relative flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-muted ${sensor.status === "online" ? "text-success" : sensor.status === "offline" ? "text-destructive" : "text-warning"}`}>
                     <Radio className="h-4 w-4" />
@@ -387,12 +393,12 @@ export default function FieldMapPage() {
                     <span className="block truncate text-xs text-muted-foreground">{sensor.sensor_types?.name || sensor.device_id || "LoRaWAN device"}</span>
                   </span>
                   <LocateFixed className="h-4 w-4 shrink-0 text-muted-foreground" />
-                </button>
+                </Button>
               ))}
-              {!visibleSensors.length && <p className="px-3 py-10 text-center text-sm text-muted-foreground">No active devices</p>}
+              {!visibleSensors.length && <p className="col-span-full px-3 py-10 text-center text-sm text-muted-foreground">No active devices</p>}
             </div>
             {selectedSensorData && (
-              <div className="border-t p-4">
+              <div className="border-t px-4 py-3 sm:px-5">
                 <div className="flex items-center justify-between gap-2">
                   <div className="min-w-0">
                     <p className="truncate text-sm font-semibold">{selectedSensorData.name}</p>
@@ -404,7 +410,7 @@ export default function FieldMapPage() {
                 </div>
               </div>
             )}
-          </aside>
+          </section>
         </div>
       </section>
 
