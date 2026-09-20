@@ -18,7 +18,7 @@ import {
 export function UserAccountMenu() {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
-  const { orgs, currentOrg, setCurrentOrg } = useOrg();
+  const { orgs, currentOrg, currentRole, setCurrentOrg } = useOrg();
   const [profile, setProfile] = useState<{ full_name: string | null; avatar_url: string | null } | null>(null);
 
   useEffect(() => {
@@ -36,6 +36,9 @@ export function UserAccountMenu() {
     () => name.split(" ").filter(Boolean).slice(0, 2).map(part => part[0]?.toUpperCase()).join("") || "U",
     [name],
   );
+  const roleLabel = currentRole?.role
+    ? currentRole.role.charAt(0).toUpperCase() + currentRole.role.slice(1).replaceAll("_", " ")
+    : null;
 
   return (
     <DropdownMenu>
@@ -58,7 +61,9 @@ export function UserAccountMenu() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-64">
         <DropdownMenuLabel className="font-normal">
-          <p className="truncate text-sm font-semibold text-foreground">{name}</p>
+            <p className="truncate text-sm font-semibold text-foreground">
+              {name}{roleLabel ? ` (${roleLabel})` : ""}
+            </p>
           <p className="mt-1 truncate text-xs text-muted-foreground">{user?.email}</p>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
