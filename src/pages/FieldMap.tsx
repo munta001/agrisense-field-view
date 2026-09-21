@@ -19,6 +19,7 @@ import {
   Upload,
   Wifi,
   WifiOff,
+  Wrench,
 } from "lucide-react";
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
@@ -95,6 +96,7 @@ export default function FieldMapPage() {
   const selectedSensorData = visibleSensors.find((sensor) => sensor.id === selectedSensor) ?? null;
   const onlineCount = visibleSensors.filter((sensor) => sensor.status === "online").length;
   const offlineCount = visibleSensors.filter((sensor) => sensor.status === "offline").length;
+  const maintenanceCount = visibleSensors.filter((sensor) => sensor.status === "maintenance").length;
   const pendingCount = Object.keys(pendingPositions).length;
 
   useEffect(() => {
@@ -263,6 +265,12 @@ export default function FieldMapPage() {
           <CardContent className="flex items-center gap-3 p-4">
             <div className="flex h-9 w-9 items-center justify-center rounded-md bg-destructive/10 text-destructive"><WifiOff /></div>
             <div><p className="text-xs text-muted-foreground">Offline</p><p className="text-lg font-semibold">{offlineCount}</p></div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="flex items-center gap-3 p-4">
+            <div className="flex h-9 w-9 items-center justify-center rounded-md bg-warning/10 text-warning"><Wrench /></div>
+            <div><p className="text-xs text-muted-foreground">Maintenance</p><p className="text-lg font-semibold">{maintenanceCount}</p></div>
           </CardContent>
         </Card>
         <Card>

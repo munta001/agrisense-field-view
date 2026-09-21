@@ -190,6 +190,7 @@ export default function SensorsPage() {
                 <SelectContent>
                   <SelectItem value="online">Online</SelectItem>
                   <SelectItem value="offline">Offline</SelectItem>
+                  <SelectItem value="maintenance">Maintenance</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -320,7 +321,10 @@ export default function SensorsPage() {
                       </div>
                     </div>
                     <div className="flex flex-col items-end gap-1">
-                      <Badge variant={sensor.status === "online" ? "default" : "destructive"}>
+                      <Badge
+                        variant={sensor.status === "online" ? "default" : sensor.status === "maintenance" ? "secondary" : "destructive"}
+                        className={sensor.status === "maintenance" ? "bg-warning/15 text-warning hover:bg-warning/15" : undefined}
+                      >
                         {sensor.status}
                       </Badge>
                       {!sensor.is_active && <Badge variant="secondary">inactive</Badge>}
