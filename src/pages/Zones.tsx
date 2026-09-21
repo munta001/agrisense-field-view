@@ -21,11 +21,12 @@ type Zone = {
 };
 
 export default function ZonesPage() {
-  const { currentOrg, currentRole } = useOrg();
+  const { currentOrg, currentRole, loading: orgLoading } = useOrg();
   const [zones, setZones] = useState<Zone[]>([]);
   const [crops, setCrops] = useState<Crop[]>([]);
   const [cropStages, setCropStages] = useState<CropStage[]>([]);
   const [sensorCounts, setSensorCounts] = useState<Record<string, number>>({});
+  const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [editZone, setEditZone] = useState<Zone | null>(null);
   const [form, setForm] = useState({ name: "", color: "#22c55e", crop_id: "", crop_stage_id: "", crop_start_date: "" });
@@ -34,6 +35,7 @@ export default function ZonesPage() {
 
   const fetchZones = async () => {
     if (!currentOrg) return;
+    setLoading(true);
     await supabase.rpc("sync_zone_stages" as any, { p_org_id: currentOrg.id });
     const { data } = await supabase.from("zones").select("*, crops(*), crop_stages(*)").eq("org_id", currentOrg.id);
     setZones((data as Zone[]) || []);
@@ -41,6 +43,7 @@ export default function ZonesPage() {
     const counts: Record<string, number> = {};
     (sensors || []).forEach(s => { if (s.zone_id) counts[s.zone_id] = (counts[s.zone_id] || 0) + 1; });
     setSensorCounts(counts);
+    setLoading(false);
   };
 
   useEffect(() => {
