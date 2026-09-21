@@ -216,7 +216,24 @@ export default function ZonesPage() {
       )}
 
 
-      {zones.length === 0 && (
+      {(orgLoading || loading) && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Card key={i} className="glass-card overflow-hidden">
+              <Skeleton className="h-32 w-full rounded-none" />
+              <CardHeader className="pb-2">
+                <Skeleton className="h-5 w-1/2" />
+              </CardHeader>
+              <CardContent className="pt-0 space-y-2">
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-4 w-1/2" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {!orgLoading && !loading && zones.length === 0 && (
         <Card className="glass-card">
           <CardContent className="flex flex-col items-center justify-center py-12 text-muted-foreground">
             <MapPin className="h-12 w-12 mb-4 opacity-40" />
