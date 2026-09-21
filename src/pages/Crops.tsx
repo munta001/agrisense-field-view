@@ -41,8 +41,9 @@ export default function CropsPage() {
 
   const fetchCrops = async () => {
     if (!currentOrg) return;
+    setLoading(true);
     const { data: cropsData } = await supabase.from("crops").select("*").eq("org_id", currentOrg.id);
-    if (!cropsData) { setCrops([]); return; }
+    if (!cropsData) { setCrops([]); setLoading(false); return; }
 
     const cropIds = cropsData.map(c => c.id);
     const { data: stagesData } = await supabase.from("crop_stages").select("*").in("crop_id", cropIds).order("stage_order");
@@ -61,6 +62,7 @@ export default function CropsPage() {
         })),
     }));
     setCrops(merged);
+    setLoading(false);
   };
 
   useEffect(() => {
