@@ -20,9 +20,10 @@ type CropStage = { id: string; crop_id: string; name: string; stage_order: numbe
 type Crop = { id: string; org_id: string; name: string; category: string; description: string | null; crop_stages: CropStage[] };
 
 export default function CropsPage() {
-  const { currentOrg, currentRole } = useOrg();
+  const { currentOrg, currentRole, loading: orgLoading } = useOrg();
   const [crops, setCrops] = useState<Crop[]>([]);
   const [sensorTypes, setSensorTypes] = useState<SensorType[]>([]);
+  const [loading, setLoading] = useState(true);
   const [cropOpen, setCropOpen] = useState(false);
   const [cropForm, setCropForm] = useState({ name: "", category: "", description: "" });
   const [stageOpen, setStageOpen] = useState<string | null>(null);
