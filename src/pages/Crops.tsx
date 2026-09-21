@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Plus, Trash2, Sprout, Layers, Pencil } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -19,9 +20,10 @@ type CropStage = { id: string; crop_id: string; name: string; stage_order: numbe
 type Crop = { id: string; org_id: string; name: string; category: string; description: string | null; crop_stages: CropStage[] };
 
 export default function CropsPage() {
-  const { currentOrg, currentRole } = useOrg();
+  const { currentOrg, currentRole, loading: orgLoading } = useOrg();
   const [crops, setCrops] = useState<Crop[]>([]);
   const [sensorTypes, setSensorTypes] = useState<SensorType[]>([]);
+  const [loading, setLoading] = useState(true);
   const [cropOpen, setCropOpen] = useState(false);
   const [cropForm, setCropForm] = useState({ name: "", category: "", description: "" });
   const [stageOpen, setStageOpen] = useState<string | null>(null);
@@ -39,8 +41,9 @@ export default function CropsPage() {
 
   const fetchCrops = async () => {
     if (!currentOrg) return;
+    setLoading(true);
     const { data: cropsData } = await supabase.from("crops").select("*").eq("org_id", currentOrg.id);
-    if (!cropsData) { setCrops([]); return; }
+    if (!cropsData) { setCrops([]); setLoading(false); return; }
 
     const cropIds = cropsData.map(c => c.id);
     const { data: stagesData } = await supabase.from("crop_stages").select("*").in("crop_id", cropIds).order("stage_order");
@@ -59,6 +62,7 @@ export default function CropsPage() {
         })),
     }));
     setCrops(merged);
+    setLoading(false);
   };
 
   useEffect(() => {
@@ -218,7 +222,23 @@ export default function CropsPage() {
         )}
       </div>
 
-      {crops.length === 0 && (
+      {(orgLoading || loading) && (
+        <div className="space-y-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Card key={i} className="glass-card border p-4">
+              <div className="flex items-center gap-3">
+                <Skeleton className="h-10 w-10 rounded-full" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-5 w-1/3" />
+                  <Skeleton className="h-4 w-1/4" />
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {!orgLoading && !loading && crops.length === 0 && (
         <Card className="glass-card">
           <CardContent className="flex flex-col items-center justify-center py-12 text-muted-foreground">
             <Sprout className="h-12 w-12 mb-4 opacity-40" />

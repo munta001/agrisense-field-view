@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, MapPin, Upload, Sprout } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -20,11 +21,12 @@ type Zone = {
 };
 
 export default function ZonesPage() {
-  const { currentOrg, currentRole } = useOrg();
+  const { currentOrg, currentRole, loading: orgLoading } = useOrg();
   const [zones, setZones] = useState<Zone[]>([]);
   const [crops, setCrops] = useState<Crop[]>([]);
   const [cropStages, setCropStages] = useState<CropStage[]>([]);
   const [sensorCounts, setSensorCounts] = useState<Record<string, number>>({});
+  const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [editZone, setEditZone] = useState<Zone | null>(null);
   const [form, setForm] = useState({ name: "", color: "#22c55e", crop_id: "", crop_stage_id: "", crop_start_date: "" });
@@ -33,6 +35,7 @@ export default function ZonesPage() {
 
   const fetchZones = async () => {
     if (!currentOrg) return;
+    setLoading(true);
     await supabase.rpc("sync_zone_stages" as any, { p_org_id: currentOrg.id });
     const { data } = await supabase.from("zones").select("*, crops(*), crop_stages(*)").eq("org_id", currentOrg.id);
     setZones((data as Zone[]) || []);
@@ -40,6 +43,7 @@ export default function ZonesPage() {
     const counts: Record<string, number> = {};
     (sensors || []).forEach(s => { if (s.zone_id) counts[s.zone_id] = (counts[s.zone_id] || 0) + 1; });
     setSensorCounts(counts);
+    setLoading(false);
   };
 
   useEffect(() => {
@@ -212,7 +216,24 @@ export default function ZonesPage() {
       )}
 
 
-      {zones.length === 0 && (
+      {(orgLoading || loading) && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Card key={i} className="glass-card overflow-hidden">
+              <Skeleton className="h-32 w-full rounded-none" />
+              <CardHeader className="pb-2">
+                <Skeleton className="h-5 w-1/2" />
+              </CardHeader>
+              <CardContent className="pt-0 space-y-2">
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-4 w-1/2" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {!orgLoading && !loading && zones.length === 0 && (
         <Card className="glass-card">
           <CardContent className="flex flex-col items-center justify-center py-12 text-muted-foreground">
             <MapPin className="h-12 w-12 mb-4 opacity-40" />
