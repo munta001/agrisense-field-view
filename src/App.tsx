@@ -27,6 +27,7 @@ import MasterAdminCreateOrganisationPage from "@/pages/MasterAdminCreateOrganisa
 import MasterAdminOrganisationDevicesPage from "@/pages/MasterAdminOrganisationDevices";
 import MasterAdminUsersPage from "@/pages/MasterAdminUsers";
 import MasterAdminAdminsPage from "@/pages/MasterAdminAdmins";
+import MasterAdminSensorTypesPage from "@/pages/MasterAdminSensorTypes";
 import ProfilePage from "@/pages/Profile";
 import MasterAdminBrandingPage from "@/pages/MasterAdminBranding";
 import NotFound from "@/pages/NotFound";
@@ -60,6 +61,7 @@ const App = () => (
               <Route path="/master-admin/organisations/:id/devices" element={<ProtectedRoute><MasterAdminOrganisationDevicesPage /></ProtectedRoute>} />
               <Route path="/master-admin/users" element={<ProtectedRoute><MasterAdminUsersPage /></ProtectedRoute>} />
               <Route path="/master-admin/admins" element={<ProtectedRoute><MasterAdminAdminsPage /></ProtectedRoute>} />
+              <Route path="/master-admin/sensor-types" element={<ProtectedRoute><MasterAdminSensorTypesPage /></ProtectedRoute>} />
               <Route path="/master-admin/profile" element={<ProtectedRoute><ProfilePage masterAdmin /></ProtectedRoute>} />
               <Route path="/master-admin/branding" element={<ProtectedRoute><MasterAdminBrandingPage /></ProtectedRoute>} />
               

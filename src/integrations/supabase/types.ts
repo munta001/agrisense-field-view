@@ -700,6 +700,19 @@ export type Database = {
         Returns: boolean
       }
       master_admin_overview: { Args: never; Returns: Json }
+      org_member_details: {
+        Args: { p_org_id: string }
+        Returns: {
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          is_active: boolean
+          last_sign_in_at: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }[]
+      }
       sync_zone_stages: { Args: { p_org_id: string }; Returns: number }
     }
     Enums: {
