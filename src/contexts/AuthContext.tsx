@@ -22,6 +22,34 @@ const AuthContext = createContext<AuthContextType>({
 
 export const useAuth = () => useContext(AuthContext);
 
+// Records a "user_signed_in" activity log entry for each organisation the user
+// actively belongs to. Guarded per browser session so token refreshes don't
+// create duplicate entries.
+async function logSignIn(userId: string) {
+  const flag = `signin-logged-${userId}`;
+  try {
+    if (sessionStorage.getItem(flag)) return;
+    sessionStorage.setItem(flag, "1");
+    const { data: memberships } = await (supabase as any)
+      .from("user_roles")
+      .select("org_id, role")
+      .eq("user_id", userId)
+      .eq("is_active", true)
+      .not("org_id", "is", null);
+    if (!memberships?.length) return;
+    await (supabase as any).from("activity_logs").insert(
+      memberships.map((m: any) => ({
+        org_id: m.org_id,
+        user_id: userId,
+        action: "user_signed_in",
+        details: { role: m.role },
+      }))
+    );
+  } catch {
+    // logging must never break sign-in
+  }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -30,10 +58,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [masterAdminLoading, setMasterAdminLoading] = useState(true);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+      if (event === "SIGNED_IN" && session?.user) logSignIn(session.user.id);
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {

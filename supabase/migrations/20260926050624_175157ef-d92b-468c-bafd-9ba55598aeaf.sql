@@ -1,0 +1,1 @@
+revoke execute on function public.log_alert_activity() from public, anon, authenticated;
