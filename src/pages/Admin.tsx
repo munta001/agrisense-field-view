@@ -94,19 +94,39 @@ export default function AdminPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Action</TableHead>
+                      <TableHead>Event</TableHead>
                       <TableHead>Details</TableHead>
                       <TableHead>Date</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {logs.map(log => (
-                      <TableRow key={log.id}>
-                        <TableCell>{log.action}</TableCell>
-                        <TableCell className="text-muted-foreground">{JSON.stringify(log.details)}</TableCell>
-                        <TableCell>{format(new Date(log.created_at), "dd MMM yyyy HH:mm")}</TableCell>
-                      </TableRow>
-                    ))}
+                    {logs.map(log => {
+                      const details = (log.details || {}) as Record<string, any>;
+                      const member = log.user_id ? members.find(m => m.user_id === log.user_id) : null;
+                      return (
+                        <TableRow key={log.id}>
+                          <TableCell>
+                            {log.action === "alert_created" ? (
+                              <Badge variant={details.severity === "critical" ? "destructive" : "secondary"}>
+                                New alert{details.severity ? ` · ${details.severity}` : ""}
+                              </Badge>
+                            ) : log.action === "user_signed_in" ? (
+                              <Badge variant="outline">Sign in</Badge>
+                            ) : (
+                              <Badge variant="outline">{log.action}</Badge>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {log.action === "alert_created"
+                              ? <span><span className="font-medium text-foreground">{details.title || "Alert"}</span>{details.message ? ` — ${details.message}` : ""}</span>
+                              : log.action === "user_signed_in"
+                                ? <span>{member?.full_name || member?.email || "A member"} signed in{details.role ? ` (${details.role})` : ""}</span>
+                                : JSON.stringify(log.details)}
+                          </TableCell>
+                          <TableCell>{format(new Date(log.created_at), "dd MMM yyyy HH:mm")}</TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               )}
