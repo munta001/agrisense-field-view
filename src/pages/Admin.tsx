@@ -5,7 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Settings, Users } from "lucide-react";
+import { KeyRound, Settings, Users } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ResetPasswordDialog } from "@/components/ResetPasswordDialog";
 import { format } from "date-fns";
 import type { Tables } from "@/integrations/supabase/types";
 
@@ -18,6 +20,7 @@ export default function AdminPage() {
   const { currentOrg, currentRole } = useOrg();
   const [members, setMembers] = useState<Member[]>([]);
   const [logs, setLogs] = useState<Tables<"activity_logs">[]>([]);
+  const [resetTarget, setResetTarget] = useState<Member | null>(null);
 
   useEffect(() => {
     if (!currentOrg) return;
@@ -61,6 +64,7 @@ export default function AdminPage() {
                     <TableHead>Status</TableHead>
                     <TableHead>Joined</TableHead>
                     <TableHead>Last sign in</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -76,6 +80,11 @@ export default function AdminPage() {
                       </TableCell>
                       <TableCell>{format(new Date(m.created_at), "dd MMM yyyy")}</TableCell>
                       <TableCell>{m.last_sign_in_at ? format(new Date(m.last_sign_in_at), "dd MMM yyyy HH:mm") : "Never"}</TableCell>
+                      <TableCell className="text-right">
+                        <Button size="sm" variant="outline" onClick={() => setResetTarget(m)}>
+                          <KeyRound className="mr-1 h-3.5 w-3.5" /> Reset password
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -134,6 +143,7 @@ export default function AdminPage() {
           </Card>
         </TabsContent>
       </Tabs>
+      <ResetPasswordDialog target={resetTarget} orgId={currentOrg?.id} onClose={() => setResetTarget(null)} />
     </div>
   );
 }

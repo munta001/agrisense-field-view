@@ -15,7 +15,8 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Loader2, Plus, Settings2, Trash2 } from "lucide-react";
+import { KeyRound, Loader2, Plus, Settings2, Trash2 } from "lucide-react";
+import { ResetPasswordDialog } from "@/components/ResetPasswordDialog";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
@@ -43,6 +44,7 @@ export default function MasterAdminUsersPage() {
   const [newOrgId, setNewOrgId] = useState("");
   const [newRole, setNewRole] = useState("viewer");
   const [busy, setBusy] = useState(false);
+  const [resetTarget, setResetTarget] = useState<PlatformUser | null>(null);
 
   const call = async (body: Record<string, unknown>) => {
     const { data, error } = await supabase.functions.invoke("master-admin-manage", { body });
@@ -202,6 +204,9 @@ export default function MasterAdminUsersPage() {
                           <Button size="sm" variant="outline" onClick={() => setEditing(u)}>
                             <Settings2 className="mr-1 h-3.5 w-3.5" /> Organisations
                           </Button>
+                          <Button size="sm" variant="outline" onClick={() => setResetTarget(u)}>
+                            <KeyRound className="mr-1 h-3.5 w-3.5" /> Reset password
+                          </Button>
                           <Button
                             size="sm"
                             variant={u.is_active ? "destructive" : "secondary"}
@@ -292,6 +297,7 @@ export default function MasterAdminUsersPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <ResetPasswordDialog target={resetTarget} onClose={() => setResetTarget(null)} />
     </MasterAdminLayout>
   );
 }
