@@ -42,7 +42,7 @@ Deno.serve(async (req) => {
       const [{ data: list }, { data: roles }, { data: profiles }, { data: orgs }] = await Promise.all([
         admin.auth.admin.listUsers({ page: 1, perPage: 1000 }),
         admin.from("user_roles").select("user_id, org_id, role, is_active").not("org_id", "is", null),
-        admin.from("profiles").select("user_id, full_name"),
+        admin.from("profiles").select("user_id, full_name, phone_number"),
         admin.from("organizations").select("id, name").order("name"),
       ]);
 
@@ -62,6 +62,7 @@ Deno.serve(async (req) => {
           user_id: u.id,
           email: u.email ?? null,
           full_name: p?.full_name ?? null,
+          phone_number: (p as { phone_number?: string | null } | undefined)?.phone_number ?? null,
           created_at: u.created_at,
           last_sign_in_at: u.last_sign_in_at ?? null,
           memberships,
@@ -364,6 +365,18 @@ Deno.serve(async (req) => {
         .delete()
         .eq("user_id", userId)
         .eq("role", "master_admin");
+      if (error) return json({ error: error.message }, 400);
+      return json({ success: true });
+    }
+
+    if (action === "update_user_phone") {
+      const userId = String(body.user_id ?? "");
+      if (!userId) return json({ error: "User is required" }, 400);
+      const phone = String(body.phone_number ?? "").trim().slice(0, 20);
+      const { error } = await admin
+        .from("profiles")
+        .update({ phone_number: phone || null })
+        .eq("user_id", userId);
       if (error) return json({ error: error.message }, 400);
       return json({ success: true });
     }

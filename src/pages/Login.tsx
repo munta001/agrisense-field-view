@@ -16,6 +16,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -33,7 +34,7 @@ export default function LoginPage() {
         const { error } = await supabase.auth.signUp({
           email,
           password,
-          options: { data: { full_name: fullName } },
+          options: { data: { full_name: fullName, phone_number: phone.trim() } },
         });
         if (error) throw error;
         toast({ title: "Account created!", description: "Check your email to confirm your account." });
@@ -78,7 +79,10 @@ export default function LoginPage() {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               {!isLogin && (
-                <Input placeholder="Full Name" value={fullName} onChange={e => setFullName(e.target.value)} required />
+                <>
+                  <Input placeholder="Full Name" value={fullName} onChange={e => setFullName(e.target.value)} required />
+                  <Input type="tel" placeholder="Phone Number" value={phone} onChange={e => setPhone(e.target.value)} maxLength={20} />
+                </>
               )}
               <Input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} required />
               <Input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} required minLength={6} />

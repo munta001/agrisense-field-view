@@ -15,7 +15,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { KeyRound, Loader2, Plus, Settings2, Trash2 } from "lucide-react";
+import { KeyRound, Loader2, Phone, Plus, Settings2, Trash2 } from "lucide-react";
 import { ResetPasswordDialog } from "@/components/ResetPasswordDialog";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -26,6 +26,7 @@ type PlatformUser = {
   user_id: string;
   email: string | null;
   full_name: string | null;
+  phone_number: string | null;
   created_at: string;
   last_sign_in_at: string | null;
   memberships: Membership[];
@@ -45,6 +46,8 @@ export default function MasterAdminUsersPage() {
   const [newRole, setNewRole] = useState("viewer");
   const [busy, setBusy] = useState(false);
   const [resetTarget, setResetTarget] = useState<PlatformUser | null>(null);
+  const [phoneTarget, setPhoneTarget] = useState<PlatformUser | null>(null);
+  const [phoneInput, setPhoneInput] = useState("");
 
   const call = async (body: Record<string, unknown>) => {
     const { data, error } = await supabase.functions.invoke("master-admin-manage", { body });
@@ -119,6 +122,22 @@ export default function MasterAdminUsersPage() {
     load(editing.user_id);
   };
 
+  const openPhoneEditor = (u: PlatformUser) => {
+    setPhoneTarget(u);
+    setPhoneInput(u.phone_number || "");
+  };
+
+  const savePhone = async () => {
+    if (!phoneTarget) return;
+    setBusy(true);
+    const ok = await call({ action: "update_user_phone", user_id: phoneTarget.user_id, phone_number: phoneInput.trim() });
+    setBusy(false);
+    if (!ok) return;
+    toast.success("Phone number updated");
+    setPhoneTarget(null);
+    load();
+  };
+
   const toggleActive = async (u: PlatformUser) => {
     const ok = await call({ action: "set_user_active", user_id: u.user_id, active: !u.is_active });
     if (!ok) return;
@@ -163,6 +182,7 @@ export default function MasterAdminUsersPage() {
                   <TableRow>
                     <TableHead>Name</TableHead>
                     <TableHead>Email</TableHead>
+                    <TableHead>Phone</TableHead>
                     <TableHead>Organisations &amp; roles</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Last sign-in</TableHead>
@@ -174,6 +194,7 @@ export default function MasterAdminUsersPage() {
                     <TableRow key={u.user_id}>
                       <TableCell className="font-medium">{u.full_name || "—"}</TableCell>
                       <TableCell className="text-muted-foreground">{u.email || "—"}</TableCell>
+                      <TableCell className="text-muted-foreground">{u.phone_number || "—"}</TableCell>
                       <TableCell>
                         {u.memberships.length ? (
                           <div className="flex flex-wrap gap-1.5">
@@ -204,6 +225,9 @@ export default function MasterAdminUsersPage() {
                           <Button size="sm" variant="outline" onClick={() => setEditing(u)}>
                             <Settings2 className="mr-1 h-3.5 w-3.5" /> Organisations
                           </Button>
+                          <Button size="sm" variant="outline" onClick={() => openPhoneEditor(u)}>
+                            <Phone className="mr-1 h-3.5 w-3.5" /> Phone
+                          </Button>
                           <Button size="sm" variant="outline" onClick={() => setResetTarget(u)}>
                             <KeyRound className="mr-1 h-3.5 w-3.5" /> Reset password
                           </Button>
@@ -219,7 +243,7 @@ export default function MasterAdminUsersPage() {
                     </TableRow>
                   ))}
                   {!filtered.length && (
-                    <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground">No users found</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground">No users found</TableCell></TableRow>
                   )}
                 </TableBody>
               </Table>
@@ -294,6 +318,30 @@ export default function MasterAdminUsersPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditing(null)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={!!phoneTarget} onOpenChange={o => !o && setPhoneTarget(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Edit phone number</DialogTitle></DialogHeader>
+          <div className="space-y-2">
+            <p className="text-sm text-muted-foreground">{phoneTarget?.email}</p>
+            <Label htmlFor="ma-user-phone">Phone number</Label>
+            <Input
+              id="ma-user-phone"
+              type="tel"
+              value={phoneInput}
+              onChange={e => setPhoneInput(e.target.value)}
+              maxLength={20}
+              placeholder="+230 5xxx xxxx"
+              disabled={busy}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPhoneTarget(null)}>Cancel</Button>
+            <Button onClick={savePhone} disabled={busy}>
+              {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Save
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
