@@ -174,6 +174,7 @@ export default function ReportsPage() {
   const [zoneId, setZoneId] = useState("all");
   const [sensorId, setSensorId] = useState("all");
   const [period, setPeriod] = useState("daily");
+  const [chartMetric, setChartMetric] = useState<string>("temperature_c");
   const [from, setFrom] = useState<Date | undefined>(subDays(new Date(), 7));
   const [to, setTo] = useState<Date | undefined>(new Date());
   const [loading, setLoading] = useState(true);
@@ -286,6 +287,16 @@ export default function ReportsPage() {
         40,
         65
       );
+
+      // Charts page: pie (readings share) + bar (average of the selected metric)
+      const metricMeta = METRICS.find(m => m.key === chartMetric) ?? METRICS[0];
+      const chartsImage = renderChartsImage(groups, metricMeta.label, metricMeta.key);
+      if (chartsImage) {
+        doc.addPage();
+        doc.setFontSize(14);
+        doc.text("Charts", 40, 45);
+        doc.addImage(chartsImage, "PNG", 40, 65, 762, 313);
+      }
 
       let y = 130;
       groups.forEach((g, idx) => {
