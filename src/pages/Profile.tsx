@@ -1,6 +1,6 @@
 import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import { format } from "date-fns";
-import { Building2, CalendarDays, Camera, Clock3, Loader2, Mail, Save, ShieldCheck, Trash2, UserRound } from "lucide-react";
+import { Building2, CalendarDays, Camera, Clock3, Loader2, Mail, Phone, Save, ShieldCheck, Trash2, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -23,6 +23,7 @@ import {
 type ProfileRecord = {
   full_name: string | null;
   avatar_url: string | null;
+  phone_number: string | null;
   created_at: string;
 };
 
@@ -65,6 +66,7 @@ function ProfileContent() {
   const [memberships, setMemberships] = useState<Membership[]>([]);
   const [loading, setLoading] = useState(true);
   const [fullNameInput, setFullNameInput] = useState("");
+  const [phoneInput, setPhoneInput] = useState("");
   const [avatarSrc, setAvatarSrc] = useState<string | null>(null);
   const [selectedPicture, setSelectedPicture] = useState<File | null>(null);
   const [picturePreview, setPicturePreview] = useState<string | null>(null);
@@ -79,7 +81,7 @@ function ProfileContent() {
     Promise.all([
       supabase
         .from("profiles")
-        .select("full_name, avatar_url, created_at")
+        .select("full_name, avatar_url, phone_number, created_at")
         .eq("user_id", user.id)
         .maybeSingle(),
       supabase
@@ -91,6 +93,7 @@ function ProfileContent() {
       const nextProfile = profileResult.data as ProfileRecord | null;
       setProfile(nextProfile);
       setFullNameInput(nextProfile?.full_name || user.user_metadata?.full_name || user.user_metadata?.name || "");
+      setPhoneInput(nextProfile?.phone_number || "");
       setAvatarSrc(await resolveProfilePicture(nextProfile?.avatar_url || user.user_metadata?.avatar_url));
       setMemberships((rolesResult.data || []) as Membership[]);
       setLoading(false);
@@ -147,9 +150,10 @@ function ProfileContent() {
       }
 
       const avatarUrl = newPicturePath || (removePicture ? null : profile?.avatar_url || null);
+      const trimmedPhone = phoneInput.trim();
       const { error: updateError } = await supabase
         .from("profiles")
-        .update({ full_name: trimmedName, avatar_url: avatarUrl })
+        .update({ full_name: trimmedName, phone_number: trimmedPhone || null, avatar_url: avatarUrl })
         .eq("user_id", user.id);
       if (updateError) throw updateError;
 
@@ -160,7 +164,7 @@ function ProfileContent() {
         if (deleteError) toast.error("Profile saved, but the previous picture could not be removed");
       }
 
-      const nextProfile = { ...profile, full_name: trimmedName, avatar_url: avatarUrl } as ProfileRecord;
+      const nextProfile = { ...profile, full_name: trimmedName, phone_number: trimmedPhone || null, avatar_url: avatarUrl } as ProfileRecord;
       setProfile(nextProfile);
       setAvatarSrc(await resolveProfilePicture(avatarUrl || user.user_metadata?.avatar_url));
       setSelectedPicture(null);
@@ -258,6 +262,10 @@ function ProfileContent() {
                 <Label htmlFor="profile-name">Full name</Label>
                 <Input id="profile-name" value={fullNameInput} onChange={event => setFullNameInput(event.target.value)} maxLength={100} disabled={saving} />
               </div>
+              <div className="mt-4 space-y-2">
+                <Label htmlFor="profile-phone">Phone number</Label>
+                <Input id="profile-phone" type="tel" value={phoneInput} onChange={event => setPhoneInput(event.target.value)} maxLength={20} placeholder="+230 5xxx xxxx" disabled={saving} />
+              </div>
               <Button className="mt-4" onClick={saveProfile} disabled={saving}>
                 {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                 Save changes
@@ -273,6 +281,7 @@ function ProfileContent() {
             </CardHeader>
             <CardContent className="grid divide-y sm:grid-cols-2 sm:gap-x-6 sm:divide-y-0">
               <DetailItem icon={Mail} label="Email address" value={user?.email || "Not available"} />
+              <DetailItem icon={Phone} label="Phone number" value={profile?.phone_number || "Not provided"} />
               <DetailItem icon={ShieldCheck} label="Sign-in method" value={provider} />
               <DetailItem icon={CalendarDays} label="Account created" value={displayDate(user?.created_at || profile?.created_at)} />
               <DetailItem icon={Clock3} label="Last sign-in" value={displayDate(user?.last_sign_in_at, true)} />
