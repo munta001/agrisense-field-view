@@ -474,6 +474,13 @@ export default function ReportsPage() {
                   </SelectContent>
                 </Select>
 
+                <Select value={chartMetric} onValueChange={setChartMetric}>
+                  <SelectTrigger className="w-full sm:w-[200px]"><SelectValue placeholder="Chart metric" /></SelectTrigger>
+                  <SelectContent>
+                    {METRICS.map(m => <SelectItem key={m.key} value={m.key}>{m.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+
                 {period === "custom" && (
                   <div className="flex w-full flex-col gap-1.5 sm:w-auto">
                     <span className="ml-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Report Period</span>
@@ -613,6 +620,55 @@ export default function ReportsPage() {
                     <p><span className="font-medium">Devices:</span> {preview.groups.length} · <span className="font-medium">Readings:</span> {preview.report.rows} · Generated {preview.report.date}</p>
                   </div>
                 </div>
+
+                {/* Charts: pie = readings share per device, bar = average of selected metric per device */}
+                {(() => {
+                  const metricMeta = METRICS.find(m => m.key === chartMetric) ?? METRICS[0];
+                  const pieData = preview.groups.map((g, i) => ({
+                    name: deviceLabel(g.sensor),
+                    value: g.readings.length,
+                    fill: CHART_COLORS[i % CHART_COLORS.length],
+                  }));
+                  const barData = preview.groups.map((g, i) => ({
+                    name: deviceLabel(g.sensor),
+                    average: avgMetric(g.readings, metricMeta.key) ?? 0,
+                    fill: CHART_COLORS[i % CHART_COLORS.length],
+                  }));
+                  return (
+                    <div className="mb-8 grid gap-4 lg:grid-cols-2">
+                      <div className="rounded-md border p-4">
+                        <h3 className="mb-3 text-base font-semibold text-slate-900">Readings share per device</h3>
+                        <div className="h-64">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                              <Pie data={pieData} dataKey="value" nameKey="name" innerRadius={50} outerRadius={85} label={({ percent }) => `${((percent ?? 0) * 100).toFixed(0)}%`}>
+                                {pieData.map((d, i) => <Cell key={i} fill={d.fill} />)}
+                              </Pie>
+                              <Tooltip />
+                              <Legend />
+                            </PieChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </div>
+                      <div className="rounded-md border p-4">
+                        <h3 className="mb-3 text-base font-semibold text-slate-900">Average {metricMeta.label} per device</h3>
+                        <div className="h-64">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={barData}>
+                              <CartesianGrid strokeDasharray="3 3" />
+                              <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                              <YAxis tick={{ fontSize: 11 }} />
+                              <Tooltip />
+                              <Bar dataKey="average" name={`Avg ${metricMeta.label}`}>
+                                {barData.map((d, i) => <Cell key={i} fill={d.fill} />)}
+                              </Bar>
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {preview.groups.map(g => (
                   <div key={g.sensor.id} className="mb-8">
