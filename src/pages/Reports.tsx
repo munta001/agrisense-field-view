@@ -15,6 +15,10 @@ import { format, startOfDay, subDays, subMonths } from "date-fns";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
+import {
+  Bar, BarChart, CartesianGrid, Cell, Legend, Pie, PieChart,
+  ResponsiveContainer, Tooltip, XAxis, YAxis,
+} from "recharts";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Sensor = Tables<"sensors">;
@@ -76,6 +80,91 @@ type PreviewData = {
 };
 
 const deviceLabel = (s: Sensor) => `${s.name}${s.device_id != null ? ` (#${s.device_id})` : ""}`;
+
+const CHART_COLORS = ["#22543D", "#2F855A", "#68D391", "#276749", "#9AE6B4", "#38A169", "#C6F6D5", "#1C4532"];
+
+const avgMetric = (readings: Reading[], key: string): number | null => {
+  const values = readings
+    .map(r => r[key as keyof Reading] as number | null)
+    .filter((x): x is number => x != null);
+  if (!values.length) return null;
+  return values.reduce((a, b) => a + b, 0) / values.length;
+};
+
+// Draws the pie (readings share per device) and bar (metric average per device)
+// charts on a canvas so they can be embedded in the PDF.
+const renderChartsImage = (groups: Group[], metricLabel: string, metricKey: string): string | null => {
+  try {
+    const canvas = document.createElement("canvas");
+    canvas.width = 1560;
+    canvas.height = 640;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    const pieData = groups.map(g => ({ name: deviceLabel(g.sensor), value: g.readings.length }));
+    const pieTotal = pieData.reduce((a, b) => a + b.value, 0);
+
+    // ---- Pie chart (left half) ----
+    ctx.fillStyle = "#1a202c";
+    ctx.font = "bold 26px sans-serif";
+    ctx.fillText("Readings share per device", 60, 50);
+    const cx = 260, cy = 350, radius = 200;
+    let angle = -Math.PI / 2;
+    pieData.forEach((d, i) => {
+      const slice = (d.value / pieTotal) * Math.PI * 2;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.arc(cx, cy, radius, angle, angle + slice);
+      ctx.closePath();
+      ctx.fillStyle = CHART_COLORS[i % CHART_COLORS.length];
+      ctx.fill();
+      angle += slice;
+    });
+    ctx.font = "18px sans-serif";
+    pieData.forEach((d, i) => {
+      const ly = 160 + i * 30;
+      ctx.fillStyle = CHART_COLORS[i % CHART_COLORS.length];
+      ctx.fillRect(500, ly - 13, 18, 18);
+      ctx.fillStyle = "#2d3748";
+      ctx.fillText(`${d.name} — ${((d.value / pieTotal) * 100).toFixed(1)}%`, 528, ly + 1);
+    });
+
+    // ---- Bar chart (right half) ----
+    ctx.fillStyle = "#1a202c";
+    ctx.font = "bold 26px sans-serif";
+    ctx.fillText(`Average ${metricLabel} per device`, 840, 50);
+    const barData = groups.map(g => ({ name: deviceLabel(g.sensor), avg: avgMetric(g.readings, metricKey) }));
+    const maxAvg = Math.max(...barData.map(d => d.avg ?? 0), 1);
+    const baseY = 560, topY = 110, chartH = baseY - topY;
+    const barAreaW = 660, barW = Math.min(70, barAreaW / barData.length - 20);
+    const step = barAreaW / barData.length;
+    ctx.strokeStyle = "#cbd5e0";
+    ctx.beginPath();
+    ctx.moveTo(830, topY);
+    ctx.lineTo(830, baseY);
+    ctx.lineTo(830 + barAreaW, baseY);
+    ctx.stroke();
+    barData.forEach((d, i) => {
+      const h = d.avg == null ? 0 : (Math.abs(d.avg) / maxAvg) * chartH;
+      const x = 830 + i * step + (step - barW) / 2;
+      ctx.fillStyle = CHART_COLORS[i % CHART_COLORS.length];
+      ctx.fillRect(x, baseY - h, barW, h);
+      ctx.fillStyle = "#2d3748";
+      ctx.font = "15px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText(d.avg == null ? "—" : d.avg.toFixed(1), x + barW / 2, baseY - h - 8);
+      const short = d.name.length > 14 ? d.name.slice(0, 13) + "…" : d.name;
+      ctx.fillText(short, x + barW / 2, baseY + 24);
+      ctx.textAlign = "left";
+    });
+
+    return canvas.toDataURL("image/png");
+  } catch {
+    return null;
+  }
+};
 
 export default function ReportsPage() {
   const { currentOrg } = useOrg();
