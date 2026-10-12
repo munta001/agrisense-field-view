@@ -157,7 +157,6 @@ export default function ZonesPage() {
     if (hadImage) await removeOldImageObject(zone);
     setImageBusy(false);
     toast({ title: hadImage ? "Image replaced" : "Image added" });
-    setImageZone(null);
     fetchZones();
   };
 
@@ -168,7 +167,31 @@ export default function ZonesPage() {
     setImageBusy(false);
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
     toast({ title: "Image deleted" });
-    setImageZone(null);
+    fetchZones();
+  };
+
+  const openManage = (zone: Zone) => {
+    setManageZone(zone);
+    setManageForm({
+      name: zone.name,
+      color: zone.color,
+      crop_id: zone.crop_id || "",
+      crop_stage_id: zone.crop_stage_id || "",
+      crop_start_date: zone.crop_start_date || "",
+    });
+  };
+
+  const handleManageSave = async () => {
+    if (!manageZone || !manageForm.name) return;
+    const { error } = await supabase.from("zones").update({
+      name: manageForm.name,
+      color: manageForm.color,
+      crop_id: cleanId(manageForm.crop_id),
+      crop_stage_id: cleanId(manageForm.crop_stage_id),
+      crop_start_date: manageForm.crop_start_date || null,
+    } as any).eq("id", manageZone.id);
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Zone updated" });
     fetchZones();
   };
 
