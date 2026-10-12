@@ -337,6 +337,63 @@ export default function ZonesPage() {
           </Card>
         ))}
       </div>
+
+      <Dialog open={!!imageZone} onOpenChange={v => { if (!v && !imageBusy) setImageZone(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="font-display">Zone image — {imageZone?.name}</DialogTitle>
+          </DialogHeader>
+          {imageZone && (
+            <div className="space-y-4 pt-2">
+              {imageZone.background_image_url ? (
+                <div
+                  className="h-48 w-full rounded-lg border bg-cover bg-center"
+                  style={{ backgroundImage: `url(${imageZone.background_image_url})` }}
+                />
+              ) : (
+                <div className="flex h-48 w-full flex-col items-center justify-center rounded-lg border border-dashed text-muted-foreground">
+                  <ImageIcon className="mb-2 h-8 w-8 opacity-40" />
+                  <p className="text-sm">No image yet</p>
+                </div>
+              )}
+              <div className="flex flex-col gap-2">
+                <label className={imageBusy ? "pointer-events-none opacity-50" : "cursor-pointer"}>
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    className="hidden"
+                    onChange={e => {
+                      const f = e.target.files?.[0];
+                      if (f) handleImageSave(imageZone, f);
+                      e.target.value = "";
+                    }}
+                  />
+                  <Button variant="outline" className="w-full" asChild disabled={imageBusy}>
+                    <span>
+                      {imageZone.background_image_url ? (
+                        <><RefreshCw className="mr-2 h-4 w-4" /> Replace image</>
+                      ) : (
+                        <><Upload className="mr-2 h-4 w-4" /> Add image</>
+                      )}
+                    </span>
+                  </Button>
+                </label>
+                {imageZone.background_image_url && (
+                  <Button
+                    variant="destructive"
+                    className="w-full"
+                    disabled={imageBusy}
+                    onClick={() => handleImageDelete(imageZone)}
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" /> Delete image
+                  </Button>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">PNG, JPG or WebP, up to 5 MB. Replacing removes the previous image.</p>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
