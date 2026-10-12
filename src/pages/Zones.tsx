@@ -408,20 +408,62 @@ export default function ZonesPage() {
               </div>
 
               <div className="border-t pt-4 space-y-3">
-                <p className="text-sm font-medium">Zone image</p>
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-medium">Zone image</p>
+                  {manageZone.background_image_url && !imageBusy && (
+                    <p className="text-xs text-muted-foreground">Hover the photo to update it</p>
+                  )}
+                </div>
                 {manageZone.background_image_url ? (
-                  <div
-                    className="h-40 w-full rounded-lg border bg-cover bg-center"
-                    style={{ backgroundImage: `url(${manageZone.background_image_url})` }}
-                  />
-                ) : (
-                  <div className="flex h-40 w-full flex-col items-center justify-center rounded-lg border border-dashed text-muted-foreground">
-                    <ImageIcon className="mb-2 h-8 w-8 opacity-40" />
-                    <p className="text-sm">No image yet</p>
+                  <div className="group relative h-44 w-full overflow-hidden rounded-xl border shadow-sm">
+                    <div
+                      className="absolute inset-0 bg-cover bg-center transition-transform duration-300 group-hover:scale-[1.02]"
+                      style={{ backgroundImage: `url(${manageZone.background_image_url})` }}
+                    />
+                    {imageBusy && (
+                      <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 bg-background/70 backdrop-blur-sm">
+                        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                        <p className="text-sm font-medium">Working on the image…</p>
+                      </div>
+                    )}
+                    {!imageBusy && (
+                      <div className="absolute inset-x-0 bottom-0 z-10 flex items-center justify-end gap-2 bg-gradient-to-t from-black/70 via-black/40 to-transparent p-3 pt-8">
+                        <label className="cursor-pointer">
+                          <input
+                            type="file"
+                            accept="image/png,image/jpeg,image/webp"
+                            className="hidden"
+                            onChange={e => {
+                              const f = e.target.files?.[0];
+                              if (f) handleImageSave(manageZone, f);
+                              e.target.value = "";
+                            }}
+                          />
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            className="h-8 gap-1.5 border-white/20 bg-white/15 text-white shadow-none backdrop-blur-md hover:bg-white/25"
+                            asChild
+                          >
+                            <span>
+                              <RefreshCw className="h-3.5 w-3.5" /> Replace
+                            </span>
+                          </Button>
+                        </label>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          className="h-8 gap-1.5 backdrop-blur-md"
+                          disabled={imageBusy}
+                          onClick={() => handleImageDelete(manageZone)}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" /> Delete
+                        </Button>
+                      </div>
+                    )}
                   </div>
-                )}
-                <div className="flex flex-col gap-2">
-                  <label className={imageBusy ? "pointer-events-none opacity-50" : "cursor-pointer"}>
+                ) : (
+                  <label className="block cursor-pointer">
                     <input
                       type="file"
                       accept="image/png,image/jpeg,image/webp"
@@ -432,28 +474,27 @@ export default function ZonesPage() {
                         e.target.value = "";
                       }}
                     />
-                    <Button variant="outline" className="w-full" asChild disabled={imageBusy}>
-                      <span>
-                        {manageZone.background_image_url ? (
-                          <><RefreshCw className="mr-2 h-4 w-4" /> Replace image</>
-                        ) : (
-                          <><Upload className="mr-2 h-4 w-4" /> Add image</>
-                        )}
-                      </span>
-                    </Button>
+                    <div className="flex h-40 w-full flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed text-muted-foreground transition-colors hover:border-primary/50 hover:bg-accent/50">
+                      {imageBusy ? (
+                        <>
+                          <Loader2 className="h-7 w-7 animate-spin text-primary" />
+                          <p className="text-sm font-medium">Uploading…</p>
+                        </>
+                      ) : (
+                        <>
+                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent">
+                            <Upload className="h-4.5 w-4.5" />
+                          </div>
+                          <p className="text-sm font-medium text-foreground">Click to add a zone image</p>
+                          <p className="text-xs">PNG, JPG or WebP · up to 5 MB</p>
+                        </>
+                      )}
+                    </div>
                   </label>
-                  {manageZone.background_image_url && (
-                    <Button
-                      variant="destructive"
-                      className="w-full"
-                      disabled={imageBusy}
-                      onClick={() => handleImageDelete(manageZone)}
-                    >
-                      <Trash2 className="mr-2 h-4 w-4" /> Delete image
-                    </Button>
-                  )}
-                  <p className="text-xs text-muted-foreground">PNG, JPG or WebP, up to 5 MB. Replacing removes the previous image.</p>
-                </div>
+                )}
+                {manageZone.background_image_url && !imageBusy && (
+                  <p className="text-xs text-muted-foreground">Replacing removes the previous image automatically.</p>
+                )}
               </div>
             </div>
           )}
