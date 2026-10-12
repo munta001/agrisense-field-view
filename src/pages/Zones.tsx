@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, MapPin, Upload, Sprout } from "lucide-react";
+import { Plus, MapPin, Upload, Sprout, Image as ImageIcon, Trash2, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 type Crop = { id: string; name: string; category: string };
