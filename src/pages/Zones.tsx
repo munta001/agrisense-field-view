@@ -42,6 +42,7 @@ export default function ZonesPage() {
     await supabase.rpc("sync_zone_stages" as any, { p_org_id: currentOrg.id });
     const { data } = await supabase.from("zones").select("*, crops(*), crop_stages(*)").eq("org_id", currentOrg.id);
     setZones((data as Zone[]) || []);
+    setManageZone(prev => prev ? (((data as Zone[]) || []).find(z => z.id === prev.id) || null) : null);
     const { data: sensors } = await supabase.from("sensors").select("zone_id").eq("org_id", currentOrg.id);
     const counts: Record<string, number> = {};
     (sensors || []).forEach(s => { if (s.zone_id) counts[s.zone_id] = (counts[s.zone_id] || 0) + 1; });
