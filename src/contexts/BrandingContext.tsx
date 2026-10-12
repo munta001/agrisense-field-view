@@ -1,68 +1,47 @@
 import { createContext, ReactNode, useContext, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  applyBrandingToDocument,
+  applyToneVars,
+  readCachedBranding,
+  toneVars,
+  writeCachedBranding,
+  type PlatformBranding,
+} from "@/lib/platform-branding";
 
-export type PlatformBranding = {
-  platform_name: string;
-  logo_url: string | null;
-  tone_color: string;
-};
+export type { PlatformBranding };
+
+const cached = readCachedBranding();
+
+// Apply the last known branding before React renders, so a returning visitor
+// sees the real brand straight away instead of a placeholder that then swaps.
+if (cached) {
+  document.title = cached.platform_name;
+  applyToneVars(Object.keys(cached.vars).length ? cached.vars : toneVars(cached.tone_color));
+}
+
+const initialBranding: PlatformBranding = cached
+  ? { platform_name: cached.platform_name, logo_url: cached.logo_url, tone_color: cached.tone_color }
+  : { platform_name: "", logo_url: null, tone_color: "" };
 
 type BrandingContextValue = PlatformBranding & {
   loading: boolean;
+  /** True once real branding is known — from the cache, or from the database. */
+  resolved: boolean;
   refreshBranding: () => Promise<void>;
 };
 
-const defaultBranding: PlatformBranding = {
-  platform_name: "AgriSense",
-  logo_url: null,
-  tone_color: "#23704F",
-};
-
 const BrandingContext = createContext<BrandingContextValue>({
-  ...defaultBranding,
+  ...initialBranding,
   loading: true,
+  resolved: false,
   refreshBranding: async () => {},
 });
 
-function hexToHsl(hex: string) {
-  const match = /^#([0-9a-f]{6})$/i.exec(hex);
-  if (!match) return { h: 152, s: 55, l: 28 };
-  const value = match[1];
-  const r = parseInt(value.slice(0, 2), 16) / 255;
-  const g = parseInt(value.slice(2, 4), 16) / 255;
-  const b = parseInt(value.slice(4, 6), 16) / 255;
-  const max = Math.max(r, g, b);
-  const min = Math.min(r, g, b);
-  const delta = max - min;
-  let h = 0;
-  if (delta) {
-    if (max === r) h = ((g - b) / delta) % 6;
-    else if (max === g) h = (b - r) / delta + 2;
-    else h = (r - g) / delta + 4;
-    h = Math.round(h * 60);
-    if (h < 0) h += 360;
-  }
-  const l = (max + min) / 2;
-  const s = delta ? delta / (1 - Math.abs(2 * l - 1)) : 0;
-  return { h, s: Math.round(s * 100), l: Math.round(l * 100) };
-}
-
-function applyTone(color: string) {
-  const { h, s, l } = hexToHsl(color);
-  const root = document.documentElement;
-  const readableLightness = l > 58 ? Math.max(28, l - 35) : l;
-  root.style.setProperty("--primary", `${h} ${Math.max(35, s)}% ${readableLightness}%`);
-  root.style.setProperty("--ring", `${h} ${Math.max(35, s)}% ${readableLightness}%`);
-  root.style.setProperty("--chart-1", `${h} ${Math.max(35, s)}% ${readableLightness}%`);
-  root.style.setProperty("--sidebar-background", `${h} ${Math.max(25, Math.min(58, s))}% 9%`);
-  root.style.setProperty("--sidebar-primary", `${h} ${Math.max(40, s)}% ${Math.max(38, Math.min(58, l + 12))}%`);
-  root.style.setProperty("--sidebar-accent", `${h} ${Math.max(25, Math.min(45, s))}% 16%`);
-  root.style.setProperty("--sidebar-border", `${h} ${Math.max(20, Math.min(35, s))}% 19%`);
-}
-
 export function BrandingProvider({ children }: { children: ReactNode }) {
-  const [branding, setBranding] = useState(defaultBranding);
+  const [branding, setBranding] = useState<PlatformBranding>(initialBranding);
   const [loading, setLoading] = useState(true);
+  const [resolved, setResolved] = useState(Boolean(cached));
 
   const refreshBranding = async () => {
     const { data } = await supabase
@@ -70,10 +49,19 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
       .select("platform_name, logo_url, tone_color")
       .eq("id", "platform")
       .maybeSingle();
-    const next = data ?? defaultBranding;
-    setBranding(next);
-    applyTone(next.tone_color);
-    document.title = next.platform_name;
+
+    if (data) {
+      const next: PlatformBranding = {
+        platform_name: data.platform_name ?? "",
+        logo_url: data.logo_url ?? null,
+        tone_color: data.tone_color ?? "",
+      };
+      setBranding(next);
+      writeCachedBranding(next);
+      applyBrandingToDocument(next);
+      setResolved(true);
+    }
+
     setLoading(false);
   };
 
@@ -81,7 +69,10 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
     void refreshBranding();
   }, []);
 
-  const value = useMemo(() => ({ ...branding, loading, refreshBranding }), [branding, loading]);
+  const value = useMemo(
+    () => ({ ...branding, loading, resolved, refreshBranding }),
+    [branding, loading, resolved],
+  );
   return <BrandingContext.Provider value={value}>{children}</BrandingContext.Provider>;
 }
 
