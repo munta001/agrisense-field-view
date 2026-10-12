@@ -4,29 +4,56 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <title>AgriSense</title>
+    <title>Smart Agriculture Platform</title>
 
     <link
       rel="icon"
-      type="image/png"
-      href="https://ibzfrlkmojekmbbsglqc.supabase.co/storage/v1/object/public/zone-images/platform/logo-1789369146402.png"
+      type="image/jpeg"
+      href="https://ibzfrlkmojekmbbsglqc.supabase.co/storage/v1/object/public/zone-images/platform/logo-1791562165048.jpg"
     />
 
-    <meta name="description" content="AgriSense Platform" />
+    <meta name="description" content="Sensor monitoring, field maps and alerts for farms and estates." />
 
-    <meta property="og:title" content="AgriSense" />
-    <meta property="og:description" content="AgriSense Platform" />
+    <meta property="og:title" content="Smart Agriculture Platform" />
+    <meta property="og:description" content="Sensor monitoring, field maps and alerts for farms and estates." />
     <meta property="og:type" content="website" />
     <meta
       property="og:image"
-      content="https://ibzfrlkmojekmbbsglqc.supabase.co/storage/v1/object/public/zone-images/platform/logo-1789369146402.png"
+      content="https://ibzfrlkmojekmbbsglqc.supabase.co/storage/v1/object/public/zone-images/platform/logo-1791562165048.jpg"
     />
 
     <meta name="twitter:card" content="summary_large_image" />
     <meta
       name="twitter:image"
-      content="https://ibzfrlkmojekmbbsglqc.supabase.co/storage/v1/object/public/zone-images/platform/logo-1789369146402.png"
+      content="https://ibzfrlkmojekmbbsglqc.supabase.co/storage/v1/object/public/zone-images/platform/logo-1791562165048.jpg"
     />
+
+    <!--
+      Paint the brand the visitor already knows before any app code runs, so the
+      page never opens in a placeholder brand. Key must match BRANDING_STORAGE_KEY
+      in src/lib/platform-branding.ts.
+    -->
+    <script>
+      (function () {
+        try {
+          var raw = localStorage.getItem("platform_branding");
+          if (!raw) return;
+          var brand = JSON.parse(raw);
+          if (!brand) return;
+          if (brand.platform_name) document.title = brand.platform_name;
+          if (brand.vars) {
+            var root = document.documentElement;
+            for (var key in brand.vars) root.style.setProperty(key, brand.vars[key]);
+          }
+          if (brand.logo_url) {
+            var icon = document.querySelector('link[rel="icon"]');
+            if (icon) icon.href = brand.logo_url;
+          }
+        } catch (e) {
+          /* no remembered brand — the app will fetch it */
+        }
+      })();
+    </script>
   </head>
 
   <body>

@@ -65,7 +65,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     "/admin": "Administration",
     "/profile": "Profile",
   };
-  const pageTitle = pathname.startsWith("/sensors/") ? "Sensor details" : routeTitles[pathname] || platform_name;
+  const pageTitle = pathname.startsWith("/sensors/") ? "Sensor details" : routeTitles[pathname] || platform_name || "Dashboard";
 
   return (
     <SidebarProvider>

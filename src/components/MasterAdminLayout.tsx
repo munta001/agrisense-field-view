@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { LogOut, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PlatformLogo } from "@/components/PlatformLogo";
-import { useBranding } from "@/contexts/BrandingContext";
+import { BrandName } from "@/components/BrandName";
 
 const links = [
   { to: "/master-admin", label: "Overview", end: true },
@@ -20,7 +20,6 @@ const links = [
 
 export function MasterAdminLayout({ children }: { children: ReactNode }) {
   const { isMasterAdmin, masterAdminLoading, signOut } = useAuth();
-  const { platform_name } = useBranding();
 
   if (masterAdminLoading) {
     return (
@@ -37,7 +36,7 @@ export function MasterAdminLayout({ children }: { children: ReactNode }) {
         <div className="flex h-14 items-center justify-between px-4 sm:px-6">
           <div className="flex items-center gap-2">
             <PlatformLogo className="h-8 w-8 rounded-lg gradient-primary p-1.5" iconClassName="text-primary-foreground" />
-            <span className="font-display font-bold">{platform_name}</span>
+            <BrandName className="font-display font-bold" />
             <Badge variant="default" className="ml-1">Master Admin</Badge>
           </div>
           <Button variant="ghost" size="sm" onClick={signOut}>
