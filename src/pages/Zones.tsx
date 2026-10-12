@@ -327,15 +327,10 @@ export default function ZonesPage() {
                 )}
               </div>
               {canEdit && (
-                <div className="mt-3">
-                  <label className="cursor-pointer" onClick={e => e.stopPropagation()}>
-                    <input type="file" accept="image/*" className="hidden" onChange={e => {
-                      if (e.target.files?.[0]) handleImageUpload(zone.id, e.target.files[0]);
-                    }} />
-                    <div className="flex items-center gap-1 text-xs text-primary hover:underline">
-                      <Upload className="h-3 w-3" /> Upload image
-                    </div>
-                  </label>
+                <div className="mt-3" onClick={e => e.stopPropagation()}>
+                  <Button variant="outline" size="sm" className="w-full" onClick={() => setImageZone(zone)}>
+                    <ImageIcon className="mr-2 h-4 w-4" /> Manage image
+                  </Button>
                 </div>
               )}
             </CardContent>
