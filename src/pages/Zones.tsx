@@ -114,13 +114,59 @@ export default function ZonesPage() {
     setOpen(true);
   };
 
-  const handleImageUpload = async (zoneId: string, file: File) => {
-    const path = `${currentOrg!.id}/${zoneId}/${file.name}`;
+  const zoneImagePath = (zoneId: string, ext: string) => `${currentOrg!.id}/${zoneId}/zone-image.${ext}`;
+
+  const removeOldImageObject = async (zone: Zone) => {
+    if (!zone.background_image_url) return;
+    try {
+      const marker = "/zone-images/";
+      const idx = zone.background_image_url.indexOf(marker);
+      if (idx === -1) return;
+      const oldPath = decodeURIComponent(zone.background_image_url.slice(idx + marker.length).split("?")[0]);
+      if (oldPath) await supabase.storage.from("zone-images").remove([oldPath]);
+    } catch { /* best-effort cleanup */ }
+  };
+
+  const handleImageSave = async (zone: Zone, file: File) => {
+    if (!currentOrg) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: "File too large", description: "Please choose an image under 5 MB.", variant: "destructive" });
+      return;
+    }
+    setImageBusy(true);
+    const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+    const path = zoneImagePath(zone.id, ext);
+    const hadImage = Boolean(zone.background_image_url);
     const { error: uploadError } = await supabase.storage.from("zone-images").upload(path, file, { upsert: true });
-    if (uploadError) { toast({ title: "Upload Error", description: uploadError.message, variant: "destructive" }); return; }
+    if (uploadError) {
+      setImageBusy(false);
+      toast({ title: "Upload Error", description: uploadError.message, variant: "destructive" });
+      return;
+    }
     const { data: urlData } = supabase.storage.from("zone-images").getPublicUrl(path);
-    await supabase.from("zones").update({ background_image_url: urlData.publicUrl }).eq("id", zoneId);
-    toast({ title: "Image uploaded" });
+    const publicUrl = `${urlData.publicUrl}?v=${Date.now()}`;
+    const { error } = await supabase.from("zones").update({ background_image_url: publicUrl }).eq("id", zone.id);
+    if (error) {
+      await supabase.storage.from("zone-images").remove([path]);
+      setImageBusy(false);
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+      return;
+    }
+    if (hadImage) await removeOldImageObject(zone);
+    setImageBusy(false);
+    toast({ title: hadImage ? "Image replaced" : "Image added" });
+    setImageZone(null);
+    fetchZones();
+  };
+
+  const handleImageDelete = async (zone: Zone) => {
+    setImageBusy(true);
+    await removeOldImageObject(zone);
+    const { error } = await supabase.from("zones").update({ background_image_url: null }).eq("id", zone.id);
+    setImageBusy(false);
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Image deleted" });
+    setImageZone(null);
     fetchZones();
   };
 
