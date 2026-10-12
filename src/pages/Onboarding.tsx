@@ -10,7 +10,6 @@ import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { PlatformLogo } from "@/components/PlatformLogo";
 import { BrandName } from "@/components/BrandName";
-import { useBranding } from "@/contexts/BrandingContext";
 
 
 export default function OnboardingPage() {
@@ -20,7 +19,6 @@ export default function OnboardingPage() {
   const { refetchOrgs } = useOrg();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { platform_name } = useBranding();
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
