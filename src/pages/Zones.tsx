@@ -29,6 +29,8 @@ export default function ZonesPage() {
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [editZone, setEditZone] = useState<Zone | null>(null);
+  const [imageZone, setImageZone] = useState<Zone | null>(null);
+  const [imageBusy, setImageBusy] = useState(false);
   const [form, setForm] = useState({ name: "", color: "#22c55e", crop_id: "", crop_stage_id: "", crop_start_date: "" });
   const { toast } = useToast();
   const canEdit = currentRole?.role === "admin" || currentRole?.role === "operator";
