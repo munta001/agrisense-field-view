@@ -353,8 +353,8 @@ export default function ZonesPage() {
               </div>
               {canEdit && (
                 <div className="mt-3" onClick={e => e.stopPropagation()}>
-                  <Button variant="outline" size="sm" className="w-full" onClick={() => setImageZone(zone)}>
-                    <ImageIcon className="mr-2 h-4 w-4" /> Manage image
+                  <Button variant="outline" size="sm" className="w-full" onClick={() => openManage(zone)}>
+                    <Settings className="mr-2 h-4 w-4" /> Manage
                   </Button>
                 </div>
               )}
