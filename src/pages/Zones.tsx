@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, MapPin, Upload, Sprout, Image as ImageIcon, Trash2, RefreshCw } from "lucide-react";
+import { Plus, MapPin, Upload, Sprout, Image as ImageIcon, Trash2, RefreshCw, Settings } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 type Crop = { id: string; name: string; category: string };
@@ -29,7 +29,8 @@ export default function ZonesPage() {
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [editZone, setEditZone] = useState<Zone | null>(null);
-  const [imageZone, setImageZone] = useState<Zone | null>(null);
+  const [manageZone, setManageZone] = useState<Zone | null>(null);
+  const [manageForm, setManageForm] = useState({ name: "", color: "#22c55e", crop_id: "", crop_stage_id: "", crop_start_date: "" });
   const [imageBusy, setImageBusy] = useState(false);
   const [form, setForm] = useState({ name: "", color: "#22c55e", crop_id: "", crop_stage_id: "", crop_start_date: "" });
   const { toast } = useToast();
@@ -41,6 +42,7 @@ export default function ZonesPage() {
     await supabase.rpc("sync_zone_stages" as any, { p_org_id: currentOrg.id });
     const { data } = await supabase.from("zones").select("*, crops(*), crop_stages(*)").eq("org_id", currentOrg.id);
     setZones((data as Zone[]) || []);
+    setManageZone(prev => prev ? (((data as Zone[]) || []).find(z => z.id === prev.id) || null) : null);
     const { data: sensors } = await supabase.from("sensors").select("zone_id").eq("org_id", currentOrg.id);
     const counts: Record<string, number> = {};
     (sensors || []).forEach(s => { if (s.zone_id) counts[s.zone_id] = (counts[s.zone_id] || 0) + 1; });
@@ -155,7 +157,6 @@ export default function ZonesPage() {
     if (hadImage) await removeOldImageObject(zone);
     setImageBusy(false);
     toast({ title: hadImage ? "Image replaced" : "Image added" });
-    setImageZone(null);
     fetchZones();
   };
 
@@ -166,7 +167,31 @@ export default function ZonesPage() {
     setImageBusy(false);
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
     toast({ title: "Image deleted" });
-    setImageZone(null);
+    fetchZones();
+  };
+
+  const openManage = (zone: Zone) => {
+    setManageZone(zone);
+    setManageForm({
+      name: zone.name,
+      color: zone.color,
+      crop_id: zone.crop_id || "",
+      crop_stage_id: zone.crop_stage_id || "",
+      crop_start_date: zone.crop_start_date || "",
+    });
+  };
+
+  const handleManageSave = async () => {
+    if (!manageZone || !manageForm.name) return;
+    const { error } = await supabase.from("zones").update({
+      name: manageForm.name,
+      color: manageForm.color,
+      crop_id: cleanId(manageForm.crop_id),
+      crop_stage_id: cleanId(manageForm.crop_stage_id),
+      crop_start_date: manageForm.crop_start_date || null,
+    } as any).eq("id", manageZone.id);
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Zone updated" });
     fetchZones();
   };
 
@@ -328,8 +353,8 @@ export default function ZonesPage() {
               </div>
               {canEdit && (
                 <div className="mt-3" onClick={e => e.stopPropagation()}>
-                  <Button variant="outline" size="sm" className="w-full" onClick={() => setImageZone(zone)}>
-                    <ImageIcon className="mr-2 h-4 w-4" /> Manage image
+                  <Button variant="outline" size="sm" className="w-full" onClick={() => openManage(zone)}>
+                    <Settings className="mr-2 h-4 w-4" /> Manage
                   </Button>
                 </div>
               )}
@@ -338,58 +363,98 @@ export default function ZonesPage() {
         ))}
       </div>
 
-      <Dialog open={!!imageZone} onOpenChange={v => { if (!v && !imageBusy) setImageZone(null); }}>
-        <DialogContent>
+      <Dialog open={!!manageZone} onOpenChange={v => { if (!v && !imageBusy) setManageZone(null); }}>
+        <DialogContent className="max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="font-display">Zone image — {imageZone?.name}</DialogTitle>
+            <DialogTitle className="font-display">Manage zone — {manageZone?.name}</DialogTitle>
           </DialogHeader>
-          {imageZone && (
-            <div className="space-y-4 pt-2">
-              {imageZone.background_image_url ? (
-                <div
-                  className="h-48 w-full rounded-lg border bg-cover bg-center"
-                  style={{ backgroundImage: `url(${imageZone.background_image_url})` }}
-                />
-              ) : (
-                <div className="flex h-48 w-full flex-col items-center justify-center rounded-lg border border-dashed text-muted-foreground">
-                  <ImageIcon className="mb-2 h-8 w-8 opacity-40" />
-                  <p className="text-sm">No image yet</p>
+          {manageZone && (
+            <div className="space-y-5 pt-2">
+              <div className="space-y-3">
+                <p className="text-sm font-medium">Zone details</p>
+                <Input placeholder="Zone Name" value={manageForm.name} onChange={e => setManageForm({ ...manageForm, name: e.target.value })} />
+                <div className="flex items-center gap-3">
+                  <label className="text-sm text-muted-foreground">Color</label>
+                  <input type="color" value={manageForm.color} onChange={e => setManageForm({ ...manageForm, color: e.target.value })} className="h-8 w-12 rounded cursor-pointer" />
                 </div>
-              )}
-              <div className="flex flex-col gap-2">
-                <label className={imageBusy ? "pointer-events-none opacity-50" : "cursor-pointer"}>
-                  <input
-                    type="file"
-                    accept="image/png,image/jpeg,image/webp"
-                    className="hidden"
-                    onChange={e => {
-                      const f = e.target.files?.[0];
-                      if (f) handleImageSave(imageZone, f);
-                      e.target.value = "";
-                    }}
-                  />
-                  <Button variant="outline" className="w-full" asChild disabled={imageBusy}>
-                    <span>
-                      {imageZone.background_image_url ? (
-                        <><RefreshCw className="mr-2 h-4 w-4" /> Replace image</>
-                      ) : (
-                        <><Upload className="mr-2 h-4 w-4" /> Add image</>
-                      )}
-                    </span>
-                  </Button>
-                </label>
-                {imageZone.background_image_url && (
-                  <Button
-                    variant="destructive"
-                    className="w-full"
-                    disabled={imageBusy}
-                    onClick={() => handleImageDelete(imageZone)}
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" /> Delete image
-                  </Button>
+                <Select value={manageForm.crop_id} onValueChange={v => setManageForm({ ...manageForm, crop_id: v, crop_stage_id: "" })}>
+                  <SelectTrigger><SelectValue placeholder="Select Crop (optional)" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No Crop</SelectItem>
+                    {crops.map(c => <SelectItem key={c.id} value={c.id}>{c.name} ({c.category})</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                {manageForm.crop_id && manageForm.crop_id !== "none" && (
+                  <Select value={manageForm.crop_stage_id} onValueChange={v => setManageForm({ ...manageForm, crop_stage_id: v })}>
+                    <SelectTrigger><SelectValue placeholder="Select Crop Stage (optional)" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">No Stage</SelectItem>
+                      {filteredStages(manageForm.crop_id).map(s => (
+                        <SelectItem key={s.id} value={s.id}>{s.name} (Order: {s.stage_order})</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 )}
+                {manageForm.crop_id && manageForm.crop_id !== "none" && (
+                  <div className="space-y-1">
+                    <label className="text-xs text-muted-foreground">Crop start date</label>
+                    <Input type="date" value={manageForm.crop_start_date} onChange={e => setManageForm({ ...manageForm, crop_start_date: e.target.value })} />
+                    <p className="text-xs text-muted-foreground">
+                      The stage moves on automatically using each stage's duration, counted from this date.
+                    </p>
+                  </div>
+                )}
+                <Button onClick={handleManageSave} className="w-full" disabled={!manageForm.name}>Save changes</Button>
               </div>
-              <p className="text-xs text-muted-foreground">PNG, JPG or WebP, up to 5 MB. Replacing removes the previous image.</p>
+
+              <div className="border-t pt-4 space-y-3">
+                <p className="text-sm font-medium">Zone image</p>
+                {manageZone.background_image_url ? (
+                  <div
+                    className="h-40 w-full rounded-lg border bg-cover bg-center"
+                    style={{ backgroundImage: `url(${manageZone.background_image_url})` }}
+                  />
+                ) : (
+                  <div className="flex h-40 w-full flex-col items-center justify-center rounded-lg border border-dashed text-muted-foreground">
+                    <ImageIcon className="mb-2 h-8 w-8 opacity-40" />
+                    <p className="text-sm">No image yet</p>
+                  </div>
+                )}
+                <div className="flex flex-col gap-2">
+                  <label className={imageBusy ? "pointer-events-none opacity-50" : "cursor-pointer"}>
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp"
+                      className="hidden"
+                      onChange={e => {
+                        const f = e.target.files?.[0];
+                        if (f) handleImageSave(manageZone, f);
+                        e.target.value = "";
+                      }}
+                    />
+                    <Button variant="outline" className="w-full" asChild disabled={imageBusy}>
+                      <span>
+                        {manageZone.background_image_url ? (
+                          <><RefreshCw className="mr-2 h-4 w-4" /> Replace image</>
+                        ) : (
+                          <><Upload className="mr-2 h-4 w-4" /> Add image</>
+                        )}
+                      </span>
+                    </Button>
+                  </label>
+                  {manageZone.background_image_url && (
+                    <Button
+                      variant="destructive"
+                      className="w-full"
+                      disabled={imageBusy}
+                      onClick={() => handleImageDelete(manageZone)}
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" /> Delete image
+                    </Button>
+                  )}
+                  <p className="text-xs text-muted-foreground">PNG, JPG or WebP, up to 5 MB. Replacing removes the previous image.</p>
+                </div>
+              </div>
             </div>
           )}
         </DialogContent>
