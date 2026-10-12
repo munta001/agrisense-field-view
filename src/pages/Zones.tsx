@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, MapPin, Upload, Sprout } from "lucide-react";
+import { Plus, MapPin, Upload, Sprout, Image as ImageIcon, Trash2, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 type Crop = { id: string; name: string; category: string };
@@ -29,6 +29,8 @@ export default function ZonesPage() {
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [editZone, setEditZone] = useState<Zone | null>(null);
+  const [imageZone, setImageZone] = useState<Zone | null>(null);
+  const [imageBusy, setImageBusy] = useState(false);
   const [form, setForm] = useState({ name: "", color: "#22c55e", crop_id: "", crop_stage_id: "", crop_start_date: "" });
   const { toast } = useToast();
   const canEdit = currentRole?.role === "admin" || currentRole?.role === "operator";
@@ -112,13 +114,59 @@ export default function ZonesPage() {
     setOpen(true);
   };
 
-  const handleImageUpload = async (zoneId: string, file: File) => {
-    const path = `${currentOrg!.id}/${zoneId}/${file.name}`;
+  const zoneImagePath = (zoneId: string, ext: string) => `${currentOrg!.id}/${zoneId}/zone-image.${ext}`;
+
+  const removeOldImageObject = async (zone: Zone) => {
+    if (!zone.background_image_url) return;
+    try {
+      const marker = "/zone-images/";
+      const idx = zone.background_image_url.indexOf(marker);
+      if (idx === -1) return;
+      const oldPath = decodeURIComponent(zone.background_image_url.slice(idx + marker.length).split("?")[0]);
+      if (oldPath) await supabase.storage.from("zone-images").remove([oldPath]);
+    } catch { /* best-effort cleanup */ }
+  };
+
+  const handleImageSave = async (zone: Zone, file: File) => {
+    if (!currentOrg) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: "File too large", description: "Please choose an image under 5 MB.", variant: "destructive" });
+      return;
+    }
+    setImageBusy(true);
+    const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+    const path = zoneImagePath(zone.id, ext);
+    const hadImage = Boolean(zone.background_image_url);
     const { error: uploadError } = await supabase.storage.from("zone-images").upload(path, file, { upsert: true });
-    if (uploadError) { toast({ title: "Upload Error", description: uploadError.message, variant: "destructive" }); return; }
+    if (uploadError) {
+      setImageBusy(false);
+      toast({ title: "Upload Error", description: uploadError.message, variant: "destructive" });
+      return;
+    }
     const { data: urlData } = supabase.storage.from("zone-images").getPublicUrl(path);
-    await supabase.from("zones").update({ background_image_url: urlData.publicUrl }).eq("id", zoneId);
-    toast({ title: "Image uploaded" });
+    const publicUrl = `${urlData.publicUrl}?v=${Date.now()}`;
+    const { error } = await supabase.from("zones").update({ background_image_url: publicUrl }).eq("id", zone.id);
+    if (error) {
+      await supabase.storage.from("zone-images").remove([path]);
+      setImageBusy(false);
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+      return;
+    }
+    if (hadImage) await removeOldImageObject(zone);
+    setImageBusy(false);
+    toast({ title: hadImage ? "Image replaced" : "Image added" });
+    setImageZone(null);
+    fetchZones();
+  };
+
+  const handleImageDelete = async (zone: Zone) => {
+    setImageBusy(true);
+    await removeOldImageObject(zone);
+    const { error } = await supabase.from("zones").update({ background_image_url: null }).eq("id", zone.id);
+    setImageBusy(false);
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Image deleted" });
+    setImageZone(null);
     fetchZones();
   };
 
@@ -279,21 +327,73 @@ export default function ZonesPage() {
                 )}
               </div>
               {canEdit && (
-                <div className="mt-3">
-                  <label className="cursor-pointer" onClick={e => e.stopPropagation()}>
-                    <input type="file" accept="image/*" className="hidden" onChange={e => {
-                      if (e.target.files?.[0]) handleImageUpload(zone.id, e.target.files[0]);
-                    }} />
-                    <div className="flex items-center gap-1 text-xs text-primary hover:underline">
-                      <Upload className="h-3 w-3" /> Upload image
-                    </div>
-                  </label>
+                <div className="mt-3" onClick={e => e.stopPropagation()}>
+                  <Button variant="outline" size="sm" className="w-full" onClick={() => setImageZone(zone)}>
+                    <ImageIcon className="mr-2 h-4 w-4" /> Manage image
+                  </Button>
                 </div>
               )}
             </CardContent>
           </Card>
         ))}
       </div>
+
+      <Dialog open={!!imageZone} onOpenChange={v => { if (!v && !imageBusy) setImageZone(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="font-display">Zone image — {imageZone?.name}</DialogTitle>
+          </DialogHeader>
+          {imageZone && (
+            <div className="space-y-4 pt-2">
+              {imageZone.background_image_url ? (
+                <div
+                  className="h-48 w-full rounded-lg border bg-cover bg-center"
+                  style={{ backgroundImage: `url(${imageZone.background_image_url})` }}
+                />
+              ) : (
+                <div className="flex h-48 w-full flex-col items-center justify-center rounded-lg border border-dashed text-muted-foreground">
+                  <ImageIcon className="mb-2 h-8 w-8 opacity-40" />
+                  <p className="text-sm">No image yet</p>
+                </div>
+              )}
+              <div className="flex flex-col gap-2">
+                <label className={imageBusy ? "pointer-events-none opacity-50" : "cursor-pointer"}>
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    className="hidden"
+                    onChange={e => {
+                      const f = e.target.files?.[0];
+                      if (f) handleImageSave(imageZone, f);
+                      e.target.value = "";
+                    }}
+                  />
+                  <Button variant="outline" className="w-full" asChild disabled={imageBusy}>
+                    <span>
+                      {imageZone.background_image_url ? (
+                        <><RefreshCw className="mr-2 h-4 w-4" /> Replace image</>
+                      ) : (
+                        <><Upload className="mr-2 h-4 w-4" /> Add image</>
+                      )}
+                    </span>
+                  </Button>
+                </label>
+                {imageZone.background_image_url && (
+                  <Button
+                    variant="destructive"
+                    className="w-full"
+                    disabled={imageBusy}
+                    onClick={() => handleImageDelete(imageZone)}
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" /> Delete image
+                  </Button>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">PNG, JPG or WebP, up to 5 MB. Replacing removes the previous image.</p>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
