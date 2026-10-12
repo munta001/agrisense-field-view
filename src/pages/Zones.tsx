@@ -363,58 +363,98 @@ export default function ZonesPage() {
         ))}
       </div>
 
-      <Dialog open={!!imageZone} onOpenChange={v => { if (!v && !imageBusy) setImageZone(null); }}>
-        <DialogContent>
+      <Dialog open={!!manageZone} onOpenChange={v => { if (!v && !imageBusy) setManageZone(null); }}>
+        <DialogContent className="max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="font-display">Zone image — {imageZone?.name}</DialogTitle>
+            <DialogTitle className="font-display">Manage zone — {manageZone?.name}</DialogTitle>
           </DialogHeader>
-          {imageZone && (
-            <div className="space-y-4 pt-2">
-              {imageZone.background_image_url ? (
-                <div
-                  className="h-48 w-full rounded-lg border bg-cover bg-center"
-                  style={{ backgroundImage: `url(${imageZone.background_image_url})` }}
-                />
-              ) : (
-                <div className="flex h-48 w-full flex-col items-center justify-center rounded-lg border border-dashed text-muted-foreground">
-                  <ImageIcon className="mb-2 h-8 w-8 opacity-40" />
-                  <p className="text-sm">No image yet</p>
+          {manageZone && (
+            <div className="space-y-5 pt-2">
+              <div className="space-y-3">
+                <p className="text-sm font-medium">Zone details</p>
+                <Input placeholder="Zone Name" value={manageForm.name} onChange={e => setManageForm({ ...manageForm, name: e.target.value })} />
+                <div className="flex items-center gap-3">
+                  <label className="text-sm text-muted-foreground">Color</label>
+                  <input type="color" value={manageForm.color} onChange={e => setManageForm({ ...manageForm, color: e.target.value })} className="h-8 w-12 rounded cursor-pointer" />
                 </div>
-              )}
-              <div className="flex flex-col gap-2">
-                <label className={imageBusy ? "pointer-events-none opacity-50" : "cursor-pointer"}>
-                  <input
-                    type="file"
-                    accept="image/png,image/jpeg,image/webp"
-                    className="hidden"
-                    onChange={e => {
-                      const f = e.target.files?.[0];
-                      if (f) handleImageSave(imageZone, f);
-                      e.target.value = "";
-                    }}
-                  />
-                  <Button variant="outline" className="w-full" asChild disabled={imageBusy}>
-                    <span>
-                      {imageZone.background_image_url ? (
-                        <><RefreshCw className="mr-2 h-4 w-4" /> Replace image</>
-                      ) : (
-                        <><Upload className="mr-2 h-4 w-4" /> Add image</>
-                      )}
-                    </span>
-                  </Button>
-                </label>
-                {imageZone.background_image_url && (
-                  <Button
-                    variant="destructive"
-                    className="w-full"
-                    disabled={imageBusy}
-                    onClick={() => handleImageDelete(imageZone)}
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" /> Delete image
-                  </Button>
+                <Select value={manageForm.crop_id} onValueChange={v => setManageForm({ ...manageForm, crop_id: v, crop_stage_id: "" })}>
+                  <SelectTrigger><SelectValue placeholder="Select Crop (optional)" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No Crop</SelectItem>
+                    {crops.map(c => <SelectItem key={c.id} value={c.id}>{c.name} ({c.category})</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                {manageForm.crop_id && manageForm.crop_id !== "none" && (
+                  <Select value={manageForm.crop_stage_id} onValueChange={v => setManageForm({ ...manageForm, crop_stage_id: v })}>
+                    <SelectTrigger><SelectValue placeholder="Select Crop Stage (optional)" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">No Stage</SelectItem>
+                      {filteredStages(manageForm.crop_id).map(s => (
+                        <SelectItem key={s.id} value={s.id}>{s.name} (Order: {s.stage_order})</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 )}
+                {manageForm.crop_id && manageForm.crop_id !== "none" && (
+                  <div className="space-y-1">
+                    <label className="text-xs text-muted-foreground">Crop start date</label>
+                    <Input type="date" value={manageForm.crop_start_date} onChange={e => setManageForm({ ...manageForm, crop_start_date: e.target.value })} />
+                    <p className="text-xs text-muted-foreground">
+                      The stage moves on automatically using each stage's duration, counted from this date.
+                    </p>
+                  </div>
+                )}
+                <Button onClick={handleManageSave} className="w-full" disabled={!manageForm.name}>Save changes</Button>
               </div>
-              <p className="text-xs text-muted-foreground">PNG, JPG or WebP, up to 5 MB. Replacing removes the previous image.</p>
+
+              <div className="border-t pt-4 space-y-3">
+                <p className="text-sm font-medium">Zone image</p>
+                {manageZone.background_image_url ? (
+                  <div
+                    className="h-40 w-full rounded-lg border bg-cover bg-center"
+                    style={{ backgroundImage: `url(${manageZone.background_image_url})` }}
+                  />
+                ) : (
+                  <div className="flex h-40 w-full flex-col items-center justify-center rounded-lg border border-dashed text-muted-foreground">
+                    <ImageIcon className="mb-2 h-8 w-8 opacity-40" />
+                    <p className="text-sm">No image yet</p>
+                  </div>
+                )}
+                <div className="flex flex-col gap-2">
+                  <label className={imageBusy ? "pointer-events-none opacity-50" : "cursor-pointer"}>
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp"
+                      className="hidden"
+                      onChange={e => {
+                        const f = e.target.files?.[0];
+                        if (f) handleImageSave(manageZone, f);
+                        e.target.value = "";
+                      }}
+                    />
+                    <Button variant="outline" className="w-full" asChild disabled={imageBusy}>
+                      <span>
+                        {manageZone.background_image_url ? (
+                          <><RefreshCw className="mr-2 h-4 w-4" /> Replace image</>
+                        ) : (
+                          <><Upload className="mr-2 h-4 w-4" /> Add image</>
+                        )}
+                      </span>
+                    </Button>
+                  </label>
+                  {manageZone.background_image_url && (
+                    <Button
+                      variant="destructive"
+                      className="w-full"
+                      disabled={imageBusy}
+                      onClick={() => handleImageDelete(manageZone)}
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" /> Delete image
+                    </Button>
+                  )}
+                  <p className="text-xs text-muted-foreground">PNG, JPG or WebP, up to 5 MB. Replacing removes the previous image.</p>
+                </div>
+              </div>
             </div>
           )}
         </DialogContent>
