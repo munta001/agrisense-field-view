@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, MapPin, Upload, Sprout, Image as ImageIcon, Trash2, RefreshCw } from "lucide-react";
+import { Plus, MapPin, Upload, Sprout, Image as ImageIcon, Trash2, RefreshCw, Settings } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 type Crop = { id: string; name: string; category: string };
@@ -29,7 +29,8 @@ export default function ZonesPage() {
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [editZone, setEditZone] = useState<Zone | null>(null);
-  const [imageZone, setImageZone] = useState<Zone | null>(null);
+  const [manageZone, setManageZone] = useState<Zone | null>(null);
+  const [manageForm, setManageForm] = useState({ name: "", color: "#22c55e", crop_id: "", crop_stage_id: "", crop_start_date: "" });
   const [imageBusy, setImageBusy] = useState(false);
   const [form, setForm] = useState({ name: "", color: "#22c55e", crop_id: "", crop_stage_id: "", crop_start_date: "" });
   const { toast } = useToast();
