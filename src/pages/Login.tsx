@@ -9,7 +9,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { PlatformLogo } from "@/components/PlatformLogo";
+import { BrandName } from "@/components/BrandName";
 import { useBranding } from "@/contexts/BrandingContext";
+
 
 export default function LoginPage() {
   const [isLogin, setIsLogin] = useState(true);
@@ -20,7 +22,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { platform_name } = useBranding();
+  const { platform_name, resolved } = useBranding();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,14 +69,21 @@ export default function LoginPage() {
       <div className="w-full max-w-md">
         <div className="mb-8 flex flex-col items-center">
           <PlatformLogo className="mb-4 h-14 w-14 rounded-2xl gradient-primary p-3 shadow-lg" iconClassName="h-7 w-7 text-primary-foreground" />
-          <h1 className="font-display text-3xl font-bold text-foreground">{platform_name}</h1>
+          <BrandName className="h-8 w-40 font-display text-3xl font-bold text-foreground" />
           <p className="mt-1 text-muted-foreground">Smart Agriculture Platform</p>
         </div>
 
         <Card className="glass-card">
           <CardHeader className="text-center">
             <CardTitle className="font-display text-xl">{isLogin ? "Welcome Back" : "Create Account"}</CardTitle>
-            <CardDescription>{isLogin ? "Sign in to your account" : `Get started with ${platform_name}`}</CardDescription>
+            <CardDescription>
+              {isLogin
+                ? "Sign in to your account"
+                : resolved && platform_name
+                  ? `Get started with ${platform_name}`
+                  : "Create your account"}
+            </CardDescription>
+
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">

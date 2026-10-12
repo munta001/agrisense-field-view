@@ -12,7 +12,8 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { PlatformLogo } from "@/components/PlatformLogo";
-import { useBranding } from "@/contexts/BrandingContext";
+import { BrandName } from "@/components/BrandName";
+
 
 const mainItems = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
@@ -35,7 +36,6 @@ export function AppSidebar() {
   const collapsed = state === "collapsed";
   const { signOut } = useAuth();
   const { orgs, currentOrg, setCurrentOrg, currentRole } = useOrg();
-  const { platform_name } = useBranding();
 
   return (
     <Sidebar collapsible="icon">
@@ -44,10 +44,9 @@ export function AppSidebar() {
         <div className="flex h-16 items-center gap-3 border-b border-sidebar-border px-4">
           <PlatformLogo className="h-11 w-11 rounded-lg bg-sidebar-primary p-2 shadow-sm" iconClassName="h-6 w-6 text-sidebar-primary-foreground" />
           {!collapsed && (
-            <span className="font-display text-xl font-bold text-sidebar-foreground">
-              {platform_name}
-            </span>
+            <BrandName className="font-display text-xl font-bold text-sidebar-foreground" />
           )}
+
         </div>
 
         {/* Org Switcher */}
