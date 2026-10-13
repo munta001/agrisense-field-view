@@ -100,6 +100,130 @@ export type Database = {
           },
         ]
       }
+      appliance_rules: {
+        Row: {
+          appliance_id: string | null
+          condition: string
+          cooldown_min: number
+          id: string
+          metric: string
+          run_seconds: number
+        }
+        Insert: {
+          appliance_id?: string | null
+          condition: string
+          cooldown_min?: number
+          id?: string
+          metric: string
+          run_seconds?: number
+        }
+        Update: {
+          appliance_id?: string | null
+          condition?: string
+          cooldown_min?: number
+          id?: string
+          metric?: string
+          run_seconds?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appliance_rules_appliance_id_fkey"
+            columns: ["appliance_id"]
+            isOneToOne: false
+            referencedRelation: "appliances"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      appliances: {
+        Row: {
+          controller_dev_eui: string
+          do_channel: string
+          id: string
+          max_run_s: number
+          name: string
+          org_id: string | null
+          zone_id: string | null
+        }
+        Insert: {
+          controller_dev_eui: string
+          do_channel?: string
+          id?: string
+          max_run_s?: number
+          name: string
+          org_id?: string | null
+          zone_id?: string | null
+        }
+        Update: {
+          controller_dev_eui?: string
+          do_channel?: string
+          id?: string
+          max_run_s?: number
+          name?: string
+          org_id?: string | null
+          zone_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appliances_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appliances_zone_id_fkey"
+            columns: ["zone_id"]
+            isOneToOne: false
+            referencedRelation: "zones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      automation_commands: {
+        Row: {
+          alert_id: string | null
+          appliance_id: string | null
+          command: string
+          created_at: string | null
+          execute_at: string
+          id: string
+          sent_at: string | null
+          source: string
+          status: string
+        }
+        Insert: {
+          alert_id?: string | null
+          appliance_id?: string | null
+          command: string
+          created_at?: string | null
+          execute_at?: string
+          id?: string
+          sent_at?: string | null
+          source: string
+          status?: string
+        }
+        Update: {
+          alert_id?: string | null
+          appliance_id?: string | null
+          command?: string
+          created_at?: string | null
+          execute_at?: string
+          id?: string
+          sent_at?: string | null
+          source?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "automation_commands_appliance_id_fkey"
+            columns: ["appliance_id"]
+            isOneToOne: false
+            referencedRelation: "appliances"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crop_stage_thresholds: {
         Row: {
           created_at: string
@@ -715,6 +839,15 @@ export type Database = {
           role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }[]
+      }
+      queue_automation: {
+        Args: {
+          p_alert_id: string
+          p_direction: string
+          p_metric: string
+          p_sensor_id: string
+        }
+        Returns: undefined
       }
       sync_zone_stages: { Args: { p_org_id: string }; Returns: number }
     }
