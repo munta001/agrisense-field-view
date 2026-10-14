@@ -50,11 +50,11 @@ export default function AlertsPage() {
             <Card key={alert.id} className={`glass-card transition-all ${!alert.is_read ? "border-l-4" : "opacity-60"}`}
               style={!alert.is_read ? { borderLeftColor: alert.severity === "critical" ? "hsl(0, 72%, 51%)" : alert.severity === "warning" ? "hsl(38, 90%, 55%)" : "hsl(200, 70%, 50%)" } : {}}>
               <CardContent className="flex items-start gap-4 p-4">
-                <div className={`rounded-lg p-2 ${config.bg}`}>
+                <div className={`shrink-0 rounded-lg p-2 ${config.bg}`}>
                   <Icon className={`h-5 w-5 ${config.color}`} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
+                  <div className="flex flex-wrap items-center gap-2 mb-1">
                     <span className="font-medium">{alert.title}</span>
                     <Badge variant={config.badge}>{alert.severity}</Badge>
                   </div>
@@ -62,7 +62,7 @@ export default function AlertsPage() {
                   <p className="text-xs text-muted-foreground mt-1">{format(new Date(alert.created_at), "dd MMM yyyy HH:mm")}</p>
                 </div>
                 {!alert.is_read && (
-                  <Button variant="ghost" size="sm" onClick={() => markRead(alert.id)}>
+                  <Button variant="ghost" size="icon" className="shrink-0" aria-label="Mark alert as read" onClick={() => markRead(alert.id)}>
                     <Check className="h-4 w-4" />
                   </Button>
                 )}

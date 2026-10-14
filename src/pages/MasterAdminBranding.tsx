@@ -95,7 +95,7 @@ export default function MasterAdminBrandingPage() {
 
         <div className="overflow-hidden rounded-lg border bg-card shadow-sm">
           <div className="grid lg:grid-cols-[1fr_360px]">
-            <section className="space-y-8 p-6 sm:p-8 lg:p-10">
+            <section className="space-y-8 p-4 sm:p-8 lg:p-10">
               <div>
                 <h2 className="font-display text-xl font-semibold">Platform identity</h2>
                 <p className="mt-1 text-sm text-muted-foreground">The name and logo appear on sign-in, navigation, and Master Admin pages.</p>
@@ -143,7 +143,7 @@ export default function MasterAdminBrandingPage() {
               </div>
             </section>
 
-            <aside className="border-t bg-muted/40 p-6 sm:p-8 lg:border-l lg:border-t-0">
+            <aside className="border-t bg-muted/40 p-4 sm:p-8 lg:border-l lg:border-t-0">
               <h2 className="font-display text-xl font-semibold">Platform logo</h2>
               <p className="mt-1 text-sm text-muted-foreground">Use a clear square or horizontal logo.</p>
               <div className="mt-6 rounded-lg border bg-card p-5">
@@ -187,7 +187,7 @@ export default function MasterAdminBrandingPage() {
           </div>
 
           <div className="flex justify-end border-t bg-muted/25 px-6 py-4 sm:px-8">
-            <Button onClick={save} disabled={saving} className="min-w-40">
+            <Button onClick={save} disabled={saving} className="w-full sm:w-auto sm:min-w-40">
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
               Save branding
             </Button>

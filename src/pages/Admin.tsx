@@ -181,7 +181,7 @@ export default function AdminPage() {
                               <Badge variant="outline">{log.action}</Badge>
                             )}
                           </TableCell>
-                          <TableCell className="text-muted-foreground">
+                          <TableCell className="min-w-[180px] max-w-sm whitespace-normal break-words text-muted-foreground">
                             {log.action === "alert_created"
                               ? <span><span className="font-medium text-foreground">{details.title || "Alert"}</span>{details.message ? ` — ${details.message}` : ""}</span>
                               : log.action === "user_signed_in"

@@ -213,7 +213,7 @@ export default function SensorsPage() {
                   <p className="text-sm text-muted-foreground">
                     Deleting <strong>{manageSensor?.name}</strong> permanently removes the device and <strong>all its readings</strong>. This cannot be undone.
                   </p>
-                  <div className="flex gap-2">
+                  <div className="flex flex-col gap-2 sm:flex-row">
                     <Button variant="outline" className="flex-1" onClick={() => setConfirmDelete(false)}>Cancel</Button>
                     <Button variant="destructive" className="flex-1" onClick={handleDelete}>Delete permanently</Button>
                   </div>
@@ -238,7 +238,7 @@ export default function SensorsPage() {
             Show inactive{inactiveCount ? ` (${inactiveCount})` : ""}
           </label>
           <Select value={selectedZone} onValueChange={setSelectedZone}>
-            <SelectTrigger className="w-[180px]"><SelectValue placeholder="Filter by zone" /></SelectTrigger>
+            <SelectTrigger className="w-full sm:w-[180px]"><SelectValue placeholder="Filter by zone" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All zones</SelectItem>
               {zones.map(z => <SelectItem key={z.id} value={z.id}>{z.name}</SelectItem>)}
@@ -309,9 +309,9 @@ export default function SensorsPage() {
                 <CardContent className="p-5">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex min-w-0 flex-wrap items-center gap-2">
                         <Radio className="h-4 w-4 text-primary" />
-                        <span className="font-display font-semibold">{sensor.name}</span>
+                        <span className="break-words font-display font-semibold">{sensor.name}</span>
                         {sensor.device_id != null && <span className="font-mono text-xs text-muted-foreground">#{sensor.device_id}</span>}
                       </div>
                       <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
@@ -331,7 +331,7 @@ export default function SensorsPage() {
                     </div>
                   </div>
 
-                  <div className="mt-4 grid grid-cols-4 gap-2">
+                  <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
                     {METRICS.map(m => {
                       const v = r ? (r[m.key as keyof Reading] as number | null) : null;
                       return (
@@ -347,13 +347,13 @@ export default function SensorsPage() {
                   {(canEdit || isAdmin) && (
                     <div className="mt-4 flex items-center gap-2 border-t pt-3">
                       {canEdit && (
-                        <Button variant="outline" size="sm" className="h-8 flex-1 gap-1.5 text-xs"
+                        <Button variant="outline" size="sm" className="h-11 flex-1 gap-1.5 text-xs sm:h-8"
                           onClick={e => { e.stopPropagation(); setEditSensor(sensor); setEditZoneId(sensor.zone_id || "none"); }}>
                           <MapPin className="h-3.5 w-3.5" />Change zone
                         </Button>
                       )}
                       {isAdmin && (
-                        <Button variant="outline" size="sm" className="h-8 flex-1 gap-1.5 text-xs"
+                        <Button variant="outline" size="sm" className="h-11 flex-1 gap-1.5 text-xs sm:h-8"
                           onClick={e => { e.stopPropagation(); setManageSensor(sensor); setManageName(sensor.name); setManageStatus(sensor.status === "inactive" ? "offline" : sensor.status); setManageActive(sensor.is_active); setConfirmDelete(false); }}>
                           <Pencil className="h-3.5 w-3.5" />Manage
                         </Button>

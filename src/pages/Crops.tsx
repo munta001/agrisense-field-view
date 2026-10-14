@@ -199,7 +199,7 @@ export default function CropsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="font-display text-2xl font-bold">Crop Management</h1>
           <p className="text-muted-foreground">Define crops, growth stages, and sensor thresholds</p>
@@ -256,7 +256,7 @@ export default function CropsPage() {
                 <Sprout className="h-5 w-5 text-primary" />
                 <div className="text-left">
                   <span className="font-display font-semibold text-base">{crop.name}</span>
-                  <div className="flex items-center gap-2 mt-0.5">
+                  <div className="mt-0.5 flex flex-wrap items-center gap-2">
                     <Badge variant="secondary">{crop.category || "Uncategorized"}</Badge>
                     <span className="text-xs text-muted-foreground">{crop.crop_stages.length} stages</span>
                   </div>
@@ -305,8 +305,8 @@ export default function CropsPage() {
                 {crop.crop_stages.map((stage, idx) => (
                   <Card key={stage.id} className="border">
                     <CardHeader className="py-3 px-4">
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="text-sm font-medium flex items-center gap-2">
+                      <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <CardTitle className="flex flex-wrap items-center gap-2 text-sm font-medium">
                           <Badge variant="outline" className="text-xs">{stage.stage_order}</Badge>
                           {stage.name}
                           <Badge variant="secondary" className="text-xs font-normal">{stage.duration_days || 0} days</Badge>
@@ -370,10 +370,10 @@ export default function CropsPage() {
                                 {canEdit && (
                                   <TableCell>
                                     <div className="flex items-center gap-1">
-                                      <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => openEditThreshold(t)}>
+                                      <Button size="sm" variant="ghost" className="h-10 w-10 p-0 sm:h-6 sm:w-6" onClick={() => openEditThreshold(t)}>
                                         <Pencil className="h-3 w-3" />
                                       </Button>
-                                      <Button size="sm" variant="ghost" className="text-destructive h-6 w-6 p-0" onClick={() => deleteThreshold(t.id)}>
+                                      <Button size="sm" variant="ghost" className="h-10 w-10 p-0 text-destructive sm:h-6 sm:w-6" onClick={() => deleteThreshold(t.id)}>
                                         <Trash2 className="h-3 w-3" />
                                       </Button>
                                     </div>
@@ -390,7 +390,7 @@ export default function CropsPage() {
               </div>
 
               {canEdit && (
-                <div className="mt-3 flex justify-end gap-2">
+                <div className="mt-3 flex flex-wrap justify-end gap-2">
                   <Button size="sm" variant="outline" onClick={() => openEditCrop(crop)}>
                     <Pencil className="h-3 w-3 mr-1" /> Edit Crop
                   </Button>

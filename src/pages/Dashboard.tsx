@@ -172,7 +172,7 @@ export default function DashboardPage() {
     return (
       <div className="space-y-6">
         <div className="space-y-2"><Skeleton className="h-9 w-72" /><Skeleton className="h-5 w-52" /></div>
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{Array.from({ length: 4 }).map((_, index) => <Skeleton key={index} className="h-32" />)}</div>
+        <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">{Array.from({ length: 4 }).map((_, index) => <Skeleton key={index} className="h-32" />)}</div>
         <Skeleton className="h-72" />
         <Skeleton className="h-80" />
       </div>
@@ -193,16 +193,16 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         {stats.map(stat => (
           <Card key={stat.label} className="border-border shadow-sm">
-            <CardContent className="p-5">
-              <div className="mb-5 flex items-start justify-between">
+            <CardContent className="p-3 sm:p-5">
+              <div className="mb-3 flex items-start justify-between">
                 <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${stat.tone}`}><stat.icon className="h-5 w-5" /></div>
                 <span className="text-xs font-medium text-muted-foreground">Last 24h</span>
               </div>
               <p className="text-xs font-bold uppercase text-muted-foreground">{stat.label}</p>
-              <div className="mt-1 flex items-end justify-between gap-3">
+              <div className="mt-1 flex flex-col items-start gap-1 sm:flex-row sm:items-end sm:justify-between sm:gap-3">
                 <p className="font-display text-3xl font-bold text-foreground">{stat.value}</p>
                 <p className="pb-1 text-xs font-medium text-muted-foreground">{stat.detail}</p>
               </div>
@@ -279,7 +279,7 @@ export default function DashboardPage() {
           </Badge>
         </div>
         <div className="overflow-x-auto">
-          <Table>
+          <Table className="min-w-[680px]">
             <TableHeader>
               <TableRow>
                 <TableHead>Zone</TableHead>
@@ -328,7 +328,7 @@ export default function DashboardPage() {
       </section>
 
       <section className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
-        <div className="flex items-center justify-between border-b border-border px-5 py-4">
+        <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-border px-5 py-4">
           <div>
             <h2 className="font-display text-lg font-semibold text-foreground">Threshold exceptions</h2>
             <p className="text-sm text-muted-foreground">Only readings outside the active crop-stage range</p>
@@ -342,8 +342,8 @@ export default function DashboardPage() {
                 <div className="flex min-w-0 items-start gap-3">
                   <span className={`mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full ${alert.severity === "critical" || alert.severity === "high" ? "bg-destructive" : "bg-warning"}`} />
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-foreground">{alert.title}</p>
-                    {alert.message && <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">{alert.message}</p>}
+                    <p className="break-words text-sm font-semibold text-foreground">{alert.title}</p>
+                    {alert.message && <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{alert.message}</p>}
                   </div>
                 </div>
                 <div className="flex shrink-0 items-center gap-3 pl-5 sm:pl-0">

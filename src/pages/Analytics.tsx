@@ -93,9 +93,9 @@ export default function AnalyticsPage() {
             8-in-1 soil probe analysis {selected ? `for ${selected.name}` : `for ${currentOrg?.name ?? ""}`}
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
           <Select value={sensorId} onValueChange={setSensorId}>
-            <SelectTrigger className="w-[220px]"><SelectValue placeholder="Select device" /></SelectTrigger>
+            <SelectTrigger className="w-full sm:w-[220px]"><SelectValue placeholder="Select device" /></SelectTrigger>
             <SelectContent>
               {sensors.map(s => (
                 <SelectItem key={s.id} value={s.id}>
@@ -105,7 +105,7 @@ export default function AnalyticsPage() {
             </SelectContent>
           </Select>
           <Select value={range} onValueChange={setRange}>
-            <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-full sm:w-[160px]"><SelectValue /></SelectTrigger>
             <SelectContent>
               {RANGES.map(r => <SelectItem key={r.key} value={r.key}>{r.label}</SelectItem>)}
             </SelectContent>

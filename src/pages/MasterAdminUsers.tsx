@@ -221,7 +221,7 @@ export default function MasterAdminUsersPage() {
                         {u.last_sign_in_at ? format(new Date(u.last_sign_in_at), "dd MMM yyyy HH:mm") : "Never"}
                       </TableCell>
                       <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
+                        <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:justify-end">
                           <Button size="sm" variant="outline" onClick={() => setEditing(u)}>
                             <Settings2 className="mr-1 h-3.5 w-3.5" /> Organisations
                           </Button>
@@ -256,17 +256,17 @@ export default function MasterAdminUsersPage() {
         <DialogContent>
           <DialogHeader><DialogTitle>Organisations &amp; roles</DialogTitle></DialogHeader>
           <div className="space-y-5">
-            <p className="text-sm text-muted-foreground">{editing?.email}</p>
+            <p className="break-all text-sm text-muted-foreground">{editing?.email}</p>
 
             <div className="space-y-2">
               <Label>Current memberships</Label>
               {editing?.memberships.length ? (
                 <div className="space-y-2">
                   {editing.memberships.map(m => (
-                    <div key={m.org_id} className="flex items-center gap-2 rounded-md border p-2">
-                      <span className="flex-1 truncate text-sm font-medium">{m.org_name}</span>
+                    <div key={m.org_id} className="flex flex-wrap items-center gap-2 rounded-md border p-3">
+                      <span className="w-full min-w-0 break-words text-sm font-medium sm:w-auto sm:flex-1">{m.org_name}</span>
                       <Select value={m.role} onValueChange={v => changeRole(m, v)} disabled={busy}>
-                        <SelectTrigger className="w-[130px]"><SelectValue /></SelectTrigger>
+                        <SelectTrigger className="w-[120px] sm:w-[130px]"><SelectValue /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="admin">Admin</SelectItem>
                           <SelectItem value="operator">Operator</SelectItem>

@@ -201,7 +201,7 @@ export default function ZonesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="font-display text-2xl font-bold">Zone Management</h1>
           <p className="text-muted-foreground">Create and manage farm zones with crop assignments</p>
@@ -323,9 +323,9 @@ export default function ZonesPage() {
               <div className="h-32 bg-cover bg-center" style={{ backgroundImage: `url(${zone.background_image_url})` }} />
             )}
             <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="font-display text-base flex items-center gap-2">
-                  <div className="h-3 w-3 rounded-full" style={{ backgroundColor: zone.color }} />
+              <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <CardTitle className="flex min-w-0 items-center gap-2 break-words font-display text-base">
+                  <div className="h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: zone.color }} />
                   {zone.name}
                 </CardTitle>
                 <Badge variant="outline">{sensorCounts[zone.id] || 0} sensors</Badge>
@@ -364,7 +364,7 @@ export default function ZonesPage() {
       </div>
 
       <Dialog open={!!manageZone} onOpenChange={v => { if (!v && !imageBusy) setManageZone(null); }}>
-        <DialogContent className="max-h-[85vh] overflow-y-auto">
+        <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-display">Manage zone — {manageZone?.name}</DialogTitle>
           </DialogHeader>
@@ -408,7 +408,7 @@ export default function ZonesPage() {
               </div>
 
               <div className="border-t pt-4 space-y-3">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <p className="text-sm font-medium">Zone image</p>
                   {manageZone.background_image_url && !imageBusy && (
                     <p className="text-xs text-muted-foreground">Shown behind this zone on the field map</p>

@@ -248,33 +248,33 @@ export default function FieldMapPage() {
         </div>
       </header>
 
-      <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <section className="grid grid-cols-2 gap-3 lg:grid-cols-5">
         <Card>
-          <CardContent className="flex items-center gap-3 p-4">
+          <CardContent className="flex min-w-0 flex-col items-start gap-2 p-3 sm:flex-row sm:items-center sm:gap-3 sm:p-4">
             <div className="flex h-9 w-9 items-center justify-center rounded-md bg-secondary text-primary"><Radio /></div>
             <div><p className="text-xs text-muted-foreground">Devices</p><p className="text-lg font-semibold">{visibleSensors.length}</p></div>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="flex items-center gap-3 p-4">
+          <CardContent className="flex min-w-0 flex-col items-start gap-2 p-3 sm:flex-row sm:items-center sm:gap-3 sm:p-4">
             <div className="flex h-9 w-9 items-center justify-center rounded-md bg-success/10 text-success"><Wifi /></div>
             <div><p className="text-xs text-muted-foreground">Online</p><p className="text-lg font-semibold">{onlineCount}</p></div>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="flex items-center gap-3 p-4">
+          <CardContent className="flex min-w-0 flex-col items-start gap-2 p-3 sm:flex-row sm:items-center sm:gap-3 sm:p-4">
             <div className="flex h-9 w-9 items-center justify-center rounded-md bg-destructive/10 text-destructive"><WifiOff /></div>
             <div><p className="text-xs text-muted-foreground">Offline</p><p className="text-lg font-semibold">{offlineCount}</p></div>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="flex items-center gap-3 p-4">
+          <CardContent className="flex min-w-0 flex-col items-start gap-2 p-3 sm:flex-row sm:items-center sm:gap-3 sm:p-4">
             <div className="flex h-9 w-9 items-center justify-center rounded-md bg-warning/10 text-warning"><Wrench /></div>
             <div><p className="text-xs text-muted-foreground">Maintenance</p><p className="text-lg font-semibold">{maintenanceCount}</p></div>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="flex items-center gap-3 p-4">
+          <CardContent className="flex min-w-0 flex-col items-start gap-2 p-3 sm:flex-row sm:items-center sm:gap-3 sm:p-4">
             <div className="flex h-9 w-9 items-center justify-center rounded-md bg-secondary text-primary"><Sprout /></div>
             <div className="min-w-0"><p className="text-xs text-muted-foreground">Crop stage</p><p className="truncate text-sm font-semibold">{activeZoneData?.crop_stages?.name || activeZoneData?.crops?.name || "Not assigned"}</p></div>
           </CardContent>
@@ -311,7 +311,7 @@ export default function FieldMapPage() {
             <svg
               ref={svgRef}
               viewBox={`0 0 ${MAP_WIDTH} ${MAP_HEIGHT}`}
-              className="aspect-[8/5] min-h-[420px] w-full touch-none select-none rounded-md border bg-card shadow-inner lg:min-h-[600px]"
+              className="aspect-[8/5] min-h-[220px] w-full touch-pan-y select-none rounded-md border bg-card shadow-inner sm:min-h-[420px] lg:min-h-[600px]"
               preserveAspectRatio="xMidYMid meet"
               onPointerMove={handlePointerMove}
               onPointerUp={stopDragging}
@@ -344,9 +344,11 @@ export default function FieldMapPage() {
                     key={sensor.id}
                     onPointerDown={(event) => handlePointerDown(event, sensor.id)}
                     style={{ cursor: isAdmin ? "grab" : "pointer" }}
+                    className="touch-none"
                     filter="url(#marker-shadow)"
                   >
                     <title>{`${sensor.name} · ${sensor.status}`}</title>
+                    <circle cx={position.x} cy={position.y} r="44" fill="transparent" />
                     {isSelected && <circle cx={position.x} cy={position.y} r="28" fill="none" stroke={color} strokeWidth="2" strokeDasharray="4 4" />}
                     <circle cx={position.x} cy={position.y} r="20" fill="hsl(var(--card))" stroke={color} strokeWidth={isPending ? 4 : 3} />
                     <circle cx={position.x} cy={position.y} r="8" fill={color} />

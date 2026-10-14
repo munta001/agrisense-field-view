@@ -133,7 +133,7 @@ export default function DataEntryPage() {
                 ))}
               </div>
 
-              <Button type="submit" disabled={loading}>
+              <Button type="submit" className="w-full sm:w-auto" disabled={loading}>
                 {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Plus className="mr-2 h-4 w-4" />Record reading</>}
               </Button>
             </form>
