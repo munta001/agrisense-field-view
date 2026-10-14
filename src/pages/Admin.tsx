@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { KeyRound, Settings, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ResetPasswordDialog } from "@/components/ResetPasswordDialog";
-import { format } from "date-fns";
+import { format, subMonths, endOfToday } from "date-fns";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Member = {
@@ -26,7 +26,11 @@ export default function AdminPage() {
     if (!currentOrg) return;
     (supabase as any).rpc("org_member_details", { p_org_id: currentOrg.id })
       .then(({ data }: any) => setMembers(data || []));
-    supabase.from("activity_logs").select("*").eq("org_id", currentOrg.id).order("created_at", { ascending: false }).limit(20)
+    // Activity logs cover the last month up to today.
+    const from = subMonths(new Date(), 1);
+    supabase.from("activity_logs").select("*").eq("org_id", currentOrg.id)
+      .gte("created_at", from.toISOString()).lte("created_at", endOfToday().toISOString())
+      .order("created_at", { ascending: false }).limit(500)
       .then(({ data }) => setLogs(data || []));
   }, [currentOrg]);
 
@@ -95,10 +99,15 @@ export default function AdminPage() {
 
         <TabsContent value="logs">
           <Card className="glass-card">
-            <CardHeader><CardTitle className="font-display text-lg">Activity Logs</CardTitle></CardHeader>
+            <CardHeader>
+              <CardTitle className="font-display text-lg">Activity Logs</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Showing activity from {format(subMonths(new Date(), 1), "dd MMM yyyy")} to today
+              </p>
+            </CardHeader>
             <CardContent>
               {logs.length === 0 ? (
-                <p className="text-center text-muted-foreground py-8">No activity logged yet</p>
+                <p className="text-center text-muted-foreground py-8">No activity in the last month</p>
               ) : (
                 <Table>
                   <TableHeader>
