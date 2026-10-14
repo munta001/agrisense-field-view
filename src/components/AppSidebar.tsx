@@ -134,7 +134,7 @@ export function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton asChild>
-              <NavLink to="/profile" end className="rounded-lg text-sidebar-foreground/65 hover:bg-sidebar-accent hover:text-sidebar-foreground" activeClassName="bg-sidebar-accent text-sidebar-foreground font-medium">
+              <NavLink to="/profile" end onClick={closeMobileNav} className="rounded-lg text-sidebar-foreground/65 hover:bg-sidebar-accent hover:text-sidebar-foreground" activeClassName="bg-sidebar-accent text-sidebar-foreground font-medium">
                 <UserRound className="mr-2 h-4 w-4 text-sidebar-primary" />
                 {!collapsed && <span>Profile</span>}
               </NavLink>
