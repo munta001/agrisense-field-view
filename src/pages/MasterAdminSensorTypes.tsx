@@ -58,7 +58,7 @@ export default function MasterAdminSensorTypesPage() {
 
   return (
     <MasterAdminLayout>
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="font-display text-2xl font-bold">Sensor types</h1>
           <p className="text-muted-foreground">Sensor types available to every organisation</p>

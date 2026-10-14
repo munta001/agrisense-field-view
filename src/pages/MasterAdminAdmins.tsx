@@ -174,9 +174,9 @@ export default function MasterAdminAdminsPage() {
                 ["Master admin since", dt(viewing.granted_at)],
                 ["Last sign-in", viewing.last_sign_in_at ? dt(viewing.last_sign_in_at) : "Never"],
               ].map(([k, v]) => (
-                <div key={k as string} className="flex justify-between gap-4 border-b border-border/50 pb-2">
+                <div key={k as string} className="flex flex-col gap-1 sm:flex-row sm:justify-between sm:gap-4 border-b border-border/50 pb-2">
                   <span className="text-muted-foreground">{k}</span>
-                  <span className="text-right font-medium">{v}</span>
+                  <span className="min-w-0 break-words font-medium sm:text-right">{v}</span>
                 </div>
               ))}
               <div>

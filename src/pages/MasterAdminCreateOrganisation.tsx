@@ -149,13 +149,13 @@ export default function MasterAdminCreateOrganisationPage() {
         <div className="overflow-hidden rounded-lg border bg-card shadow-sm">
           {pageLoading ? (
             <div className="grid min-h-[480px] lg:grid-cols-[1fr_340px]">
-              <div className="space-y-7 p-6 sm:p-8">
+              <div className="space-y-7 p-4 sm:p-8">
                 <Skeleton className="h-8 w-48" />
                 <Skeleton className="h-12 w-full" />
                 <Skeleton className="h-12 w-full" />
                 <Skeleton className="h-12 w-full" />
               </div>
-              <div className="space-y-6 border-t bg-muted/40 p-6 sm:p-8 lg:border-l lg:border-t-0">
+              <div className="space-y-6 border-t bg-muted/40 p-4 sm:p-8 lg:border-l lg:border-t-0">
                 <Skeleton className="h-8 w-32" />
                 <Skeleton className="h-40 w-full" />
               </div>
@@ -163,7 +163,7 @@ export default function MasterAdminCreateOrganisationPage() {
           ) : (
             <>
               <div className="grid lg:grid-cols-[1fr_340px]">
-                <section className="p-6 sm:p-8 lg:p-10" aria-labelledby="organisation-details-heading">
+                <section className="p-4 sm:p-8 lg:p-10" aria-labelledby="organisation-details-heading">
                   <div className="mb-8">
                     <h2 id="organisation-details-heading" className="font-display text-xl font-semibold text-foreground">Organisation details</h2>
                     <p className="mt-1 text-sm text-muted-foreground">The name and short code identify this organisation across the platform.</p>
@@ -235,7 +235,7 @@ export default function MasterAdminCreateOrganisationPage() {
                   </div>
                 </section>
 
-                <aside className="border-t bg-muted/40 p-6 sm:p-8 lg:border-l lg:border-t-0" aria-labelledby="organisation-logo-heading">
+                <aside className="border-t bg-muted/40 p-4 sm:p-8 lg:border-l lg:border-t-0" aria-labelledby="organisation-logo-heading">
                   <div className="mb-6">
                     <h2 id="organisation-logo-heading" className="font-display text-xl font-semibold text-foreground">Brand logo</h2>
                     <p className="mt-1 text-sm text-muted-foreground">Shown throughout the organisation workspace.</p>
@@ -301,7 +301,7 @@ export default function MasterAdminCreateOrganisationPage() {
                 </aside>
               </div>
 
-              <div className="flex flex-col-reverse gap-3 border-t bg-muted/25 px-6 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-8">
+              <div className="flex flex-col-reverse gap-3 border-t bg-muted/25 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-8">
                 <p className="hidden text-xs text-muted-foreground sm:block">Review the details before saving.</p>
                 <div className="flex flex-col-reverse gap-2 sm:flex-row">
                   <Button variant="outline" asChild>

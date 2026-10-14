@@ -75,14 +75,14 @@ export default function MasterAdminOrganisationDevicesPage() {
         </Button>
         <div className="flex items-center gap-3">
           {org?.logo_url ? (
-            <img src={org.logo_url} alt="" className="h-12 w-12 rounded-lg border object-cover" />
+            <img src={org.logo_url} alt="" className="h-12 w-12 shrink-0 rounded-lg border object-cover" />
           ) : (
-            <div className="flex h-12 w-12 items-center justify-center rounded-lg border bg-muted">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border bg-muted">
               <Building2 className="h-6 w-6 text-muted-foreground" />
             </div>
           )}
           <div>
-            <h1 className="font-display text-2xl font-bold text-foreground">
+            <h1 className="break-words font-display text-2xl font-bold text-foreground">
               {org ? `Devices — ${org.name}` : "Devices"}
             </h1>
             <p className="text-muted-foreground">

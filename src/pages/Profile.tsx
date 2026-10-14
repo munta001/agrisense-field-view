@@ -241,7 +241,7 @@ function ProfileContent() {
                 </Button>
               )}
             </div>
-            <h2 className="mt-4 font-display text-xl font-bold">{fullName}</h2>
+            <h2 className="mt-4 max-w-full break-words font-display text-xl font-bold">{fullName}</h2>
             <p className="mt-1 break-all text-sm text-muted-foreground">{user?.email || "No email address"}</p>
             <div className="mt-4 flex flex-wrap justify-center gap-2">
               <Badge variant="secondary">Active account</Badge>
@@ -266,7 +266,7 @@ function ProfileContent() {
                 <Label htmlFor="profile-phone">Phone number</Label>
                 <Input id="profile-phone" type="tel" value={phoneInput} onChange={event => setPhoneInput(event.target.value)} maxLength={20} placeholder="+230 5xxx xxxx" disabled={saving} />
               </div>
-              <Button className="mt-4" onClick={saveProfile} disabled={saving}>
+              <Button className="mt-4 w-full sm:w-auto" onClick={saveProfile} disabled={saving}>
                 {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                 Save changes
               </Button>
@@ -296,7 +296,7 @@ function ProfileContent() {
             </CardHeader>
             <CardContent className="space-y-3">
               {isMasterAdmin && (
-                <div className="flex items-center justify-between gap-4 rounded-md border bg-muted/30 p-4">
+                <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center rounded-md border bg-muted/30 p-4">
                   <div>
                     <p className="font-medium">Platform administration</p>
                     <p className="mt-1 text-sm text-muted-foreground">Access across all organisations</p>
@@ -309,7 +309,7 @@ function ProfileContent() {
                 const organisation = orgs.find(org => org.id === membership.org_id);
                 const isCurrent = currentOrg?.id === membership.org_id;
                 return (
-                  <div key={membership.id} className="flex items-center justify-between gap-4 rounded-md border bg-muted/30 p-4">
+                  <div key={membership.id} className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center rounded-md border bg-muted/30 p-4">
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="truncate font-medium">{organisation?.name || "Organisation"}</p>

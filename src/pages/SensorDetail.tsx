@@ -57,7 +57,7 @@ export default function SensorDetailPage() {
     time: format(new Date(r.recorded_at), "dd/MM HH:mm"),
     value: r[activeMetric as keyof Reading] as number | null,
   }));
-  const active = metrics.find(m => m.key === activeMetric)!;
+  const active = metrics.find(m => m.key === activeMetric) ?? metrics[0];
 
   if (loading) {
     return (
@@ -87,7 +87,7 @@ export default function SensorDetailPage() {
           <Button variant="ghost" size="sm" className="mb-1 -ml-2" onClick={() => navigate("/sensors")}>
             <ArrowLeft className="mr-2 h-4 w-4" />Sensors
           </Button>
-          <h1 className="font-display text-2xl font-bold">{sensor.name}</h1>
+          <h1 className="break-words font-display text-2xl font-bold">{sensor.name}</h1>
           <p className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
             <span className="flex items-center gap-1"><Radio className="h-3.5 w-3.5" />Device ID {sensor.device_id ?? "—"}</span>
             <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{sensor.zones?.name || sensor.location || "No zone"}</span>
@@ -122,7 +122,7 @@ export default function SensorDetailPage() {
                   <m.icon className="h-4 w-4" />
                   <span className="text-xs">{m.label}</span>
                 </div>
-                <p className="font-display text-2xl font-bold">
+                <p className="flex flex-wrap items-baseline break-all font-display text-xl font-bold sm:text-2xl">
                   {v ?? "—"}<span className="ml-1 text-sm font-normal text-muted-foreground">{m.unit}</span>
                 </p>
               </CardContent>
@@ -162,8 +162,8 @@ export default function SensorDetailPage() {
             <div><p className="text-muted-foreground">Checksum</p><p className="font-mono">{latest.checksum_valid == null ? "—" : latest.checksum_valid ? "valid" : "invalid"}</p></div>
             <div><p className="text-muted-foreground">Battery</p><p className="font-mono">{latest.battery_v ?? "—"} V</p></div>
             <div><p className="text-muted-foreground">Report cycle</p><p className="font-mono">{latest.report_cycle_s ?? "—"} s</p></div>
-            <div><p className="text-muted-foreground">Location</p><p className="font-mono">{sensor.location || "—"}</p></div>
-            <div><p className="text-muted-foreground">IP address</p><p className="font-mono">{sensor.ip_address || "—"}</p></div>
+            <div><p className="text-muted-foreground">Location</p><p className="break-all font-mono">{sensor.location || "—"}</p></div>
+            <div><p className="text-muted-foreground">IP address</p><p className="break-all font-mono">{sensor.ip_address || "—"}</p></div>
           </CardContent>
         </Card>
       )}

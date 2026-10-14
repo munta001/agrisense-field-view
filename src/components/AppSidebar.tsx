@@ -33,7 +33,7 @@ const adminItems = [
 
 export function AppSidebar() {
   const { state, isMobile, setOpenMobile } = useSidebar();
-  const collapsed = state === "collapsed";
+  const collapsed = !isMobile && state === "collapsed";
   const { signOut } = useAuth();
   const { orgs, currentOrg, setCurrentOrg, currentRole } = useOrg();
 
@@ -75,7 +75,7 @@ export function AppSidebar() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-56">
                 {orgs.map(org => (
-                  <DropdownMenuItem key={org.id} onClick={() => setCurrentOrg(org)} className="gap-2">
+                  <DropdownMenuItem key={org.id} onClick={() => { setCurrentOrg(org); closeMobileNav(); }} className="gap-2">
                     <span className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded border bg-muted">
                       {org.logo_url ? (
                         <img src={org.logo_url} alt="" className="h-full w-full object-contain" />
