@@ -32,10 +32,16 @@ const adminItems = [
 ];
 
 export function AppSidebar() {
-  const { state } = useSidebar();
+  const { state, isMobile, setOpenMobile } = useSidebar();
   const collapsed = state === "collapsed";
   const { signOut } = useAuth();
   const { orgs, currentOrg, setCurrentOrg, currentRole } = useOrg();
+
+  // On mobile the sidebar is an overlay drawer — close it whenever a
+  // navigation link inside it is tapped so the page underneath is visible.
+  const closeMobileNav = () => {
+    if (isMobile) setOpenMobile(false);
+  };
 
   return (
     <Sidebar collapsible="icon">
@@ -92,7 +98,7 @@ export function AppSidebar() {
               {mainItems.map(item => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    <NavLink to={item.url} end className="rounded-lg text-sidebar-foreground/65 transition-colors hover:bg-sidebar-accent/70 hover:text-sidebar-foreground" activeClassName="bg-sidebar-accent text-sidebar-foreground font-medium shadow-sm">
+                    <NavLink to={item.url} end onClick={closeMobileNav} className="rounded-lg text-sidebar-foreground/65 transition-colors hover:bg-sidebar-accent/70 hover:text-sidebar-foreground" activeClassName="bg-sidebar-accent text-sidebar-foreground font-medium shadow-sm">
                       <item.icon className="mr-2 h-4 w-4 text-sidebar-primary" />
                       {!collapsed && <span>{item.title}</span>}
                     </NavLink>
@@ -111,7 +117,7 @@ export function AppSidebar() {
                 {adminItems.map(item => (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild>
-                      <NavLink to={item.url} end className="rounded-lg text-sidebar-foreground/65 transition-colors hover:bg-sidebar-accent/70 hover:text-sidebar-foreground" activeClassName="bg-sidebar-accent text-sidebar-foreground font-medium shadow-sm">
+                      <NavLink to={item.url} end onClick={closeMobileNav} className="rounded-lg text-sidebar-foreground/65 transition-colors hover:bg-sidebar-accent/70 hover:text-sidebar-foreground" activeClassName="bg-sidebar-accent text-sidebar-foreground font-medium shadow-sm">
                         <item.icon className="mr-2 h-4 w-4 text-sidebar-primary" />
                         {!collapsed && <span>{item.title}</span>}
                       </NavLink>
@@ -128,7 +134,7 @@ export function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton asChild>
-              <NavLink to="/profile" end className="rounded-lg text-sidebar-foreground/65 hover:bg-sidebar-accent hover:text-sidebar-foreground" activeClassName="bg-sidebar-accent text-sidebar-foreground font-medium">
+              <NavLink to="/profile" end onClick={closeMobileNav} className="rounded-lg text-sidebar-foreground/65 hover:bg-sidebar-accent hover:text-sidebar-foreground" activeClassName="bg-sidebar-accent text-sidebar-foreground font-medium">
                 <UserRound className="mr-2 h-4 w-4 text-sidebar-primary" />
                 {!collapsed && <span>Profile</span>}
               </NavLink>
