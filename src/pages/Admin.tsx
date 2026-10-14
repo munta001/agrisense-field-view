@@ -1,11 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrg } from "@/contexts/OrgContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { KeyRound, Settings, Users } from "lucide-react";
+import { Bell, KeyRound, List, LogIn, Settings, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ResetPasswordDialog } from "@/components/ResetPasswordDialog";
 import { format, subMonths, endOfToday } from "date-fns";
@@ -15,6 +15,14 @@ type Member = {
   id: string; user_id: string; role: string; is_active: boolean; created_at: string;
   full_name: string | null; email: string | null; last_sign_in_at: string | null;
 };
+
+type LogFilter = "all" | "alerts" | "signins";
+
+const LOG_FILTERS: { value: LogFilter; label: string; icon: typeof List }[] = [
+  { value: "all", label: "All activity", icon: List },
+  { value: "alerts", label: "Alerts", icon: Bell },
+  { value: "signins", label: "Sign-ins", icon: LogIn },
+];
 
 export default function AdminPage() {
   const { currentOrg, currentRole } = useOrg();
