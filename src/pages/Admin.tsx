@@ -29,6 +29,21 @@ export default function AdminPage() {
   const [members, setMembers] = useState<Member[]>([]);
   const [logs, setLogs] = useState<Tables<"activity_logs">[]>([]);
   const [resetTarget, setResetTarget] = useState<Member | null>(null);
+  const [logFilter, setLogFilter] = useState<LogFilter>("all");
+
+  const logCounts = useMemo(() => ({
+    all: logs.length,
+    alerts: logs.filter(l => l.action === "alert_created").length,
+    signins: logs.filter(l => l.action === "user_signed_in").length,
+  }), [logs]);
+
+  const filteredLogs = useMemo(
+    () => logs.filter(log =>
+      logFilter === "all" ? true
+        : logFilter === "alerts" ? log.action === "alert_created"
+        : log.action === "user_signed_in"),
+    [logs, logFilter],
+  );
 
   useEffect(() => {
     if (!currentOrg) return;
@@ -107,15 +122,39 @@ export default function AdminPage() {
 
         <TabsContent value="logs">
           <Card className="glass-card">
-            <CardHeader>
-              <CardTitle className="font-display text-lg">Activity Logs</CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Showing activity from {format(subMonths(new Date(), 1), "dd MMM yyyy")} to today
-              </p>
+            <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="space-y-1">
+                <CardTitle className="font-display text-lg">Activity Logs</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Showing activity from {format(subMonths(new Date(), 1), "dd MMM yyyy")} to today
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-1 self-start rounded-xl border bg-muted/40 p-1 sm:self-auto">
+                {LOG_FILTERS.map(({ value, label, icon: Icon }) => (
+                  <Button
+                    key={value}
+                    type="button"
+                    size="sm"
+                    variant={logFilter === value ? "secondary" : "ghost"}
+                    className={logFilter === value ? "shadow-sm" : "text-muted-foreground hover:text-foreground"}
+                    onClick={() => setLogFilter(value)}
+                  >
+                    <Icon className="mr-1.5 h-3.5 w-3.5" />
+                    {label}
+                    <span className="ml-1.5 text-xs tabular-nums opacity-70">{logCounts[value]}</span>
+                  </Button>
+                ))}
+              </div>
             </CardHeader>
             <CardContent>
-              {logs.length === 0 ? (
-                <p className="text-center text-muted-foreground py-8">No activity in the last month</p>
+              {filteredLogs.length === 0 ? (
+                <p className="text-center text-muted-foreground py-8">
+                  {logFilter === "alerts"
+                    ? "No alerts in the last month"
+                    : logFilter === "signins"
+                      ? "No sign-ins in the last month"
+                      : "No activity in the last month"}
+                </p>
               ) : (
                 <Table>
                   <TableHeader>
@@ -126,7 +165,7 @@ export default function AdminPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {logs.map(log => {
+                    {filteredLogs.map(log => {
                       const details = (log.details || {}) as Record<string, any>;
                       const member = log.user_id ? members.find(m => m.user_id === log.user_id) : null;
                       return (
