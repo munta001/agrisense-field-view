@@ -27,7 +27,7 @@ const METRICS = [
   { key: "nitrogen", label: "N", unit: "mg/kg", icon: Leaf },
   { key: "phosphorus", label: "P", unit: "mg/kg", icon: Sprout },
   { key: "potassium", label: "K", unit: "mg/kg", icon: Beaker },
-  { key: "salinity", label: "Salinity", unit: "", icon: Waves },
+  { key: "salinity", label: "Salinity", unit: "ppm", icon: Waves },
 ] as const;
 
 export default function SensorsPage() {

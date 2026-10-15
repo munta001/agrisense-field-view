@@ -21,7 +21,7 @@ const METRICS = [
   { key: "nitrogen", label: "Nitrogen", unit: "mg/kg", color: "hsl(152, 55%, 35%)" },
   { key: "phosphorus", label: "Phosphorus", unit: "mg/kg", color: "hsl(96, 45%, 40%)" },
   { key: "potassium", label: "Potassium", unit: "mg/kg", color: "hsl(20, 70%, 50%)" },
-  { key: "salinity", label: "Salinity", unit: "", color: "hsl(190, 60%, 40%)" },
+  { key: "salinity", label: "Salinity", unit: "ppm", color: "hsl(190, 60%, 40%)" },
 ] as const;
 
 const RANGES = [
