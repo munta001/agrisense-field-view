@@ -29,7 +29,7 @@ const METRICS = [
   { key: "nitrogen", label: "N (mg/kg)" },
   { key: "phosphorus", label: "P (mg/kg)" },
   { key: "potassium", label: "K (mg/kg)" },
-  { key: "salinity", label: "Salinity" },
+  { key: "salinity", label: "Salinity (ppm)" },
 ] as const;
 
 const PERIODS = [

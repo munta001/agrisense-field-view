@@ -16,7 +16,7 @@ export const SOIL_METRICS: { key: MetricKey; label: string; unit: string }[] = [
   { key: "nitrogen", label: "Nitrogen", unit: "mg/kg" },
   { key: "phosphorus", label: "Phosphorus", unit: "mg/kg" },
   { key: "potassium", label: "Potassium", unit: "mg/kg" },
-  { key: "salinity", label: "Salinity", unit: "mg/L" },
+  { key: "salinity", label: "Salinity", unit: "ppm" },
 ];
 
 export const metricLabel = (key: string) =>

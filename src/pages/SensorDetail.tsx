@@ -24,7 +24,7 @@ const metrics = [
   { key: "nitrogen", label: "Nitrogen", unit: "mg/kg", icon: Leaf, color: "hsl(142, 60%, 45%)" },
   { key: "phosphorus", label: "Phosphorus", unit: "mg/kg", icon: Sprout, color: "hsl(25, 80%, 55%)" },
   { key: "potassium", label: "Potassium", unit: "mg/kg", icon: Beaker, color: "hsl(190, 70%, 45%)" },
-  { key: "salinity", label: "Salinity", unit: "raw", icon: Waves, color: "hsl(220, 60%, 60%)" },
+  { key: "salinity", label: "Salinity", unit: "ppm", icon: Waves, color: "hsl(220, 60%, 60%)" },
 ] as const;
 
 export default function SensorDetailPage() {

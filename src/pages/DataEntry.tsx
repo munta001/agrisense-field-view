@@ -24,7 +24,7 @@ const FIELDS = [
   { key: "nitrogen", label: "Nitrogen", unit: "mg/kg", step: "1" },
   { key: "phosphorus", label: "Phosphorus", unit: "mg/kg", step: "1" },
   { key: "potassium", label: "Potassium", unit: "mg/kg", step: "1" },
-  { key: "salinity", label: "Salinity", unit: "", step: "1" },
+  { key: "salinity", label: "Salinity", unit: "ppm", step: "1" },
 ] as const;
 
 const emptyForm = () => Object.fromEntries(FIELDS.map(f => [f.key, ""])) as Record<string, string>;
