@@ -1,0 +1,2 @@
+CREATE POLICY "Master admins view orgs" ON public.organizations FOR SELECT TO authenticated USING (public.is_master_admin(auth.uid()));
+CREATE POLICY "Master admins view zones" ON public.zones FOR SELECT TO authenticated USING (public.is_master_admin(auth.uid()));

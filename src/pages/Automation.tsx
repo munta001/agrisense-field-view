@@ -47,7 +47,7 @@ export default function AutomationPage() {
             <Card key={a.id} className="min-w-0">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 font-display text-lg"><Zap className="h-4 w-4 text-primary" />{a.name}</CardTitle>
-                <p className="text-xs text-muted-foreground">{a.zones?.name || "No zone"} · max {a.max_run_s}s per run</p>
+                <p className="break-all text-xs text-muted-foreground">Zone: {a.zones?.name || "No zone"} · Controller {a.controller_dev_eui} · Output {a.do_channel} · Max {a.max_run_s}s per run</p>
               </CardHeader>
               <CardContent className="space-y-2">
                 {(a.appliance_rules || []).map((r: any) => (
