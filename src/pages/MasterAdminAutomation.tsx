@@ -31,9 +31,11 @@ export default function MasterAdminAutomationPage() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    db.from("organizations").select("id,name").order("name").then(({ data }: any) => {
-      setOrgs(data || []);
-      if (data?.[0]) setOrgId(data[0].id);
+    db.rpc("master_admin_overview").then(({ data, error }: any) => {
+      if (error) { toast.error(error.message); return; }
+      const list = (data?.organizations || []).map((o: any) => ({ id: o.id, name: o.name }));
+      setOrgs(list);
+      if (list[0]) setOrgId(list[0].id);
     });
   }, []);
 
