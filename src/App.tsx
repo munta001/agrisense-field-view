@@ -30,6 +30,8 @@ import MasterAdminAdminsPage from "@/pages/MasterAdminAdmins";
 import MasterAdminSensorTypesPage from "@/pages/MasterAdminSensorTypes";
 import ProfilePage from "@/pages/Profile";
 import MasterAdminBrandingPage from "@/pages/MasterAdminBranding";
+import AutomationPage from "@/pages/Automation";
+import MasterAdminAutomationPage from "@/pages/MasterAdminAutomation";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -63,6 +65,7 @@ const App = () => (
               <Route path="/master-admin/admins" element={<ProtectedRoute><MasterAdminAdminsPage /></ProtectedRoute>} />
               <Route path="/master-admin/sensor-types" element={<ProtectedRoute><MasterAdminSensorTypesPage /></ProtectedRoute>} />
               <Route path="/master-admin/profile" element={<ProtectedRoute><ProfilePage masterAdmin /></ProtectedRoute>} />
+              <Route path="/master-admin/automation" element={<ProtectedRoute><MasterAdminAutomationPage /></ProtectedRoute>} />
               <Route path="/master-admin/branding" element={<ProtectedRoute><MasterAdminBrandingPage /></ProtectedRoute>} />
               
               <Route path="/dashboard" element={<ProtectedAppRoute><DashboardPage /></ProtectedAppRoute>} />
@@ -74,6 +77,7 @@ const App = () => (
               <Route path="/alerts" element={<ProtectedAppRoute><AlertsPage /></ProtectedAppRoute>} />
               <Route path="/reports" element={<ProtectedAppRoute><ReportsPage /></ProtectedAppRoute>} />
               <Route path="/crops" element={<ProtectedAppRoute><CropsPage /></ProtectedAppRoute>} />
+              <Route path="/automation" element={<ProtectedAppRoute><AutomationPage /></ProtectedAppRoute>} />
               <Route path="/zones" element={<ProtectedAppRoute><ZonesPage /></ProtectedAppRoute>} />
               <Route path="/admin" element={<ProtectedAppRoute><AdminPage /></ProtectedAppRoute>} />
               <Route path="/profile" element={<ProtectedAppRoute><ProfilePage /></ProtectedAppRoute>} />
