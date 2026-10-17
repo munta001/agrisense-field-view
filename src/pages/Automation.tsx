@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Zap } from "lucide-react";
 import { metricLabel } from "@/lib/metrics";
 
@@ -39,6 +40,12 @@ export default function AutomationPage() {
         <p className="text-muted-foreground">Appliances that switch on automatically when readings leave the crop range. Set up by the platform administrator.</p>
       </div>
 
+      <Tabs defaultValue="automations">
+        <TabsList>
+          <TabsTrigger value="automations">Automations ({appliances.length})</TabsTrigger>
+          <TabsTrigger value="activity">Recent activity ({commands.length})</TabsTrigger>
+        </TabsList>
+        <TabsContent value="automations" className="mt-4">
       {loading ? <Skeleton className="h-40 w-full" /> : appliances.length === 0 ? (
         <Card><CardContent className="py-10 text-center text-muted-foreground">No automations configured for this organisation yet</CardContent></Card>
       ) : (
@@ -62,7 +69,8 @@ export default function AutomationPage() {
           ))}
         </div>
       )}
-
+        </TabsContent>
+        <TabsContent value="activity" className="mt-4">
       <Card>
         <CardHeader><CardTitle className="font-display text-lg">Recent activity</CardTitle></CardHeader>
         <CardContent>
@@ -83,6 +91,8 @@ export default function AutomationPage() {
           </Table>
         </CardContent>
       </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
