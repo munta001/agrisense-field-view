@@ -54,7 +54,8 @@ export default function AutomationPage() {
             <Card key={a.id} className="min-w-0">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 font-display text-lg"><Zap className="h-4 w-4 text-primary" />{a.name}</CardTitle>
-                <p className="break-all text-xs text-muted-foreground">Zone: {a.zones?.name || "No zone"} · Controller {a.controller_dev_eui} · Output {a.do_channel} · Max {a.max_run_s}s per run</p>
+                <div><Badge variant="outline" className="mt-1">Zone: {a.zones?.name || "No zone"}</Badge></div>
+                <p className="break-all text-xs text-muted-foreground">Controller {a.controller_dev_eui} · Output {a.do_channel} · Max {a.max_run_s}s per run</p>
               </CardHeader>
               <CardContent className="space-y-2">
                 {(a.appliance_rules || []).map((r: any) => (
@@ -75,18 +76,18 @@ export default function AutomationPage() {
         <CardHeader><CardTitle className="font-display text-lg">Recent activity</CardTitle></CardHeader>
         <CardContent>
           <Table>
-            <TableHeader><TableRow><TableHead>Time</TableHead><TableHead>Appliance</TableHead><TableHead>Action</TableHead><TableHead>Trigger</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>
+            <TableHeader><TableRow><TableHead>Time</TableHead><TableHead>Appliance</TableHead><TableHead>Zone</TableHead><TableHead>Action</TableHead><TableHead>Trigger</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>
             <TableBody>
               {commands.map(c => (
                 <TableRow key={c.id}>
                   <TableCell className="whitespace-nowrap">{new Date(c.execute_at).toLocaleString()}</TableCell>
-                  <TableCell>{apName(c.appliance_id)}</TableCell>
+                  <TableCell>{apName(c.appliance_id)}</TableCell><TableCell>{appliances.find(a => a.id === c.appliance_id)?.zones?.name || "—"}</TableCell>
                   <TableCell className="uppercase">{c.command}</TableCell>
                   <TableCell className="capitalize">{c.source}</TableCell>
                   <TableCell><Badge variant={statusVariant(c.status)} className="capitalize">{c.status}</Badge></TableCell>
                 </TableRow>
               ))}
-              {!loading && commands.length === 0 && <TableRow><TableCell colSpan={5} className="py-8 text-center text-muted-foreground">No automation activity yet</TableCell></TableRow>}
+              {!loading && commands.length === 0 && <TableRow><TableCell colSpan={6} className="py-8 text-center text-muted-foreground">No automation activity yet</TableCell></TableRow>}
             </TableBody>
           </Table>
         </CardContent>
