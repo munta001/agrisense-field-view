@@ -123,7 +123,8 @@ export default function MasterAdminAutomationPage() {
             <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0">
               <div className="min-w-0">
                 <CardTitle className="flex items-center gap-2 font-display text-lg"><Zap className="h-4 w-4 shrink-0 text-primary" /><span className="truncate">{a.name}</span></CardTitle>
-                <p className="mt-1 break-all text-xs text-muted-foreground">{zoneName(a.zone_id)} · Controller {a.controller_dev_eui} · Output {a.do_channel} · Max {a.max_run_s}s</p>
+                <Badge variant="outline" className="mt-1">Zone: {zoneName(a.zone_id)}</Badge>
+                <p className="mt-1 break-all text-xs text-muted-foreground">Controller {a.controller_dev_eui} · Output {a.do_channel} · Max {a.max_run_s}s</p>
               </div>
               <div className="flex shrink-0">
                 <Button variant="ghost" size="icon" aria-label="Edit appliance" onClick={() => openAp(a)}><Pencil className="h-4 w-4" /></Button>
@@ -155,9 +156,9 @@ export default function MasterAdminAutomationPage() {
           <DialogHeader><DialogTitle>{apEdit ? "Edit appliance" : "New appliance"}</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div className="space-y-1"><Label>Name</Label><Input value={apForm.name} maxLength={100} placeholder="Irrigation pump" onChange={e => setApForm({ ...apForm, name: e.target.value })} /></div>
-            <div className="space-y-1"><Label>Zone</Label>
+            <div className="space-y-1"><Label>Activate in zone</Label>
               <Select value={apForm.zone_id} onValueChange={v => setApForm({ ...apForm, zone_id: v })}>
-                <SelectTrigger><SelectValue placeholder="Select zone" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="Select the zone this automation controls" /></SelectTrigger>
                 <SelectContent>{zones.map(z => <SelectItem key={z.id} value={z.id}>{z.name}</SelectItem>)}</SelectContent>
               </Select>
             </div>
