@@ -1,0 +1,11 @@
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.appliances, public.appliance_rules, public.automation_commands TO authenticated;
+GRANT ALL ON public.appliances, public.appliance_rules, public.automation_commands TO service_role;
+ALTER TABLE public.appliances ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.appliance_rules ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.automation_commands ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Master admins manage appliances" ON public.appliances FOR ALL TO authenticated USING (public.is_master_admin(auth.uid())) WITH CHECK (public.is_master_admin(auth.uid()));
+CREATE POLICY "Members view appliances" ON public.appliances FOR SELECT TO authenticated USING (public.is_org_member(auth.uid(), org_id));
+CREATE POLICY "Master admins manage rules" ON public.appliance_rules FOR ALL TO authenticated USING (public.is_master_admin(auth.uid())) WITH CHECK (public.is_master_admin(auth.uid()));
+CREATE POLICY "Members view rules" ON public.appliance_rules FOR SELECT TO authenticated USING (EXISTS (SELECT 1 FROM public.appliances a WHERE a.id = appliance_id AND public.is_org_member(auth.uid(), a.org_id)));
+CREATE POLICY "Master admins view commands" ON public.automation_commands FOR SELECT TO authenticated USING (public.is_master_admin(auth.uid()));
+CREATE POLICY "Members view commands" ON public.automation_commands FOR SELECT TO authenticated USING (EXISTS (SELECT 1 FROM public.appliances a WHERE a.id = appliance_id AND public.is_org_member(auth.uid(), a.org_id)));

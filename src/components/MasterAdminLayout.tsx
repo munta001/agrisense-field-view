@@ -14,6 +14,7 @@ const links = [
   { to: "/master-admin/users", label: "Users" },
   { to: "/master-admin/admins", label: "Master admins" },
   { to: "/master-admin/sensor-types", label: "Sensor types" },
+  { to: "/master-admin/automation", label: "Automation" },
   { to: "/master-admin/branding", label: "Platform branding" },
   { to: "/master-admin/profile", label: "Profile" },
 ];
