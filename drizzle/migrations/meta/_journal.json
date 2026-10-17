@@ -15,6 +15,13 @@
       "when": 1792245031980,
       "tag": "0001_automation_access",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792245286141,
+      "tag": "0002_master_admin_view_orgs_zones",
+      "breakpoints": true
     }
   ]
 }
