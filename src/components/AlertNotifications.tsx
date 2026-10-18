@@ -72,7 +72,7 @@ export function AlertNotifications({ collapsed, isMobile, onNavigate }: {
             isError ? <div className="p-4 text-sm text-muted-foreground">Couldn't load alerts. <Button variant="link" size="sm" onClick={() => void refetch()}>Retry</Button></div> :
               !data?.alerts.length ? <p className="p-5 text-center text-sm text-muted-foreground">No alerts</p> :
                 data.alerts.map(alert => (
-                  <Button key={alert.id} variant="ghost" className={`h-auto w-full flex-col items-start gap-1 whitespace-normal rounded-md p-3 text-left ${alert.is_read ? "bg-muted/50" : "bg-primary/5"} hover:bg-primary/10`}
+                  <Button key={alert.id} variant="ghost" className={`h-auto w-full flex-col items-start gap-1 whitespace-normal rounded-md p-3 text-left sm:h-auto ${alert.is_read ? "bg-muted/50" : "bg-primary/5"} hover:bg-primary/10`}
                     onClick={async () => {
                       if (!alert.is_read) {
                         await supabase.from("alerts").update({ is_read: true }).eq("org_id", orgId).eq("id", alert.id);
