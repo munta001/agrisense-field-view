@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { PlatformLogo } from "@/components/PlatformLogo";
 import { BrandName } from "@/components/BrandName";
+import { AlertNotifications } from "@/components/AlertNotifications";
 
 
 
@@ -97,6 +98,9 @@ export function AppSidebar() {
         <SidebarGroup className="px-3 pt-4">
           <SidebarGroupLabel className="px-2 text-[10px] font-semibold uppercase text-sidebar-foreground/40">Workspace</SidebarGroupLabel>
           <SidebarGroupContent>
+            <div className="mb-3">
+              <AlertNotifications collapsed={collapsed} isMobile={isMobile} onNavigate={closeMobileNav} />
+            </div>
             <SidebarMenu>
               {mainItems.map(item => (
                 <SidebarMenuItem key={item.title}>
