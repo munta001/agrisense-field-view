@@ -1,4 +1,8 @@
 # Mobile responsiveness
+\n+# Manual automation and notifications
+- [ ] Add secure manual On/Off actions and zone alerts to Automation.
+- [ ] Add an unread-alert sidebar notification badge.
+- [ ] Test permissions, command safety, and signed-in Automation.
 - [x] Improve shared layouts, navigation, dialogs, tabs, and table scrolling.
 - [x] Adapt every farm page and its forms, charts, maps, and actions for phones.
 - [x] Adapt all master-admin, profile, and sign-in pages for phones.
