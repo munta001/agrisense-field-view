@@ -855,6 +855,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      request_manual_automation: {
+        Args: { p_alert_id?: string; p_appliance_id: string; p_command: string }
+        Returns: string
+      }
       sync_zone_stages: { Args: { p_org_id: string }; Returns: number }
     }
     Enums: {
