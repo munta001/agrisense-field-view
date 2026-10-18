@@ -189,6 +189,7 @@ export type Database = {
           appliance_id: string | null
           command: string
           created_at: string | null
+          error: string | null
           execute_at: string
           id: string
           sent_at: string | null
@@ -200,6 +201,7 @@ export type Database = {
           appliance_id?: string | null
           command: string
           created_at?: string | null
+          error?: string | null
           execute_at?: string
           id?: string
           sent_at?: string | null
@@ -211,6 +213,7 @@ export type Database = {
           appliance_id?: string | null
           command?: string
           created_at?: string | null
+          error?: string | null
           execute_at?: string
           id?: string
           sent_at?: string | null

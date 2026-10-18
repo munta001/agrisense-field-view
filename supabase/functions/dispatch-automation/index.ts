@@ -41,6 +41,7 @@ Deno.serve(async (req) => {
     // deno-lint-ignore no-explicit-any
     const ap: any = Array.isArray(c.appliances) ? c.appliances[0] : c.appliances;
     let ok = false;
+    let errMsg = "";
     try {
       const hex = ap.do_channel + (c.command === "on" ? "0100" : "0000") + "ff";
       const res = await fetch(`${EMQX_API}/publish`, {
@@ -56,14 +57,17 @@ Deno.serve(async (req) => {
         }),
       });
       ok = res.status === 200; // 202 = no matching subscriber (gateway offline)
-    } catch (_) {
-      ok = false;
+      if (!ok) errMsg = `HTTP ${res.status}: ${(await res.text()).slice(0, 200)}`;
+    } catch (e) {
+      errMsg = `fetch error: ${String(e).slice(0, 200)}`;
     }
 
     if (!ok) {
       // a failed OFF goes back to pending to be retried; a failed ON is dropped
       await db.from("automation_commands")
-        .update(c.command === "off" ? { status: "pending", sent_at: null } : { status: "failed" })
+        .update(c.command === "off"
+          ? { status: "pending", sent_at: null, error: errMsg }
+          : { status: "failed", error: errMsg })
         .eq("id", c.id);
     }
     results.push({ id: c.id, command: c.command, ok });
