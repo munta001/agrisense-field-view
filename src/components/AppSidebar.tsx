@@ -13,8 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { PlatformLogo } from "@/components/PlatformLogo";
 import { BrandName } from "@/components/BrandName";
-import { useAlertNotifications } from "@/hooks/use-alert-notifications";
-import { Badge } from "@/components/ui/badge";
+
 
 
 const mainItems = [
@@ -39,7 +38,7 @@ export function AppSidebar() {
   const collapsed = !isMobile && state === "collapsed";
   const { signOut } = useAuth();
   const { orgs, currentOrg, setCurrentOrg, currentRole } = useOrg();
-  const { unreadCount } = useAlertNotifications();
+
 
   // On mobile the sidebar is an overlay drawer — close it whenever a
   // navigation link inside it is tapped so the page underneath is visible.
@@ -102,13 +101,11 @@ export function AppSidebar() {
               {mainItems.map(item => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    <NavLink to={item.url} end onClick={closeMobileNav} aria-label={item.title === "Alerts" && unreadCount ? `Alerts, ${unreadCount} unread` : item.title} className="relative rounded-lg text-sidebar-foreground/65 transition-colors hover:bg-sidebar-accent/70 hover:text-sidebar-foreground" activeClassName="bg-sidebar-accent text-sidebar-foreground font-medium shadow-sm">
+                    <NavLink to={item.url} end onClick={closeMobileNav} aria-label={item.title} className="relative rounded-lg text-sidebar-foreground/65 transition-colors hover:bg-sidebar-accent/70 hover:text-sidebar-foreground" activeClassName="bg-sidebar-accent text-sidebar-foreground font-medium shadow-sm">
                       <item.icon className="mr-2 h-4 w-4 text-sidebar-primary" />
                       {!collapsed && <span>{item.title}</span>}
-                      {item.title === "Alerts" && unreadCount > 0 && (collapsed
-                        ? <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-destructive" />
-                        : <Badge variant="destructive" className="ml-auto text-xs">{unreadCount > 99 ? "99+" : unreadCount}</Badge>)}
                     </NavLink>
+
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
