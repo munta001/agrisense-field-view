@@ -18,7 +18,9 @@ export function useAlertNotifications() {
   });
   useEffect(() => {
     if (!orgId) return;
-    const channel = supabase.channel(`alert-notifications-${orgId}`)
+    // Consumers share the query, but each effect needs its own channel. The
+    // realtime client reuses channels by name, including during async teardown.
+    const channel = supabase.channel(`alert-notifications-${orgId}-${crypto.randomUUID()}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "alerts", filter: `org_id=eq.${orgId}` }, () => {
         queryClient.invalidateQueries({ queryKey: ["unread-alerts", orgId] });
       }).subscribe();
