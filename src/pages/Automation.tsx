@@ -13,16 +13,16 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Bell, Power, Square, RefreshCw, Check } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
-import { useAlertNotifications } from "@/hooks/use-alert-notifications";
 import { alertsForAppliance, canControlAutomation } from "@/lib/automation";
+
 
 const db = supabase as any;
 
 export default function AutomationPage() {
   const { currentOrg, currentRole } = useOrg();
   const { isMasterAdmin } = useAuth();
-  const { refreshNotifications } = useAlertNotifications();
   const [appliances, setAppliances] = useState<any[]>([]);
+
   const [commands, setCommands] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [alerts, setAlerts] = useState<any[]>([]);
@@ -77,8 +77,8 @@ export default function AutomationPage() {
     const { error } = await supabase.from("alerts").update({ is_read: true }).eq("id", id);
     if (error) { toast.error("Could not mark alert as read"); return; }
     setAlerts(items => items.map(item => item.id === id ? { ...item, is_read: true } : item));
-    refreshNotifications();
   };
+
 
   const controls = (appliance: any, alertId?: string) => canControl && (
     <div className="flex flex-wrap gap-2">

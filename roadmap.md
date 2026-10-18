@@ -7,6 +7,7 @@
 
 # Manual automation and notifications
 - [x] Add secure manual On/Off actions and zone alerts to Automation.
-- [x] Add an unread-alert sidebar notification badge.
+- [x] Unread-alert sidebar notification badge — removed per user request (Jabeer, "skip the alert notification"); hook and tests deleted.
+
 - [x] Test role rules, alert-zone matching, and authenticated validation without sending physical commands.
 - [ ] Verify organisation controls end-to-end — blocked by expired preview session and permission to mint the organisation user's session; physical equipment has not been activated for testing.
