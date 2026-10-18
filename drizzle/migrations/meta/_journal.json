@@ -29,6 +29,20 @@
       "when": 1792249000114,
       "tag": "0003_whatsapp_alerts",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792309504714,
+      "tag": "0004_manual_automation",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792309646454,
+      "tag": "0005_manual_automation_active_memberships",
+      "breakpoints": true
     }
   ]
 }

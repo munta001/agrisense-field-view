@@ -7,10 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Bell, AlertTriangle, Info, AlertOctagon, Check } from "lucide-react";
 import { format } from "date-fns";
 import type { Tables } from "@/integrations/supabase/types";
+import { useAlertNotifications } from "@/hooks/use-alert-notifications";
 
 export default function AlertsPage() {
   const { currentOrg } = useOrg();
   const [alerts, setAlerts] = useState<Tables<"alerts">[]>([]);
+  const { refreshNotifications } = useAlertNotifications();
 
   const fetchAlerts = async () => {
     if (!currentOrg) return;
@@ -22,6 +24,7 @@ export default function AlertsPage() {
 
   const markRead = async (id: string) => {
     await supabase.from("alerts").update({ is_read: true }).eq("id", id);
+    refreshNotifications();
     fetchAlerts();
   };
 
