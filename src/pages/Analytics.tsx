@@ -123,14 +123,14 @@ export default function AnalyticsPage() {
         <Card className="glass-card"><CardContent className="py-12 text-center text-muted-foreground">No readings for this device in the selected period</CardContent></Card>
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          <div className="grid grid-cols-1 gap-3 min-[400px]:grid-cols-2 md:grid-cols-4">
             {METRICS.map(m => {
               const s = stat(m.key);
               return (
                 <Card key={m.key} className="glass-card">
                   <CardContent className="p-4">
                     <p className="text-xs text-muted-foreground">{m.label}{m.unit ? ` (${m.unit})` : ""}</p>
-                    <p className="font-mono text-xl font-semibold" style={{ color: m.color }}>
+                    <p className="break-words font-mono text-xl font-semibold" style={{ color: m.color }}>
                       {s ? s.last.toFixed(2) : "—"}
                     </p>
                     {s && (

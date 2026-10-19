@@ -128,25 +128,25 @@ export default function MasterAdminPage() {
       ) : (
         filtered.map(org => (
           <Card key={org.id} className="glass-card">
-            <CardHeader className="flex-col gap-3 space-y-0 sm:flex-row sm:items-center sm:justify-between">
-              <div>
+            <CardHeader className="flex-col gap-3 space-y-0 xl:flex-row xl:items-center xl:justify-between">
+              <div className="min-w-0">
                 <CardTitle className="font-display text-lg">{org.name}</CardTitle>
                 <p className="text-xs text-muted-foreground">
                   Created {format(new Date(org.created_at), "dd MMM yyyy")}
                 </p>
               </div>
-              <div className="flex flex-wrap gap-2 text-xs">
+              <div className="flex min-w-0 flex-wrap gap-2 text-xs">
                 <Badge variant="secondary">{org.users.length} users</Badge>
                 <Badge variant="secondary">{org.sensor_count} devices ({org.active_sensor_count} active)</Badge>
                 <Badge variant="secondary">{org.zone_count} zones</Badge>
                 <Badge variant="secondary">{org.reading_count} readings</Badge>
-                <Badge variant="outline" title={`Files + ${Number(org.reading_count || 0).toLocaleString()} readings`}>
+                <Badge variant="outline" className="max-w-full break-words" title={`Files + ${Number(org.reading_count || 0).toLocaleString()} readings`}>
                   {formatBytes(Number(org.storage_bytes || 0))} total · {org.storage_files} files + {(Number(org.reading_count || 0)).toLocaleString()} readings
                 </Badge>
               </div>
             </CardHeader>
             <CardContent>
-              <div className="overflow-x-auto">
+              <div className="min-w-0">
                 <Table>
                   <TableHeader>
                     <TableRow>

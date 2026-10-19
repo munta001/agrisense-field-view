@@ -35,7 +35,7 @@ export function MasterAdminLayout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-10 border-b bg-card/50 backdrop-blur-sm">
-        <div className="flex min-h-16 items-center justify-between gap-2 px-4 sm:px-6">
+        <div className="flex min-h-16 min-w-0 items-center justify-between gap-2 px-4 sm:px-6">
           <div className="flex min-w-0 items-center gap-2">
             <PlatformLogo className="h-8 w-8 rounded-lg gradient-primary p-1.5" iconClassName="text-primary-foreground" />
             <BrandName className="min-w-0 truncate font-display font-bold" />
@@ -48,7 +48,7 @@ export function MasterAdminLayout({ children }: { children: ReactNode }) {
           </Button>
           </div>
         </div>
-        <nav aria-label="Administration" className={cn("gap-1 px-4 pb-3 sm:flex sm:overflow-x-auto sm:pb-2", mobileNavOpen ? "grid grid-cols-2" : "hidden")}>
+        <nav aria-label="Administration" className={cn("min-w-0 gap-1 px-4 pb-3 sm:flex sm:flex-nowrap sm:overflow-x-auto sm:pb-2", mobileNavOpen ? "grid grid-cols-2" : "hidden")}>
           {links.map(l => (
             <NavLink
               key={l.to}
@@ -57,7 +57,7 @@ export function MasterAdminLayout({ children }: { children: ReactNode }) {
               onClick={() => setMobileNavOpen(false)}
               className={({ isActive }) =>
                 cn(
-                  "whitespace-nowrap rounded-md px-3 py-3 sm:py-1.5 text-sm font-medium transition-colors",
+                  "min-w-0 break-words rounded-md px-3 py-3 sm:shrink-0 sm:whitespace-nowrap sm:py-1.5 text-sm font-medium transition-colors",
                   isActive ? "bg-primary/15 text-primary" : "text-muted-foreground hover:bg-muted",
                 )
               }
