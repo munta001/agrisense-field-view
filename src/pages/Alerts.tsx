@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Bell, AlertTriangle, Info, AlertOctagon, Check, Loader2 } from "lucide-react";
+import { Bell, AlertTriangle, Info, AlertOctagon, Check, CheckCheck, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { fetchAlertPage } from "@/lib/alert-feed";
 import { useToast } from "@/hooks/use-toast";
@@ -30,6 +30,7 @@ export default function AlertsPage() {
   const [zoneId, setZoneId] = useState("all");
   const [sensorId, setSensorId] = useState("all");
   const [markingId, setMarkingId] = useState<string | null>(null);
+  const [markingAll, setMarkingAll] = useState(false);
   useEffect(() => { setZoneId("all"); setSensorId("all"); }, [orgId]);
 
   const options = useQuery({
