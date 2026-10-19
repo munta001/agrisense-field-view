@@ -89,6 +89,7 @@ export function AlertNotifications({ collapsed, isMobile, onNavigate }: {
                   </Button>
                 ))}
         </div>
+        <div className="border-t p-2"><Button variant="ghost" className="w-full" onClick={viewAlerts}>View all unread alerts <ArrowUpRight className="ml-2 h-4 w-4" /></Button></div>
       </PopoverContent>
     </Popover>
   );
