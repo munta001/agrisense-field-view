@@ -1,4 +1,6 @@
 # Mobile responsiveness
+- [ ] Correct layout distortions across shared elements and affected pages; verify at desktop and phone widths.
+- [ ] Show all unread alerts and add sensor and zone filters; verify using real organisation alerts.
 - [x] Improve shared layouts, navigation, dialogs, tabs, and table scrolling.
 - [x] Adapt every farm page and its forms, charts, maps, and actions for phones.
 - [x] Adapt all master-admin, profile, and sign-in pages for phones.
