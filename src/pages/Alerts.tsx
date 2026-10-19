@@ -98,31 +98,24 @@ export default function AlertsPage() {
         <h1 className="break-words font-display text-2xl font-bold">Alerts & Notifications</h1>
         <p className="mt-1 text-sm text-muted-foreground">{loading ? "Loading alerts…" : view === "unread" ? `${count} unread alerts` : "20 most recent alerts"}</p>
       </div>
-      <div className="flex min-w-0 flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
-        <div className="flex flex-wrap items-center gap-3">
-          <Tabs value={view} onValueChange={setView}>
-            <TabsList aria-label="Alert view"><TabsTrigger value="unread">Unread</TabsTrigger><TabsTrigger value="recent">Recent</TabsTrigger></TabsList>
-          </Tabs>
-          <Button variant="outline" size="sm" className="shrink-0" disabled={markingAll || (!loading && count === 0)} onClick={() => void markAllRead()}>
-            {markingAll ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCheck className="mr-2 h-4 w-4" />}
-            Mark all as read
-          </Button>
-        </div>
-        <div className="grid min-w-0 gap-3 sm:grid-cols-2 xl:w-[32rem]">
-          <div className="min-w-0 space-y-1.5">
-            <label className="text-xs font-medium text-muted-foreground" htmlFor="alert-zone">Zone</label>
-            <Select value={zoneId} onValueChange={id => { setZoneId(id); setSensorId("all"); }}>
-              <SelectTrigger id="alert-zone" aria-label="Filter by zone"><SelectValue /></SelectTrigger>
-              <SelectContent><SelectItem value="all">All zones</SelectItem>{options.data?.zones.map(z => <SelectItem key={z.id} value={z.id}>{z.name}</SelectItem>)}</SelectContent>
-            </Select>
-          </div>
-          <div className="min-w-0 space-y-1.5">
-            <label className="text-xs font-medium text-muted-foreground" htmlFor="alert-sensor">Sensor</label>
-            <Select value={sensorId} onValueChange={setSensorId}>
-              <SelectTrigger id="alert-sensor" aria-label="Filter by sensor"><SelectValue /></SelectTrigger>
-              <SelectContent><SelectItem value="all">All sensors</SelectItem>{sensors.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
-            </Select>
-          </div>
+      <div className="flex min-w-0 flex-wrap items-center gap-2">
+        <Tabs value={view} onValueChange={setView}>
+          <TabsList aria-label="Alert view"><TabsTrigger value="unread">Unread</TabsTrigger><TabsTrigger value="recent">Recent</TabsTrigger></TabsList>
+        </Tabs>
+        <Button variant="outline" size="sm" className="shrink-0" disabled={markingAll || (!loading && count === 0)} onClick={() => void markAllRead()}>
+          {markingAll ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCheck className="mr-2 h-4 w-4" />}
+          <span className="hidden sm:inline">Mark all as read</span>
+          <span className="sm:hidden">Mark all</span>
+        </Button>
+        <div className="ml-auto flex min-w-0 flex-1 gap-2 xs:max-sm:w-full sm:flex-none">
+          <Select value={zoneId} onValueChange={id => { setZoneId(id); setSensorId("all"); }}>
+            <SelectTrigger aria-label="Filter by zone" className="min-w-0 flex-1 sm:w-40"><span className="flex min-w-0 items-center gap-1.5"><MapPin className="h-3.5 w-3.5 shrink-0 text-muted-foreground" /><SelectValue /></span></SelectTrigger>
+            <SelectContent><SelectItem value="all">All zones</SelectItem>{options.data?.zones.map(z => <SelectItem key={z.id} value={z.id}>{z.name}</SelectItem>)}</SelectContent>
+          </Select>
+          <Select value={sensorId} onValueChange={setSensorId}>
+            <SelectTrigger aria-label="Filter by sensor" className="min-w-0 flex-1 sm:w-44"><span className="flex min-w-0 items-center gap-1.5"><Cpu className="h-3.5 w-3.5 shrink-0 text-muted-foreground" /><SelectValue /></span></SelectTrigger>
+            <SelectContent><SelectItem value="all">All sensors</SelectItem>{sensors.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
+          </Select>
         </div>
       </div>
       <div className="space-y-3" aria-live="polite">
