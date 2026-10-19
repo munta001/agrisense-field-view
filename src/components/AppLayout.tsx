@@ -62,6 +62,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     "/reports": "Reports",
     "/crops": "Crops",
     "/zones": "Zones",
+    "/automation": "Automation",
     "/admin": "Administration",
     "/profile": "Profile",
   };

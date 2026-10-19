@@ -176,7 +176,7 @@ export default function MasterAdminUsersPage() {
           {loading ? (
             <Skeleton className="h-[260px]" />
           ) : (
-            <div className="overflow-x-auto">
+            <div className="min-w-0">
               <Table>
                 <TableHeader>
                   <TableRow>

@@ -104,7 +104,7 @@ export default function MasterAdminOrganisationsPage() {
           {loading ? (
             <Skeleton className="h-[220px]" />
           ) : (
-            <div className="overflow-x-auto">
+            <div className="min-w-0">
               <Table>
                 <TableHeader>
                   <TableRow>

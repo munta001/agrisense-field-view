@@ -1,4 +1,6 @@
 # Mobile responsiveness
+- [x] Correct shared card spacing, narrow metric grids, and administration navigation/table layouts; organisation pages verified at 320, 390, 768 and 1280px. Signed-in master-admin verification remains blocked as noted below.
+- [x] Show all unread alerts and add sensor and zone filters; verified all 245 Green Valley Farm unread alerts through the final page and both filters with real organisation data.
 - [x] Improve shared layouts, navigation, dialogs, tabs, and table scrolling.
 - [x] Adapt every farm page and its forms, charts, maps, and actions for phones.
 - [x] Adapt all master-admin, profile, and sign-in pages for phones.
@@ -10,4 +12,4 @@
 - [x] Add a sidebar bell with an unread badge and scrollable alert list matching the new reference; verified with real organisation alerts on desktop and phone, including navigation to Alerts.
 
 - [x] Test role rules, alert-zone matching, and authenticated validation without sending physical commands.
-- [ ] Verify organisation controls end-to-end — blocked by expired preview session and permission to mint the organisation user's session; physical equipment has not been activated for testing.
+- [ ] Verify physical controller On/Off end-to-end — requires permission to activate real equipment; organisation pages now verified signed-in, but physical commands have not been sent for testing.

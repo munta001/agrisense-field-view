@@ -108,7 +108,7 @@ export default function SensorDetailPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 min-[400px]:grid-cols-2 lg:grid-cols-4">
         {metrics.map(m => {
           const v = latest ? (latest[m.key as keyof Reading] as number | null) : null;
           return (
