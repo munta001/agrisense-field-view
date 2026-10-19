@@ -136,9 +136,14 @@ export default function AlertsPage() {
               <CardContent className="flex items-start gap-3 p-4 sm:gap-4 sm:p-5">
                 <div className={`shrink-0 rounded-md p-2 ${config.bg}`}><Icon className={`h-5 w-5 ${config.color}`} /></div>
                 <div className="min-w-0 flex-1 space-y-1.5">
-                  <div className="flex flex-wrap items-start gap-2"><h2 className="min-w-0 break-words text-sm font-semibold sm:text-base">{alert.title}</h2><Badge variant={config.badge} className="shrink-0">{alert.severity}</Badge></div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="min-w-0 break-words text-sm font-semibold sm:text-base">{alert.title}</h2>
+                    <Badge variant={config.badge} className="shrink-0">{alert.severity}</Badge>
+                    {zone && <Badge variant="outline" className="shrink-0 max-w-[10rem]"><span className="truncate">{zone.name}</span></Badge>}
+                    {sensor && <Badge variant="outline" className="shrink-0 max-w-[10rem]"><span className="truncate">{sensor.name}</span></Badge>}
+                  </div>
                   <p className="break-words text-sm leading-relaxed text-muted-foreground">{alert.message}</p>
-                  <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">{sensor && <span className="break-words">{sensor.name}</span>}{zone && <span className="break-words">{zone.name}</span>}<time dateTime={alert.created_at}>{format(new Date(alert.created_at), "dd MMM yyyy HH:mm")}</time></div>
+                  <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground"><time dateTime={alert.created_at}>{format(new Date(alert.created_at), "dd MMM yyyy HH:mm")}</time></div>
                 </div>
                 {!alert.is_read && <Button variant="ghost" size="icon" className="shrink-0" title="Mark as read" aria-label="Mark alert as read" disabled={markingId !== null} onClick={() => void markRead(alert.id)}>{markingId === alert.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}</Button>}
               </CardContent>
