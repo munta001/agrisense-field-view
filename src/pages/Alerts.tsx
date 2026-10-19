@@ -74,6 +74,23 @@ export default function AlertsPage() {
     } catch { toast({ title: "Could not mark alert as read", variant: "destructive" }); }
     finally { setMarkingId(null); }
   };
+  const markAllRead = async () => {
+    if (!orgId) return;
+    setMarkingAll(true);
+    try {
+      let query = supabase.from("alerts").update({ is_read: true }).eq("org_id", orgId).eq("is_read", false);
+      if (sensorId !== "all") query = query.eq("sensor_id", sensorId);
+      else if (zoneId !== "all") query = query.in("sensor_id", sensors.map(s => s.id));
+      const { error } = await query;
+      if (error) throw error;
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["alert-feed"] }),
+        queryClient.invalidateQueries({ queryKey: ["alert-notifications"] }),
+      ]);
+      toast({ title: "All alerts marked as read" });
+    } catch { toast({ title: "Could not mark alerts as read", variant: "destructive" }); }
+    finally { setMarkingAll(false); }
+  };
 
   return (
     <div className="min-w-0 space-y-5">
