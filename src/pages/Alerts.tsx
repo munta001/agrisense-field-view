@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Bell, AlertTriangle, Info, AlertOctagon, Check, CheckCheck, Loader2 } from "lucide-react";
+import { Bell, AlertTriangle, Info, AlertOctagon, Check, CheckCheck, Loader2, MapPin, Cpu } from "lucide-react";
 import { format } from "date-fns";
 import { fetchAlertPage } from "@/lib/alert-feed";
 import { useToast } from "@/hooks/use-toast";
@@ -107,7 +107,7 @@ export default function AlertsPage() {
           <span className="hidden sm:inline">Mark all as read</span>
           <span className="sm:hidden">Mark all</span>
         </Button>
-        <div className="ml-auto flex min-w-0 flex-1 gap-2 xs:max-sm:w-full sm:flex-none">
+        <div className="flex w-full min-w-0 gap-2 sm:ml-auto sm:w-auto sm:flex-none">
           <Select value={zoneId} onValueChange={id => { setZoneId(id); setSensorId("all"); }}>
             <SelectTrigger aria-label="Filter by zone" className="min-w-0 flex-1 sm:w-40"><span className="flex min-w-0 items-center gap-1.5"><MapPin className="h-3.5 w-3.5 shrink-0 text-muted-foreground" /><SelectValue /></span></SelectTrigger>
             <SelectContent><SelectItem value="all">All zones</SelectItem>{options.data?.zones.map(z => <SelectItem key={z.id} value={z.id}>{z.name}</SelectItem>)}</SelectContent>
