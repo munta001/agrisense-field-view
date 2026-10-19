@@ -99,9 +99,15 @@ export default function AlertsPage() {
         <p className="mt-1 text-sm text-muted-foreground">{loading ? "Loading alerts…" : view === "unread" ? `${count} unread alerts` : "20 most recent alerts"}</p>
       </div>
       <div className="flex min-w-0 flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
-        <Tabs value={view} onValueChange={setView}>
-          <TabsList aria-label="Alert view"><TabsTrigger value="unread">Unread</TabsTrigger><TabsTrigger value="recent">Recent</TabsTrigger></TabsList>
-        </Tabs>
+        <div className="flex flex-wrap items-center gap-3">
+          <Tabs value={view} onValueChange={setView}>
+            <TabsList aria-label="Alert view"><TabsTrigger value="unread">Unread</TabsTrigger><TabsTrigger value="recent">Recent</TabsTrigger></TabsList>
+          </Tabs>
+          <Button variant="outline" size="sm" className="shrink-0" disabled={markingAll || (!loading && count === 0)} onClick={() => void markAllRead()}>
+            {markingAll ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCheck className="mr-2 h-4 w-4" />}
+            Mark all as read
+          </Button>
+        </div>
         <div className="grid min-w-0 gap-3 sm:grid-cols-2 xl:w-[32rem]">
           <div className="min-w-0 space-y-1.5">
             <label className="text-xs font-medium text-muted-foreground" htmlFor="alert-zone">Zone</label>
