@@ -43,6 +43,13 @@
       "when": 1792309646454,
       "tag": "0005_manual_automation_active_memberships",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793337168600,
+      "tag": "0006_remove_whatsapp_alerts",
+      "breakpoints": true
     }
   ]
 }
