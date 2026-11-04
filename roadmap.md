@@ -13,3 +13,7 @@
 
 - [x] Test role rules, alert-zone matching, and authenticated validation without sending physical commands.
 - [ ] Verify physical controller On/Off end-to-end — requires permission to activate real equipment; organisation pages now verified signed-in, but physical commands have not been sent for testing.
+
+# Integrations
+- [x] Redeploy dispatch-automation so it loads the current secrets; 403 guard verified.
+- [ ] Connect Twilio for WhatsApp alerts — waiting on the user; the connect card was declined.
