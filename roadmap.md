@@ -16,4 +16,5 @@
 
 # Integrations
 - [x] Redeploy dispatch-automation so it loads the current secrets; 403 guard verified.
-- [ ] Connect Twilio for WhatsApp alerts — waiting on the user; the connect card was declined.
+- [ ] Add organisation-admin WhatsApp settings and delivery verification using one platform Twilio account — waiting for the platform account connection.
+- [x] Guide the user through creating the platform Twilio account, testing WhatsApp, registering a sender, preparing a template, and entering credentials privately.
