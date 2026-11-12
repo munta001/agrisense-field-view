@@ -10,7 +10,9 @@ import { Zap } from "lucide-react";
 import { metricLabel } from "@/lib/metrics";
 import { Button } from "@/components/ui/button";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Bell, Power, Square, RefreshCw, Check } from "lucide-react";
+import { Bell, Power, Square, RefreshCw, Check, Activity, AlertTriangle, MapPin, Clock, TrendingUp, TrendingDown, ChevronDown } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { alertsForAppliance, canControlAutomation } from "@/lib/automation";
@@ -89,76 +91,135 @@ export default function AutomationPage() {
 
   const apName = (id: string) => appliances.find(a => a.id === id)?.name || "—";
   const statusVariant = (s: string) => (s === "failed" ? "destructive" : s === "sent" ? "default" : "secondary") as any;
+  const latest = (id: string) => commands.find(c => c.appliance_id === id);
+  const isRunning = (a: any) => {
+    const c = latest(a.id);
+    return c?.command === "on" && c.status !== "failed" && Date.now() < new Date(c.execute_at).getTime() + a.max_run_s * 1000;
+  };
+  const runningCount = appliances.filter(isRunning).length;
+  const unreadCount = alerts.filter(a => !a.is_read && appliances.some(ap => ap.zone_id && ap.zone_id === a.sensors?.zone_id)).length;
+  const failedCount = commands.filter(c => c.status === "failed").length;
+  const stats = [
+    { label: "Appliances", value: appliances.length, icon: Zap, tone: "text-primary" },
+    { label: "Running now", value: runningCount, icon: Activity, tone: "text-success" },
+    { label: "Zone alerts unread", value: unreadCount, icon: Bell, tone: "text-warning" },
+    { label: "Failed commands", value: failedCount, icon: AlertTriangle, tone: "text-destructive" },
+  ];
 
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-6">
       <div className="flex items-start justify-between gap-3">
-        <div>
-        <h1 className="font-display text-2xl font-bold">Automation</h1>
-        <p className="text-muted-foreground">Zone controllers and recent alerts</p>
+        <div className="min-w-0">
+          <h1 className="font-display text-2xl font-bold">Automation</h1>
+          <p className="text-muted-foreground">Control zone appliances and respond to alerts</p>
         </div>
-        <Button variant="outline" size="icon" aria-label="Refresh automation" disabled={loading || busy} onClick={() => setRefresh(v => v + 1)}><RefreshCw className="h-4 w-4" /></Button>
+        <Button variant="outline" size="sm" disabled={loading || busy} onClick={() => setRefresh(v => v + 1)}>
+          <RefreshCw className={cn("h-4 w-4 sm:mr-2", loading && "animate-spin")} /><span className="hidden sm:inline">Refresh</span>
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {stats.map(s => (
+          <Card key={s.label} className="min-w-0">
+            <CardContent className="flex items-center gap-3 p-4">
+              <div className="rounded-lg bg-muted p-2"><s.icon className={cn("h-5 w-5", s.tone)} /></div>
+              <div className="min-w-0"><p className="text-2xl font-bold leading-none">{loading ? "–" : s.value}</p><p className="mt-1 truncate text-xs text-muted-foreground">{s.label}</p></div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       <Tabs defaultValue="automations">
-        <TabsList>
+        <div className="overflow-x-auto"><TabsList>
           <TabsTrigger value="automations">Automations ({appliances.length})</TabsTrigger>
           <TabsTrigger value="activity">Recent activity ({commands.length})</TabsTrigger>
-        </TabsList>
+        </TabsList></div>
         <TabsContent value="automations" className="mt-4">
-      {loading ? <Skeleton className="h-40 w-full" /> : appliances.length === 0 ? (
-        <Card><CardContent className="py-10 text-center text-muted-foreground">No automations configured for this organisation yet</CardContent></Card>
+      {loading ? <div className="grid gap-4 lg:grid-cols-2"><Skeleton className="h-64 w-full" /><Skeleton className="h-64 w-full" /></div> : appliances.length === 0 ? (
+        <Card><CardContent className="flex flex-col items-center gap-2 py-12 text-center text-muted-foreground"><Zap className="h-8 w-8" />No automations configured for this organisation yet</CardContent></Card>
       ) : (
         <div className="grid gap-4 lg:grid-cols-2">
-          {appliances.map(a => (
-            <Card key={a.id} className="min-w-0">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 font-display text-lg"><Zap className="h-4 w-4 text-primary" />{a.name}</CardTitle>
-                <div><Badge variant="outline" className="mt-1">Zone: {a.zones?.name || "No zone"}</Badge></div>
-                <p className="break-all text-xs text-muted-foreground">Controller {a.controller_dev_eui} · Output {a.do_channel} · Max {a.max_run_s}s per run</p>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                 {controls(a)}
-                 <p className="text-xs text-muted-foreground">{commands.find(c => c.appliance_id === a.id) ? `Latest command: ${commands.find(c => c.appliance_id === a.id)?.command} · ${commands.find(c => c.appliance_id === a.id)?.status}` : "No commands yet"}</p>
-                {(a.appliance_rules || []).map((r: any) => (
-                  <div key={r.id} className="rounded-md border p-2 text-sm">
-                    <span className="font-medium">When {metricLabel(r.metric)} is {r.condition === "above_max" ? "too high" : "too low"}</span>
-                    <p className="text-xs text-muted-foreground">Switch on for {r.run_seconds}s · then wait {r.cooldown_min} min</p>
+          {appliances.map(a => {
+            const running = isRunning(a);
+            const last = latest(a.id);
+            const zoneAlerts = alertsForAppliance<any>(alerts, a.zone_id);
+            const pending = commands.some(c => c.appliance_id === a.id && c.status === "pending");
+            return (
+            <Card key={a.id} className={cn("min-w-0 overflow-hidden transition-shadow hover:shadow-md", running && "border-success/60")}>
+              <div className={cn("h-1", running ? "bg-success" : "bg-muted")} />
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div className={cn("rounded-full p-2", running ? "bg-success/15" : "bg-muted")}><Zap className={cn("h-5 w-5", running ? "text-success" : "text-muted-foreground")} /></div>
+                    <div className="min-w-0">
+                      <CardTitle className="truncate font-display text-lg">{a.name}</CardTitle>
+                      <p className="flex items-center gap-1 text-xs text-muted-foreground"><MapPin className="h-3 w-3" />{a.zones?.name || "No zone"}</p>
+                    </div>
                   </div>
-                ))}
-                {!a.appliance_rules?.length && <p className="text-sm text-muted-foreground">No rules</p>}
-                 <div className="border-t pt-3">
-                   <h3 className="mb-2 flex items-center gap-2 text-sm font-medium"><Bell className="h-4 w-4 text-warning" />Recent zone alerts</h3>
-                   {alertsForAppliance<any>(alerts, a.zone_id).map(alert => (
-                     <div key={alert.id} className="space-y-2 border-b py-3 last:border-b-0">
+                  <Badge variant="outline" className={cn("shrink-0 gap-1.5", running ? "border-success text-success" : pending ? "border-warning text-warning" : "")}>
+                    <span className={cn("h-2 w-2 rounded-full", running ? "animate-pulse bg-success" : pending ? "bg-warning" : "bg-muted-foreground")} />
+                    {running ? "Running" : pending ? "Pending" : "Idle"}
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-3 gap-2 rounded-lg bg-muted/50 p-3 text-center">
+                  <div className="min-w-0"><p className="text-[11px] text-muted-foreground">Controller</p><p className="truncate text-xs font-medium" title={a.controller_dev_eui}>{a.controller_dev_eui}</p></div>
+                  <div><p className="text-[11px] text-muted-foreground">Output</p><p className="text-xs font-medium">{a.do_channel}</p></div>
+                  <div><p className="text-[11px] text-muted-foreground">Max run</p><p className="text-xs font-medium">{a.max_run_s}s</p></div>
+                </div>
+                {controls(a)}
+                <p className="flex items-center gap-1 text-xs text-muted-foreground"><Clock className="h-3 w-3" />{last ? <>Last: <span className="uppercase">{last.command}</span> · <span className="capitalize">{last.status}</span> · {new Date(last.execute_at).toLocaleString()}</> : "No commands yet"}</p>
+                <div className="space-y-2">
+                  <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Rules</h3>
+                  {(a.appliance_rules || []).map((r: any) => (
+                    <div key={r.id} className="flex items-start gap-2 rounded-md border p-2 text-sm">
+                      {r.condition === "above_max" ? <TrendingUp className="mt-0.5 h-4 w-4 shrink-0 text-destructive" /> : <TrendingDown className="mt-0.5 h-4 w-4 shrink-0 text-primary" />}
+                      <div className="min-w-0"><p className="font-medium">When {metricLabel(r.metric)} is {r.condition === "above_max" ? "too high" : "too low"}</p>
+                      <p className="text-xs text-muted-foreground">Run {r.run_seconds}s · cooldown {r.cooldown_min} min</p></div>
+                    </div>
+                  ))}
+                  {!a.appliance_rules?.length && <p className="text-sm text-muted-foreground">No rules</p>}
+                </div>
+                <Collapsible defaultOpen={zoneAlerts.some(x => !x.is_read)} className="rounded-lg border">
+                  <CollapsibleTrigger className="group flex w-full items-center justify-between gap-2 p-3 text-sm font-medium">
+                    <span className="flex items-center gap-2"><Bell className="h-4 w-4 text-warning" />Zone alerts
+                      {zoneAlerts.filter(x => !x.is_read).length > 0 && <Badge variant="destructive" className="h-5 px-1.5">{zoneAlerts.filter(x => !x.is_read).length} new</Badge>}
+                    </span>
+                    <ChevronDown className="h-4 w-4 transition-transform group-data-[state=open]:rotate-180" />
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="max-h-80 overflow-y-auto border-t px-3">
+                   {zoneAlerts.map(alert => (
+                     <div key={alert.id} className={cn("space-y-2 border-b py-3 last:border-b-0", alert.is_read && "opacity-60")}>
                        <div className="flex items-start justify-between gap-2">
                          <div className="min-w-0"><p className="break-words text-sm font-medium">{alert.title}</p><p className="text-xs text-muted-foreground">{alert.sensors?.name} · {new Date(alert.created_at).toLocaleString()}</p></div>
-                         <Badge variant={alert.severity === "critical" ? "destructive" : "secondary"}>{alert.severity}</Badge>
+                         <Badge variant={alert.severity === "critical" ? "destructive" : "secondary"} className="capitalize">{alert.severity}</Badge>
                        </div>
                        <p className="break-words text-sm text-muted-foreground">{alert.message}</p>
                        <div className="flex flex-wrap items-center gap-2">{controls(a, alert.id)}{!alert.is_read && <Button size="sm" variant="ghost" onClick={() => markRead(alert.id)}><Check className="mr-1 h-4 w-4" />Mark read</Button>}</div>
                      </div>
                    ))}
-                   {!alertsForAppliance<any>(alerts, a.zone_id).length && <p className="text-sm text-muted-foreground">No recent alerts in this zone</p>}
-                 </div>
+                   {!zoneAlerts.length && <p className="py-3 text-sm text-muted-foreground">No recent alerts in this zone</p>}
+                  </CollapsibleContent>
+                </Collapsible>
               </CardContent>
             </Card>
-          ))}
+          );})}
         </div>
       )}
         </TabsContent>
         <TabsContent value="activity" className="mt-4">
-      <Card>
+      <Card className="min-w-0">
         <CardHeader><CardTitle className="font-display text-lg">Recent activity</CardTitle></CardHeader>
-        <CardContent>
+        <CardContent className="overflow-x-auto">
           <Table>
             <TableHeader><TableRow><TableHead>Time</TableHead><TableHead>Appliance</TableHead><TableHead>Zone</TableHead><TableHead>Action</TableHead><TableHead>Trigger</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>
             <TableBody>
               {commands.map(c => (
                 <TableRow key={c.id}>
                   <TableCell className="whitespace-nowrap">{new Date(c.execute_at).toLocaleString()}</TableCell>
-                  <TableCell>{apName(c.appliance_id)}</TableCell><TableCell>{appliances.find(a => a.id === c.appliance_id)?.zones?.name || "—"}</TableCell>
-                  <TableCell className="uppercase">{c.command}</TableCell>
+                  <TableCell className="whitespace-nowrap font-medium">{apName(c.appliance_id)}</TableCell><TableCell>{appliances.find(a => a.id === c.appliance_id)?.zones?.name || "—"}</TableCell>
+                  <TableCell><Badge variant="outline" className={cn("uppercase", c.command === "on" ? "border-success text-success" : "")}>{c.command}</Badge></TableCell>
                   <TableCell className="capitalize">{c.source}</TableCell>
                    <TableCell><Badge variant={statusVariant(c.status)} className="capitalize">{c.status}</Badge>{c.error && <p className="mt-1 max-w-xs break-words text-xs text-destructive">{c.error}</p>}</TableCell>
                 </TableRow>
