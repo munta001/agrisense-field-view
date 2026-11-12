@@ -6,4 +6,5 @@
 - Sidebar alert notifications use user-and-organisation-scoped query caching with polling and refresh on opening, rather than realtime channels, to avoid duplicate subscription callbacks; read actions invalidate that cache.
 - Alert feeds use server-side organisation, read-status and sensor filtering with counted pagination; zone filters resolve to the zone's sensors so every unread alert remains accessible beyond the recent feed limit.
 - Shared CardContent includes top padding by default because standalone cards have no header; header-based compact sections may explicitly opt out to keep card content clear of borders.
+- Field-map reading dialogs fetch the selected sensor's latest organisation-scoped reading with polling while open; distinguish taps from drags so viewing data never changes placement.
 

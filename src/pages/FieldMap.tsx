@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
+import { MapSensorReadings } from "@/components/MapSensorReadings";
 
 type Zone = Tables<"zones"> & {
   background_image_url?: string | null;
@@ -52,12 +53,14 @@ export default function FieldMapPage() {
   const [sensors, setSensors] = useState<Sensor[]>([]);
   const [activeZone, setActiveZone] = useState("");
   const [selectedSensor, setSelectedSensor] = useState<string | null>(null);
+  const [readingsSensor, setReadingsSensor] = useState<string | null>(null);
   const [draggingSensor, setDraggingSensor] = useState<string | null>(null);
   const [pendingPositions, setPendingPositions] = useState<Record<string, { x: number; y: number }>>({});
   const [uploadingZone, setUploadingZone] = useState<Zone | null>(null);
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(true);
   const svgRef = useRef<SVGSVGElement>(null);
+  const pointerGesture = useRef<{ sensorId: string; x: number; y: number; moved: boolean } | null>(null);
 
   const isAdmin = currentRole?.role === "admin";
   const isAdminOrOperator = currentRole?.role === "admin" || currentRole?.role === "operator";
@@ -101,7 +104,9 @@ export default function FieldMapPage() {
 
   useEffect(() => {
     setSelectedSensor(null);
+    setReadingsSensor(null);
     setDraggingSensor(null);
+    pointerGesture.current = null;
     setPendingPositions({});
   }, [activeZone]);
 
@@ -130,20 +135,26 @@ export default function FieldMapPage() {
 
   const handlePointerDown = (event: React.PointerEvent<SVGGElement>, sensorId: string) => {
     setSelectedSensor(sensorId);
-    if (!isAdmin) return;
-    event.preventDefault();
+    pointerGesture.current = { sensorId, x: event.clientX, y: event.clientY, moved: false };
+    if (isAdmin) event.preventDefault();
     svgRef.current?.setPointerCapture(event.pointerId);
-    setDraggingSensor(sensorId);
+    if (isAdmin) setDraggingSensor(sensorId);
   };
 
   const handlePointerMove = (event: React.PointerEvent<SVGSVGElement>) => {
-    if (!draggingSensor) return;
+    const gesture = pointerGesture.current;
+    if (!gesture) return;
+    if (Math.hypot(event.clientX - gesture.x, event.clientY - gesture.y) > 5) gesture.moved = true;
+    if (!draggingSensor || !gesture.moved) return;
     const position = svgPoint(event.clientX, event.clientY);
     setPendingPositions((current) => ({ ...current, [draggingSensor]: position }));
   };
 
   const stopDragging = (event: React.PointerEvent<SVGSVGElement>) => {
     if (svgRef.current?.hasPointerCapture(event.pointerId)) svgRef.current.releasePointerCapture(event.pointerId);
+    const gesture = pointerGesture.current;
+    if (event.type === "pointerup" && gesture && !gesture.moved) setReadingsSensor(gesture.sensorId);
+    pointerGesture.current = null;
     setDraggingSensor(null);
   };
 
@@ -342,6 +353,16 @@ export default function FieldMapPage() {
                 return (
                   <g
                     key={sensor.id}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`View readings for ${sensor.name}`}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        setSelectedSensor(sensor.id);
+                        setReadingsSensor(sensor.id);
+                      }
+                    }}
                     onPointerDown={(event) => handlePointerDown(event, sensor.id)}
                     style={{ cursor: isAdmin ? "grab" : "pointer" }}
                     className="touch-none"
@@ -391,7 +412,7 @@ export default function FieldMapPage() {
                   key={sensor.id}
                   type="button"
                   variant="ghost"
-                  onClick={() => setSelectedSensor(sensor.id)}
+                  onClick={() => { setSelectedSensor(sensor.id); setReadingsSensor(sensor.id); }}
                   className={`h-auto min-h-[72px] w-full justify-start gap-3 border px-3 py-3 text-left transition-colors ${selectedSensor === sensor.id ? "border-primary bg-secondary" : "border-border bg-card hover:bg-muted"}`}
                 >
                   <span className={`relative flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-muted ${sensor.status === "online" ? "text-success" : sensor.status === "offline" ? "text-destructive" : "text-warning"}`}>
@@ -423,6 +444,13 @@ export default function FieldMapPage() {
           </section>
         </div>
       </section>
+
+      {currentOrg && <MapSensorReadings
+        sensor={visibleSensors.find((sensor) => sensor.id === readingsSensor) ?? null}
+        orgId={currentOrg.id}
+        zoneName={activeZoneData?.name ?? ""}
+        onClose={() => setReadingsSensor(null)}
+      />}
 
       <Dialog open={Boolean(uploadingZone)} onOpenChange={(open) => !open && setUploadingZone(null)}>
         <DialogContent>

@@ -1,4 +1,5 @@
 # Mobile responsiveness
+- [x] Open latest sensor readings from field-map markers and device buttons; verified real readings, refresh, dragging without opening the dialog, and phone layout without overflow.
 - [x] Correct shared card spacing, narrow metric grids, and administration navigation/table layouts; organisation pages verified at 320, 390, 768 and 1280px. Signed-in master-admin verification remains blocked as noted below.
 - [x] Show all unread alerts and add sensor and zone filters; verified all 245 Green Valley Farm unread alerts through the final page and both filters with real organisation data.
 - [x] Improve shared layouts, navigation, dialogs, tabs, and table scrolling.
