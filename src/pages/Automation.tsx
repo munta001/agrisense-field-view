@@ -135,10 +135,10 @@ export default function AutomationPage() {
           <TabsTrigger value="activity">Recent activity ({commands.length})</TabsTrigger>
         </TabsList></div>
         <TabsContent value="automations" className="mt-4">
-      {loading ? <div className="grid gap-4 lg:grid-cols-2"><Skeleton className="h-64 w-full" /><Skeleton className="h-64 w-full" /></div> : appliances.length === 0 ? (
+      {loading ? <div className="grid gap-4"><Skeleton className="h-64 w-full" /></div> : appliances.length === 0 ? (
         <Card><CardContent className="flex flex-col items-center gap-2 py-12 text-center text-muted-foreground"><Zap className="h-8 w-8" />No automations configured for this organisation yet</CardContent></Card>
       ) : (
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid gap-4">
           {appliances.map(a => {
             const running = isRunning(a);
             const last = latest(a.id);
@@ -162,7 +162,8 @@ export default function AutomationPage() {
                   </Badge>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-4 lg:grid lg:grid-cols-2 lg:items-start lg:gap-6 lg:space-y-0">
+                <div className="min-w-0 space-y-4">
                 <div className="grid grid-cols-3 gap-2 rounded-lg bg-muted/50 p-3 text-center">
                   <div className="min-w-0"><p className="text-[11px] text-muted-foreground">Controller</p><p className="truncate text-xs font-medium" title={a.controller_dev_eui}>{a.controller_dev_eui}</p></div>
                   <div><p className="text-[11px] text-muted-foreground">Output</p><p className="text-xs font-medium">{a.do_channel}</p></div>
@@ -170,6 +171,8 @@ export default function AutomationPage() {
                 </div>
                 {controls(a)}
                 <p className="flex items-center gap-1 text-xs text-muted-foreground"><Clock className="h-3 w-3" />{last ? <>Last: <span className="uppercase">{last.command}</span> · <span className="capitalize">{last.status}</span> · {new Date(last.execute_at).toLocaleString()}</> : "No commands yet"}</p>
+                </div>
+                <div className="min-w-0 space-y-4">
                 <div className="space-y-2">
                   <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Rules</h3>
                   {(a.appliance_rules || []).map((r: any) => (
@@ -202,6 +205,7 @@ export default function AutomationPage() {
                    {!zoneAlerts.length && <p className="py-3 text-sm text-muted-foreground">No recent alerts in this zone</p>}
                   </CollapsibleContent>
                 </Collapsible>
+                </div>
               </CardContent>
             </Card>
           );})}
