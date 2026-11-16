@@ -51,8 +51,8 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarContent>
         {/* Brand */}
-        <div className="flex h-16 items-center gap-3 border-b border-sidebar-border px-4">
-          <PlatformLogo className="h-11 w-11 rounded-lg ring-1 ring-sidebar-border" iconClassName="h-6 w-6 text-sidebar-primary-foreground" />
+        <div className={`flex h-16 items-center gap-3 border-b border-sidebar-border ${collapsed ? "justify-center px-1" : "px-4"}`}>
+          <PlatformLogo className={collapsed ? "h-9 w-9 rounded-md ring-1 ring-sidebar-border" : "h-11 w-11 rounded-lg ring-1 ring-sidebar-border"} iconClassName="h-6 w-6 text-sidebar-primary-foreground" />
           {!collapsed && (
             <BrandName className="font-display text-xl font-bold text-sidebar-foreground" />
           )}
@@ -95,10 +95,10 @@ export function AppSidebar() {
           </div>
         )}
 
-        <SidebarGroup className="px-3 pt-4">
+        <SidebarGroup className={collapsed ? "px-1 pt-4" : "px-3 pt-4"}>
           <SidebarGroupLabel className="px-2 text-[10px] font-semibold uppercase text-sidebar-foreground/40">Workspace</SidebarGroupLabel>
           <SidebarGroupContent>
-            <div className="mb-3">
+            <div className={collapsed ? "mb-3 flex justify-center" : "mb-3"}>
               <AlertNotifications collapsed={collapsed} isMobile={isMobile} onNavigate={closeMobileNav} />
             </div>
             <SidebarMenu>
@@ -118,7 +118,7 @@ export function AppSidebar() {
         </SidebarGroup>
 
         {currentRole?.role === "admin" && (
-          <SidebarGroup className="px-3">
+          <SidebarGroup className={collapsed ? "px-1" : "px-3"}>
             <SidebarGroupLabel className="px-2 text-[10px] font-semibold uppercase text-sidebar-foreground/40">Administration</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
