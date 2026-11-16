@@ -11,6 +11,8 @@ import {
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useBranding } from "@/contexts/BrandingContext";
 import { PlatformLogo } from "@/components/PlatformLogo";
 import { BrandName } from "@/components/BrandName";
 import { AlertNotifications } from "@/components/AlertNotifications";
@@ -39,6 +41,7 @@ export function AppSidebar() {
   const collapsed = !isMobile && state === "collapsed";
   const { signOut } = useAuth();
   const { orgs, currentOrg, setCurrentOrg, currentRole } = useOrg();
+  const { platform_name } = useBranding();
 
 
   // On mobile the sidebar is an overlay drawer — close it whenever a
@@ -52,11 +55,21 @@ export function AppSidebar() {
       <SidebarContent>
         {/* Brand */}
         <div className={`flex h-16 items-center gap-3 border-b border-sidebar-border ${collapsed ? "justify-center px-1" : "px-4"}`}>
-          <PlatformLogo className={collapsed ? "h-9 w-9 rounded-md ring-1 ring-sidebar-border" : "h-11 w-11 rounded-lg ring-1 ring-sidebar-border"} iconClassName="h-6 w-6 text-sidebar-primary-foreground" />
-          {!collapsed && (
-            <BrandName className="font-display text-xl font-bold text-sidebar-foreground" />
+          {collapsed ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="inline-flex">
+                  <PlatformLogo className="h-9 w-9 rounded-md ring-1 ring-sidebar-border" iconClassName="h-6 w-6 text-sidebar-primary-foreground" />
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="right" align="center">{platform_name || "ThirdEye"}</TooltipContent>
+            </Tooltip>
+          ) : (
+            <>
+              <PlatformLogo className="h-11 w-11 rounded-lg ring-1 ring-sidebar-border" iconClassName="h-6 w-6 text-sidebar-primary-foreground" />
+              <BrandName className="font-display text-xl font-bold text-sidebar-foreground" />
+            </>
           )}
-
         </div>
 
         {/* Org Switcher */}
@@ -104,7 +117,7 @@ export function AppSidebar() {
             <SidebarMenu>
               {mainItems.map(item => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
+                  <SidebarMenuButton asChild tooltip={item.title}>
                     <NavLink to={item.url} end onClick={closeMobileNav} aria-label={item.title} className="relative rounded-lg text-sidebar-foreground/65 transition-colors hover:bg-sidebar-accent/70 hover:text-sidebar-foreground" activeClassName="bg-sidebar-accent text-sidebar-foreground font-medium shadow-sm">
                       <item.icon className="mr-2 h-4 w-4 text-sidebar-primary" />
                       {!collapsed && <span>{item.title}</span>}
@@ -124,8 +137,8 @@ export function AppSidebar() {
               <SidebarMenu>
                 {adminItems.map(item => (
                   <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild>
-                      <NavLink to={item.url} end onClick={closeMobileNav} className="rounded-lg text-sidebar-foreground/65 transition-colors hover:bg-sidebar-accent/70 hover:text-sidebar-foreground" activeClassName="bg-sidebar-accent text-sidebar-foreground font-medium shadow-sm">
+                  <SidebarMenuButton asChild tooltip={item.title}>
+                    <NavLink to={item.url} end onClick={closeMobileNav} className="rounded-lg text-sidebar-foreground/65 transition-colors hover:bg-sidebar-accent/70 hover:text-sidebar-foreground" activeClassName="bg-sidebar-accent text-sidebar-foreground font-medium shadow-sm">
                         <item.icon className="mr-2 h-4 w-4 text-sidebar-primary" />
                         {!collapsed && <span>{item.title}</span>}
                       </NavLink>
@@ -141,7 +154,7 @@ export function AppSidebar() {
       <SidebarFooter className="border-t border-sidebar-border p-3">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild>
+            <SidebarMenuButton asChild tooltip="Profile">
               <NavLink to="/profile" end onClick={closeMobileNav} className="rounded-lg text-sidebar-foreground/65 hover:bg-sidebar-accent hover:text-sidebar-foreground" activeClassName="bg-sidebar-accent text-sidebar-foreground font-medium">
                 <UserRound className="mr-2 h-4 w-4 text-sidebar-primary" />
                 {!collapsed && <span>Profile</span>}
@@ -149,7 +162,7 @@ export function AppSidebar() {
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton onClick={signOut} className="rounded-lg text-sidebar-foreground/55 hover:bg-sidebar-accent hover:text-sidebar-foreground">
+            <SidebarMenuButton tooltip="Sign Out" onClick={signOut} className="rounded-lg text-sidebar-foreground/55 hover:bg-sidebar-accent hover:text-sidebar-foreground">
               <LogOut className="mr-2 h-4 w-4" />
               {!collapsed && <span>Sign Out</span>}
             </SidebarMenuButton>

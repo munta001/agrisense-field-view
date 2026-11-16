@@ -26,3 +26,6 @@
 - [x] Redeploy dispatch-automation so it loads the current secrets; 403 guard verified.
 - [ ] Add organisation-admin WhatsApp settings and delivery verification using one platform Twilio account — waiting for the platform account connection.
 - [x] Guide the user through creating the platform Twilio account, testing WhatsApp, registering a sender, preparing a template, and entering credentials privately.
+
+# Sidebar hover labels
+- [x] Show the page name beside each icon when the sidebar is folded up; verified by hovering every icon while signed in.

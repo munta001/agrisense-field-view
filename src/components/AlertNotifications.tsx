@@ -8,6 +8,7 @@ import { useOrg } from "@/contexts/OrgContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export function AlertNotifications({ collapsed, isMobile, onNavigate }: {
@@ -41,24 +42,34 @@ export function AlertNotifications({ collapsed, isMobile, onNavigate }: {
   };
   if (!currentOrg) return null;
 
+  const bell = (
+    <Button variant="ghost" size={collapsed ? "icon" : "default"}
+      aria-label={`Alert notifications, ${data?.unread ?? 0} unread`}
+      className={`relative text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground ${collapsed ? "" : "w-full justify-start px-2"}`}>
+      <span className="relative flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-sidebar-accent">
+        <Bell className="h-4 w-4 text-sidebar-primary" />
+        {(data?.unread ?? 0) > 0 && (
+          <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold leading-none text-destructive-foreground">
+            {data && data.unread > 99 ? "99+" : data?.unread}
+          </span>
+        )}
+      </span>
+      {!collapsed && <span className="text-sm">Notifications</span>}
+    </Button>
+  );
+
   return (
     <Popover open={open} onOpenChange={value => { setOpen(value); if (value) void refetch(); }}>
-      <PopoverTrigger asChild>
-        <Button variant="ghost" size={collapsed ? "icon" : "default"}
-          aria-label={`Alert notifications, ${data?.unread ?? 0} unread`}
-          title="Alert notifications"
-          className={`relative text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground ${collapsed ? "" : "w-full justify-start px-2"}`}>
-          <span className="relative flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-sidebar-accent">
-            <Bell className="h-4 w-4 text-sidebar-primary" />
-            {(data?.unread ?? 0) > 0 && (
-              <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold leading-none text-destructive-foreground">
-                {data && data.unread > 99 ? "99+" : data?.unread}
-              </span>
-            )}
-          </span>
-          {!collapsed && <span className="text-sm">Notifications</span>}
-        </Button>
-      </PopoverTrigger>
+      {collapsed ? (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <PopoverTrigger asChild>{bell}</PopoverTrigger>
+          </TooltipTrigger>
+          <TooltipContent side="right" align="center">Notifications</TooltipContent>
+        </Tooltip>
+      ) : (
+        <PopoverTrigger asChild>{bell}</PopoverTrigger>
+      )}
       <PopoverContent side={isMobile ? "bottom" : "right"} align="start" sideOffset={12}
         className="w-80 overflow-hidden p-0" aria-label="Recent alert notifications">
         <div className="flex items-center justify-between border-b px-3 py-2">
