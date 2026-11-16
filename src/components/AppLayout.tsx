@@ -72,7 +72,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <div className="flex min-w-0 flex-1 flex-col">
           <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-card px-4 shadow-sm sm:px-6">
             <div className="flex min-w-0 items-center gap-3">
-              <PlatformLogo className="h-8 w-8 shrink-0 rounded-md ring-1 ring-border" iconClassName="h-4 w-4 text-primary-foreground" />
               <SidebarTrigger />
               <div className="hidden h-6 w-px bg-border sm:block" />
               <p className="truncate font-display text-base font-semibold text-foreground sm:text-lg">{pageTitle}</p>
