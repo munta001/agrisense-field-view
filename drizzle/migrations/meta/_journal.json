@@ -57,6 +57,13 @@
       "when": 1794824873977,
       "tag": "0007_default_blue_platform_tone",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1794825821089,
+      "tag": "0008_use_bundled_platform_logo",
+      "breakpoints": true
     }
   ]
 }

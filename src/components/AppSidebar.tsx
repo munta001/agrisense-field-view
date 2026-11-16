@@ -52,7 +52,7 @@ export function AppSidebar() {
       <SidebarContent>
         {/* Brand */}
         <div className="flex h-16 items-center gap-3 border-b border-sidebar-border px-4">
-          <PlatformLogo className="h-11 w-11 rounded-lg bg-sidebar-primary p-2 shadow-sm" iconClassName="h-6 w-6 text-sidebar-primary-foreground" />
+          <PlatformLogo className="h-11 w-11 rounded-lg ring-1 ring-sidebar-border" iconClassName="h-6 w-6 text-sidebar-primary-foreground" />
           {!collapsed && (
             <BrandName className="font-display text-xl font-bold text-sidebar-foreground" />
           )}

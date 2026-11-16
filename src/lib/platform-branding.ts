@@ -1,4 +1,4 @@
-import defaultLogo from "@/assets/third-eye-logo.jpeg.asset.json";
+import defaultLogo from "@/assets/third-eye-logo.jpeg";
 
 export type PlatformBranding = {
   platform_name: string;
@@ -10,7 +10,7 @@ export const BRANDING_STORAGE_KEY = "platform_branding";
 export const DEFAULT_TONE_COLOR = "#055299";
 export const DEFAULT_BRANDING: PlatformBranding = {
   platform_name: "ThirdEye",
-  logo_url: defaultLogo.url,
+  logo_url: defaultLogo,
   tone_color: DEFAULT_TONE_COLOR,
 };
 

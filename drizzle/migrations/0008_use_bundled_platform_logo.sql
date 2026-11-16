@@ -1,0 +1,1 @@
+update public.platform_settings set logo_url = null where id = 'platform';

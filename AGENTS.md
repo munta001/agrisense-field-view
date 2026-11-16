@@ -8,4 +8,5 @@
 - Alert feeds use server-side organisation, read-status and sensor filtering with counted pagination; zone filters resolve to the zone's sensors so every unread alert remains accessible beyond the recent feed limit.
 - Shared CardContent includes top padding by default because standalone cards have no header; header-based compact sections may explicitly opt out to keep card content clear of borders.
 - Field-map reading dialogs fetch the selected sensor's latest organisation-scoped reading with polling while open; distinguish taps from drags so viewing data never changes placement.
+- The platform's default logo ships bundled in `src/assets` and is imported directly; database branding fields (name, logo, tone) fall back to those bundled defaults when empty, so branding never renders a placeholder after a settings read.
 

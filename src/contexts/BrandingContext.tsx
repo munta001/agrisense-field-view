@@ -22,7 +22,11 @@ if (cached) {
 }
 
 const initialBranding: PlatformBranding = cached
-  ? { platform_name: cached.platform_name, logo_url: cached.logo_url, tone_color: cached.tone_color }
+  ? {
+      platform_name: cached.platform_name || DEFAULT_BRANDING.platform_name,
+      logo_url: cached.logo_url || DEFAULT_BRANDING.logo_url,
+      tone_color: cached.tone_color || DEFAULT_BRANDING.tone_color,
+    }
   : DEFAULT_BRANDING;
 
 type BrandingContextValue = PlatformBranding & {
@@ -53,9 +57,9 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
 
     if (data) {
       const next: PlatformBranding = {
-        platform_name: data.platform_name ?? "",
-        logo_url: data.logo_url ?? null,
-        tone_color: data.tone_color ?? "",
+        platform_name: data.platform_name || DEFAULT_BRANDING.platform_name,
+        logo_url: data.logo_url || DEFAULT_BRANDING.logo_url,
+        tone_color: data.tone_color || DEFAULT_BRANDING.tone_color,
       };
       setBranding(next);
       writeCachedBranding(next);

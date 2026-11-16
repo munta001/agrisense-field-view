@@ -2,6 +2,7 @@
 - [x] Refresh the complete fresh-project SQL bundle, including automation, and provide a downloadable copy; schema and required setup executed in isolated PostgreSQL with signup trigger checked.
 - [x] Use the screenshot blue as the default tone and verify the sign-in screen.
 - [x] Apply the uploaded application logo and show ThirdEye immediately on sign-in without a placeholder-name flash; desktop/phone checked using verified hosted logo bytes because localhost does not serve the CDN path.
+- [x] Use the uploaded logo image as the platform logo everywhere, including the navigation bar and browser tab icon; the image now ships with the app so it loads in every environment, and the stored copy was cleared in favour of it.
 
 # Mobile responsiveness
 - [x] Open latest sensor readings from field-map markers and device buttons; verified real readings, refresh, dragging without opening the dialog, and phone layout without overflow.
