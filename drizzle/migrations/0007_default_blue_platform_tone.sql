@@ -1,0 +1,1 @@
+ALTER TABLE public.platform_settings ALTER COLUMN tone_color SET DEFAULT '#055299';

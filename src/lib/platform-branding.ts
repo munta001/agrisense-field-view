@@ -1,3 +1,5 @@
+import defaultLogo from "@/assets/third-eye-logo.jpeg.asset.json";
+
 export type PlatformBranding = {
   platform_name: string;
   logo_url: string | null;
@@ -5,12 +7,18 @@ export type PlatformBranding = {
 };
 
 export const BRANDING_STORAGE_KEY = "platform_branding";
+export const DEFAULT_TONE_COLOR = "#055299";
+export const DEFAULT_BRANDING: PlatformBranding = {
+  platform_name: "ThirdEye",
+  logo_url: defaultLogo.url,
+  tone_color: DEFAULT_TONE_COLOR,
+};
 
 type CachedBranding = PlatformBranding & { vars: Record<string, string> };
 
 function hexToHsl(hex: string) {
   const match = /^#([0-9a-f]{6})$/i.exec(hex);
-  if (!match) return { h: 152, s: 55, l: 28 };
+  if (!match) return hexToHsl(DEFAULT_TONE_COLOR);
   const value = match[1];
   const r = parseInt(value.slice(0, 2), 16) / 255;
   const g = parseInt(value.slice(2, 4), 16) / 255;

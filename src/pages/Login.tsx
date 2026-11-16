@@ -68,9 +68,8 @@ export default function LoginPage() {
     <div className="flex min-h-svh items-center justify-center bg-background px-4 py-8">
       <div className="w-full max-w-md">
         <div className="mb-8 flex flex-col items-center">
-          <PlatformLogo className="mb-4 h-14 w-14 rounded-2xl gradient-primary p-3 shadow-lg" iconClassName="h-7 w-7 text-primary-foreground" />
+          <PlatformLogo className="mb-4 h-36 w-36 rounded-lg" iconClassName="h-7 w-7 text-primary-foreground" />
           <BrandName className="max-w-full break-words text-center font-display text-3xl font-bold text-foreground" />
-          <p className="mt-1 text-muted-foreground">Smart Agriculture Platform</p>
         </div>
 
         <Card className="glass-card">

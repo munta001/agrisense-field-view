@@ -8,8 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useBranding } from "@/contexts/BrandingContext";
 import { supabase } from "@/integrations/supabase/client";
+import { DEFAULT_TONE_COLOR } from "@/lib/platform-branding";
 
-const presets = ["#23704F", "#2563EB", "#0F766E", "#B45309", "#BE123C", "#6D28D9"];
+const presets = [DEFAULT_TONE_COLOR, "#2563EB", "#0F766E", "#B45309", "#BE123C", "#6D28D9"];
 
 export default function MasterAdminBrandingPage() {
   const { platform_name, logo_url, tone_color, refreshBranding } = useBranding();
@@ -136,7 +137,7 @@ export default function MasterAdminBrandingPage() {
                       <span className="h-4 w-4 rounded-full border bg-primary" style={{ backgroundColor: preset }} />
                     </Button>
                   ))}
-                  <Button type="button" variant="ghost" size="sm" onClick={() => setColor("#23704F")}>
+                  <Button type="button" variant="ghost" size="sm" onClick={() => setColor(DEFAULT_TONE_COLOR)}>
                     <RotateCcw className="h-4 w-4" /> Reset
                   </Button>
                 </div>

@@ -50,6 +50,13 @@
       "when": 1793337168600,
       "tag": "0006_remove_whatsapp_alerts",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1794824873977,
+      "tag": "0007_default_blue_platform_tone",
+      "breakpoints": true
     }
   ]
 }

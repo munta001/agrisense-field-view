@@ -1,31 +1,30 @@
-# AgriSense — Supabase migration kit
+# ThirdEye — fresh-project migration kit
 
-Everything the app needs in the database, extracted from the production
-project and cleaned up so it runs on a **fresh** Supabase project.
+Updated 16 November 2026. This recreates the application schema, not a copy of existing customer data or login accounts. Use a **fresh external project**, not the existing live database.
 
-## Files
+## Run in this order
 
-| File | What it is |
-|---|---|
-| `01_schema.sql` | **Required.** Full schema: 14 tables, all functions, triggers (including the signup profile trigger on `auth.users`), indexes, row-level security policies, grants, and both storage buckets (`zone-images` public, `profile-pictures` private with a 5 MB limit) with their policies. |
-| `02_seed_optional.sql` | **Optional.** Baseline data: the Soil 8-in-1 (LoRaWAN) sensor type, the platform branding row, and two crop templates (Tomato with stages + thresholds, Lettuce). |
+1. Run `01_schema.sql`: all 17 application tables, constraints, indexes, 14 functions, triggers, access policies and grants. Includes appliances, rules, queued automation, manual On/Off permissions, capped stop timers and error details.
+2. Run `02_setup_required.sql`: the required LoRaWAN sensor type, ThirdEye branding with blue `#055299`, and both storage buckets. Do not skip this step.
+3. `02_seed_optional.sql` contains demo crops only. Skip it for production; its sample thresholds and durations are not agronomic recommendations.
 
-## How to run
+Paste each whole file into the new project's SQL editor and run it. The schema file is intended to run once. Startup setup can be rerun without replacing saved records.
 
-1. Create the new project at supabase.com.
-2. Open **SQL Editor → New query**, paste the whole of `01_schema.sql`, and run it. It takes a few seconds.
-3. (Optional) Paste and run `02_seed_optional.sql`.
-4. In **Authentication → Providers**, configure Email (and Google if you use Google sign-in).
-5. In **Authentication → URL configuration**, add your app's URL to the redirect allow-list.
-6. Deploy the two edge functions (`master-admin-manage`, `bootstrap-master-admin`) — they live in the app's `supabase/functions/` folder and are separate from the database.
-7. Put your project URL and anon key into the app's `.env`:
-   `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY`.
-8. Create your first master admin: run the `bootstrap-master-admin` edge function (or insert a row into `public.user_roles` with `role = 'master_admin'` for your user id).
+## Configuration that SQL cannot transfer
 
-## Notes
+- Configure email confirmation, SMTP and redirect URLs on the new account. Google sign-in currently uses Lovable-managed OAuth in application code; an external deployment needs its own Google provider setup and the corresponding client sign-in change.
+- Deploy **all five** folders under `supabase/functions/`: `master-admin-manage`, `bootstrap-master-admin`, `reset-user-password`, `manual-automation`, and `dispatch-automation`. For the dispatcher use `--no-verify-jwt`; its `x-dispatch-secret` check is the authentication guard. Keep the other functions' own session checks.
+- Set `EMQX_API_URL`, `EMQX_API_KEY`, `EMQX_API_SECRET` and `DISPATCH_SECRET` privately on the destination. Never paste keys into SQL or chat. The destination provides its own backend service credentials.
+- Recreate any external scheduler that calls the dispatcher with `x-dispatch-secret`. SQL creates the queue but does not schedule dispatch calls.
+- Point a separately configured application checkout at the new account using its URL and publishable key. This bundle does **not** switch this live app away from Lovable Cloud.
+- Upload the application logo and organisation/zone/profile images to the destination and update their paths. This SQL contains no old-account storage URLs or image binaries.
+- Create your own confirmed sign-in account, then assign that account `master_admin` in `public.user_roles` with a null organisation. No passwords or preassigned admins are included. Inspect `bootstrap-master-admin` before deploying it: it contains an existing account email and must be adapted to your intended owner.
+- Existing organisations, readings, profiles, memberships and Auth users require a separate data-transfer process; none are included here. For a full current-data export use **More → Database → Manage → Settings → Export data**.
 
-- Row-level security is enabled on every table — with no policies nothing is readable, and all policies are included here, so the app works the same as production.
-- All 14 tables are granted to `anon`, `authenticated` and `service_role`; RLS decides what each role can actually touch. The LoRaWAN gateway inserts readings through the anon key using the `insert_sensor_reading` function.
-- One production bug was fixed while extracting: `insert_sensor_reading` referenced a `companies` table that does not exist; that dead fallback was removed.
-- The seed uses placeholder UUIDs so it cannot collide with real data you add later.
-- Sensitive helper functions (`handle_new_user`, `log_alert_activity`, `org_member_details`, `master_admin_overview`, etc.) have their EXECUTE rights restricted to match production.
+## Security and compatibility notes
+
+- RLS is enabled on all 17 tables. Anonymous table access is limited to reading branding and the existing gateway insert policy; internal automation queue writes are server-only.
+- Role editing in this export prevents organisation admins creating/promoting Master Admins and removes the recursive first-member role fallback.
+- Application user IDs are plain UUIDs except the profiles and user_roles Auth links.
+- The obsolete `companies` fallback is removed from ingestion. `whatsapp_sent_at` is retained as deprecated for compatibility; no Meta/WhatsApp sending hook or Twilio integration is included.
+- Existing gateway ingestion and other access policies are preserved; review gateway credentials and tenant/storage policies before exposing a new production deployment.

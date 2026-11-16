@@ -1,23 +1,7 @@
 -- ============================================================
--- AgriSense — OPTIONAL baseline seed data
--- Run AFTER 01_schema.sql, in the SQL Editor of the new project.
+-- ThirdEye — OPTIONAL demo crop data (not production thresholds)
+-- Run AFTER 01_schema.sql and 02_setup_required.sql.
 -- ============================================================
-
--- The 8-in-1 LoRaWAN soil sensor type (the app's insert_sensor_reading
--- function auto-registers devices against this type)
-INSERT INTO public.sensor_types (id, name, unit, icon, description, min_value, max_value) VALUES
-  ('44ccc9b7-feaf-4493-ba3b-e5f1e22d5f6f',
-   'Soil 8-in-1 (LoRaWAN)',
-   'multi',
-   'flask-conical',
-   'Soil 8-in-1 LoRaWAN probe: temperature, moisture, conductivity, pH, N, P, K, salinity',
-   NULL, NULL);
-
--- Platform branding singleton (set your own platform name / tone colour;
--- logo_url points at storage you will upload later, so left NULL here)
-INSERT INTO public.platform_settings (id, platform_name, logo_url, tone_color)
-VALUES ('platform', 'AgriSense', NULL, '#23704F')
-ON CONFLICT (id) DO NOTHING;
 
 -- Crop templates are per-organisation (crops.org_id is required), so they are
 -- attached to the first organisation that exists. If none exists yet, nothing

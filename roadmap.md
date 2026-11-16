@@ -1,3 +1,8 @@
+# Migration and default branding
+- [x] Refresh the complete fresh-project SQL bundle, including automation, and provide a downloadable copy; schema and required setup executed in isolated PostgreSQL with signup trigger checked.
+- [x] Use the screenshot blue as the default tone and verify the sign-in screen.
+- [x] Apply the uploaded application logo and show ThirdEye immediately on sign-in without a placeholder-name flash; desktop/phone checked using verified hosted logo bytes because localhost does not serve the CDN path.
+
 # Mobile responsiveness
 - [x] Open latest sensor readings from field-map markers and device buttons; verified real readings, refresh, dragging without opening the dialog, and phone layout without overflow.
 - [x] Correct shared card spacing, narrow metric grids, and administration navigation/table layouts; organisation pages verified at 320, 390, 768 and 1280px. Signed-in master-admin verification remains blocked as noted below.

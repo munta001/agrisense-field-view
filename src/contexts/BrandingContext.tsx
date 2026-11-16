@@ -6,6 +6,7 @@ import {
   readCachedBranding,
   toneVars,
   writeCachedBranding,
+  DEFAULT_BRANDING,
   type PlatformBranding,
 } from "@/lib/platform-branding";
 
@@ -22,7 +23,7 @@ if (cached) {
 
 const initialBranding: PlatformBranding = cached
   ? { platform_name: cached.platform_name, logo_url: cached.logo_url, tone_color: cached.tone_color }
-  : { platform_name: "", logo_url: null, tone_color: "" };
+  : DEFAULT_BRANDING;
 
 type BrandingContextValue = PlatformBranding & {
   loading: boolean;
@@ -34,14 +35,14 @@ type BrandingContextValue = PlatformBranding & {
 const BrandingContext = createContext<BrandingContextValue>({
   ...initialBranding,
   loading: true,
-  resolved: false,
+  resolved: true,
   refreshBranding: async () => {},
 });
 
 export function BrandingProvider({ children }: { children: ReactNode }) {
   const [branding, setBranding] = useState<PlatformBranding>(initialBranding);
   const [loading, setLoading] = useState(true);
-  const [resolved, setResolved] = useState(Boolean(cached));
+  const [resolved, setResolved] = useState(true);
 
   const refreshBranding = async () => {
     const { data } = await supabase
